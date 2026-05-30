@@ -838,6 +838,10 @@
                     openModalId = id;
                     modal.classList.add("open");
                     backdrop.classList.add("open");
+                    // Reconcile the color controls with current state on open, so
+                    // the sliders, preview, and saturation track never show values
+                    // left stale by a randomize or shared-link restore.
+                    if (id === "modal-color") syncColorControls();
                     document.querySelectorAll(".dropdown-item").forEach((f) => {
                         f.classList.toggle(
                             "active",
@@ -1035,7 +1039,7 @@
                     const swatch = document.createElement("span");
                     swatch.className = "swatch";
                     const p = pal.stops;
-                    swatch.style.background = `linear-gradient(90deg, ${p[1]}, ${p[3]})`;
+                    swatch.style.backgroundImage = `linear-gradient(90deg, ${p[1]}, ${p[3]})`;
                     btn.appendChild(swatch);
                     btn.appendChild(document.createTextNode(pal.label));
                     btn.dataset.palette = pal.id;
@@ -1087,9 +1091,17 @@
                     palettePreview.style.backgroundImage = `linear-gradient(90deg, ${stops.join(", ")})`;
                 }
 
-                // Recolor the saturation track to ramp from gray to the current base hue.
+                // Recolor the saturation track to ramp from gray to the active
+                // palette's base hue. In preset mode we read the hue off the
+                // preset's mid stop (mirroring how clicking a chip seeds the
+                // sliders) rather than custom.hue, which can be stale after a
+                // randomize or shared-link restore that never touched it.
                 function updateSatSliderBg() {
-                    const h = state.palette.custom.hue;
+                    let h = state.palette.custom.hue;
+                    if (state.palette.mode === "preset") {
+                        const pal = PALETTES.byId(state.palette.name);
+                        if (pal) h = Math.round(hexToHsl(pal.stops[2]).h);
+                    }
                     satSlider.style.backgroundImage = `linear-gradient(90deg, hsl(${h}, 0%, 55%), hsl(${h}, 85%, 55%))`;
                 }
 
