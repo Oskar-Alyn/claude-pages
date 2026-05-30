@@ -3016,8 +3016,8 @@
                 // MAIN LOOP
                 // ============================================================
                 function loop() {
+                    if (pointerDown) depositAtPointer();
                     if (playing) {
-                        if (pointerDown) depositAtPointer();
                         const iters = state.settings.simSpeed || 1;
                         for (let i = 0; i < iters; i++) simulate();
                     }
