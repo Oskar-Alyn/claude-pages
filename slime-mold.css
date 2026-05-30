@@ -45,7 +45,8 @@ body {
     position: fixed;
     inset: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100vh; /* fallback for browsers without dvh */
+    height: 100dvh; /* tracks the visible viewport as Safari's toolbar shows/hides */
     display: block;
     background: #000;
     touch-action: none;
