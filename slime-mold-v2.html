@@ -44,7 +44,7 @@
         <meta charset="UTF-8" />
         <meta
             name="viewport"
-            content="width=device-width, initial-scale=1, viewport-fit=cover"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
         <meta name="theme-color" content="#0a0d14" />
         <title>Slime mold v2</title>
@@ -84,6 +84,12 @@
                     sans-serif;
                 line-height: 1.5;
                 -webkit-font-smoothing: antialiased;
+                /* This is an interactive sim, not a reading page: block the
+                   accidental text-selection and long-press callout that touch
+                   users trigger while dragging on the canvas / tapping the UI. */
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
             }
 
             #canvas {
