@@ -629,6 +629,34 @@
                 // ============================================================
                 // SIMULATION
                 // ============================================================
+                // Diffuse a single border cell with the same 3x3 kernel the
+                // interior loop uses, but with neighbor indices wrapped
+                // toroidally. The field is a torus just like agent motion,
+                // sensors, and deposits already are; without this the 1px
+                // border only decayed, leaving a sticky, discontinuous seam at
+                // the edges that made agents bunch up there. Only the perimeter
+                // needs the wrapping branch — interior cells stay on the fast
+                // branch-free loop in simulate().
+                function diffuseEdgeCell(x, y, dc, dn, decayMul) {
+                    const xm = x === 0 ? W - 1 : x - 1;
+                    const xp = x === W - 1 ? 0 : x + 1;
+                    const ym = y === 0 ? H - 1 : y - 1;
+                    const yp = y === H - 1 ? 0 : y + 1;
+                    const rm = ym * W,
+                        r = y * W,
+                        rp = yp * W;
+                    const sum =
+                        field[rm + xm] +
+                        field[rm + x] +
+                        field[rm + xp] +
+                        field[r + xm] +
+                        field[r + xp] +
+                        field[rp + xm] +
+                        field[rp + x] +
+                        field[rp + xp];
+                    nextField[r + x] = (field[r + x] * dc + sum * dn) * decayMul;
+                }
+
                 function simulate() {
                     const n = state.params.count;
                     const sa = (state.params.sensorAngle * Math.PI) / 180;
@@ -724,14 +752,12 @@
                         }
                     }
                     for (let x = 0; x < W; x++) {
-                        nextField[x] = field[x] * decayMul;
-                        nextField[(H - 1) * W + x] =
-                            field[(H - 1) * W + x] * decayMul;
+                        diffuseEdgeCell(x, 0, dc, dn, decayMul);
+                        diffuseEdgeCell(x, H - 1, dc, dn, decayMul);
                     }
-                    for (let y = 0; y < H; y++) {
-                        nextField[y * W] = field[y * W] * decayMul;
-                        nextField[y * W + W - 1] =
-                            field[y * W + W - 1] * decayMul;
+                    for (let y = 1; y < H - 1; y++) {
+                        diffuseEdgeCell(0, y, dc, dn, decayMul);
+                        diffuseEdgeCell(W - 1, y, dc, dn, decayMul);
                     }
 
                     const tmp = field;
