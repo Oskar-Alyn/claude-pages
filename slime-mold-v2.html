@@ -23,12 +23,16 @@
     trails" mental model) — avoid the words agent / sensor / pheromone /
     diffusion in anything the user reads.
 
-  - Internal names != display labels. State stores internal values
-    (e.g. heading "Tangential", shapes "TwoBlobs"/"FourBlobs", quality keys
-    "veryHigh"/"ultra") which are mapped to friendly chip labels (e.g.
-    "Spinning", "Two blobs") at render time. Changing an internal name means
-    updating seedParticles()/the sim AND any persisted/shared state — so
-    rename the display label, not the key.
+  - Each enumerable option (patterns, headings, quality, palettes) lives in
+    one ordered `registry()` of descriptor objects { id, label, ...metadata }.
+    The `id` is the single stable key: the sim branches on it and state
+    serializes it. The `label` is the friendly chip text and the only field
+    copy edits touch (e.g. heading "Tangential" → "Spinning", "TwoBlobs" →
+    "Two Blobs"). Option-specific metadata rides on the same object (pattern
+    `clustered`/`blobCount`, heading `usesAngle`, quality `target`, palette
+    `stops`). The UI renders from `.label`, the sim switches on `.id`, and
+    `registry.byId(id)` resolves a stored id to its descriptor with a safe
+    fallback to the default. To rename what the user sees, edit only `.label`.
 
   - UI layout: a top-right cogwheel opens a dropdown of the four modals
     (Color / Shape / Parameters / Settings); action buttons (record, share,
@@ -1289,13 +1293,7 @@
 
                 <div class="section">
                     <div class="section-label">Simulation quality</div>
-                    <div class="segmented" id="seg-quality">
-                        <button data-q="low">Low</button>
-                        <button data-q="med">Medium</button>
-                        <button data-q="high">High</button>
-                        <button data-q="veryHigh">Very high</button>
-                        <button data-q="ultra">Ultra</button>
-                    </div>
+                    <div class="segmented" id="seg-quality"></div>
                     <div class="ctrl-hint" style="margin-top: 8px">
                         Lower is faster but blockier.
                     </div>
@@ -1517,104 +1515,186 @@
                     },
                 ];
 
-                const palettes = {
-                    Acid: [
-                        "#000000",
-                        "#082a14",
-                        "#1a8a3c",
-                        "#7af066",
-                        "#f5ffa8",
-                    ],
-                    Coral: [
-                        "#0a0612",
-                        "#2b0a26",
-                        "#a83a5c",
-                        "#ff7da3",
-                        "#ffe3ea",
-                    ],
-                    Ember: [
-                        "#000000",
-                        "#2c0500",
-                        "#a02000",
-                        "#ff7a2e",
-                        "#ffde8a",
-                    ],
-                    Frost: [
-                        "#000814",
-                        "#0a2e58",
-                        "#3a86d0",
-                        "#9ed4ff",
-                        "#f0faff",
-                    ],
-                    Toxic: [
-                        "#040010",
-                        "#1a0828",
-                        "#6a0aa8",
-                        "#c850f5",
-                        "#f8d4ff",
-                    ],
-                    Inferno: [
-                        "#000000",
-                        "#1a0000",
-                        "#a00010",
-                        "#ff4020",
-                        "#ffec70",
-                    ],
-                    Cyber: [
-                        "#000810",
-                        "#0a2030",
-                        "#0a8a98",
-                        "#5af0d8",
-                        "#fff088",
-                    ],
-                    Verdant: [
-                        "#020808",
-                        "#0a2818",
-                        "#187058",
-                        "#54d8b8",
-                        "#dcfff0",
-                    ],
-                    Twilight: [
-                        "#040208",
-                        "#280a40",
-                        "#8a2080",
-                        "#ff60c0",
-                        "#ffe098",
-                    ],
-                    Iris: [
-                        "#000018",
-                        "#0c1448",
-                        "#4a3ac0",
-                        "#c060e0",
-                        "#ffd0e0",
-                    ],
-                };
+                // One ordered registry per enumeration. Each entry is a
+                // descriptor: { id, label, ...metadata }. `id` is the single
+                // stable key the sim branches on and that state serializes;
+                // `label` is the only field copy edits touch; option-specific
+                // metadata (cluster flag, particle target, palette stops) rides
+                // on the same object. registry.byId() resolves an id to its
+                // descriptor, falling back to the default if an unknown id ever
+                // turns up. The UI renders from .label, the sim branches on .id.
+                function registry(items, defaultId) {
+                    return {
+                        items,
+                        byId: (id) =>
+                            items.find((d) => d.id === id) ||
+                            items.find((d) => d.id === defaultId),
+                    };
+                }
+                const randItem = (arr) =>
+                    arr[Math.floor(Math.random() * arr.length)];
 
-                const patternNames = [
-                    "Scatter",
-                    "Ring",
+                const PALETTES = registry(
+                    [
+                        {
+                            id: "Acid",
+                            label: "Acid",
+                            stops: [
+                                "#000000",
+                                "#082a14",
+                                "#1a8a3c",
+                                "#7af066",
+                                "#f5ffa8",
+                            ],
+                        },
+                        {
+                            id: "Coral",
+                            label: "Coral",
+                            stops: [
+                                "#0a0612",
+                                "#2b0a26",
+                                "#a83a5c",
+                                "#ff7da3",
+                                "#ffe3ea",
+                            ],
+                        },
+                        {
+                            id: "Ember",
+                            label: "Ember",
+                            stops: [
+                                "#000000",
+                                "#2c0500",
+                                "#a02000",
+                                "#ff7a2e",
+                                "#ffde8a",
+                            ],
+                        },
+                        {
+                            id: "Frost",
+                            label: "Frost",
+                            stops: [
+                                "#000814",
+                                "#0a2e58",
+                                "#3a86d0",
+                                "#9ed4ff",
+                                "#f0faff",
+                            ],
+                        },
+                        {
+                            id: "Toxic",
+                            label: "Toxic",
+                            stops: [
+                                "#040010",
+                                "#1a0828",
+                                "#6a0aa8",
+                                "#c850f5",
+                                "#f8d4ff",
+                            ],
+                        },
+                        {
+                            id: "Inferno",
+                            label: "Inferno",
+                            stops: [
+                                "#000000",
+                                "#1a0000",
+                                "#a00010",
+                                "#ff4020",
+                                "#ffec70",
+                            ],
+                        },
+                        {
+                            id: "Cyber",
+                            label: "Cyber",
+                            stops: [
+                                "#000810",
+                                "#0a2030",
+                                "#0a8a98",
+                                "#5af0d8",
+                                "#fff088",
+                            ],
+                        },
+                        {
+                            id: "Verdant",
+                            label: "Verdant",
+                            stops: [
+                                "#020808",
+                                "#0a2818",
+                                "#187058",
+                                "#54d8b8",
+                                "#dcfff0",
+                            ],
+                        },
+                        {
+                            id: "Twilight",
+                            label: "Twilight",
+                            stops: [
+                                "#040208",
+                                "#280a40",
+                                "#8a2080",
+                                "#ff60c0",
+                                "#ffe098",
+                            ],
+                        },
+                        {
+                            id: "Iris",
+                            label: "Iris",
+                            stops: [
+                                "#000018",
+                                "#0c1448",
+                                "#4a3ac0",
+                                "#c060e0",
+                                "#ffd0e0",
+                            ],
+                        },
+                    ],
+                    "Inferno",
+                );
+
+                const PATTERNS = registry(
+                    [
+                        { id: "Scatter", label: "Scatter" },
+                        { id: "Ring", label: "Ring", clustered: true },
+                        { id: "Disc", label: "Disc", clustered: true },
+                        { id: "Center", label: "Center" },
+                        { id: "Edges", label: "Edges" },
+                        { id: "Grid", label: "Grid" },
+                        {
+                            id: "TwoBlobs",
+                            label: "Two Blobs",
+                            clustered: true,
+                            blobCount: 2,
+                        },
+                        {
+                            id: "FourBlobs",
+                            label: "Four Blobs",
+                            clustered: true,
+                            blobCount: 4,
+                        },
+                    ],
                     "Disc",
-                    "Center",
-                    "Edges",
-                    "Grid",
-                    "TwoBlobs",
-                    "FourBlobs",
-                ];
-                const headingNames = [
-                    "Random",
-                    "Inward",
-                    "Outward",
-                    "Tangential",
-                    "Fixed",
-                ];
+                );
 
-                const QUALITY_TARGETS = {
-                    low: 60000,
-                    med: 130000,
-                    high: 220000,
-                    veryHigh: 400000,
-                    ultra: 800000,
-                };
+                const HEADINGS = registry(
+                    [
+                        { id: "Random", label: "Random" },
+                        { id: "Inward", label: "Toward center" },
+                        { id: "Outward", label: "Away from center" },
+                        { id: "Tangential", label: "Spinning" },
+                        { id: "Fixed", label: "Fixed", usesAngle: true },
+                    ],
+                    "Tangential",
+                );
+
+                const QUALITIES = registry(
+                    [
+                        { id: "low", label: "Low", target: 60000 },
+                        { id: "med", label: "Medium", target: 130000 },
+                        { id: "high", label: "High", target: 220000 },
+                        { id: "veryHigh", label: "Very high", target: 400000 },
+                        { id: "ultra", label: "Ultra", target: 800000 },
+                    ],
+                    "high",
+                );
                 const MAX_PARTICLES = 40000;
 
                 const randomRanges = {
@@ -1650,9 +1730,7 @@
                     const vw = window.innerWidth;
                     const vh = window.innerHeight;
                     const aspect = vw / vh;
-                    const target =
-                        QUALITY_TARGETS[state.settings.quality] ||
-                        QUALITY_TARGETS.med;
+                    const target = QUALITIES.byId(state.settings.quality).target;
                     const Hg = Math.max(
                         60,
                         Math.round(Math.sqrt(target / aspect)),
@@ -1780,7 +1858,7 @@
                             c.saturation,
                         );
                     }
-                    return palettes[state.palette.name] || palettes.Acid;
+                    return PALETTES.byId(state.palette.name).stops;
                 }
 
                 function refreshPalette() {
@@ -1860,8 +1938,9 @@
                             }
                             case "TwoBlobs":
                             case "FourBlobs": {
-                                const blobCount =
-                                    state.pattern.name === "TwoBlobs" ? 2 : 4;
+                                const blobCount = PATTERNS.byId(
+                                    state.pattern.name,
+                                ).blobCount;
                                 const blobIdx = i % blobCount;
                                 const blobAngle =
                                     (blobIdx / blobCount) * Math.PI * 2;
@@ -2339,19 +2418,19 @@
                 // COLOR MODAL
                 // ============================================================
                 const colorRow = document.getElementById("color-row");
-                Object.keys(palettes).forEach((name) => {
+                PALETTES.items.forEach((pal) => {
                     const btn = document.createElement("button");
                     btn.className = "chip";
                     const swatch = document.createElement("span");
                     swatch.className = "swatch";
-                    const p = palettes[name];
+                    const p = pal.stops;
                     swatch.style.background = `linear-gradient(90deg, ${p[1]}, ${p[3]})`;
                     btn.appendChild(swatch);
-                    btn.appendChild(document.createTextNode(name));
-                    btn.dataset.palette = name;
+                    btn.appendChild(document.createTextNode(pal.label));
+                    btn.dataset.palette = pal.id;
                     btn.addEventListener("click", () => {
                         state.palette.mode = "preset";
-                        state.palette.name = name;
+                        state.palette.name = pal.id;
                         // Seed the custom sliders from the preset (mid stop = base,
                         // brightest stop = accent) so they reflect the selection.
                         const mid = hexToHsl(p[2]);
@@ -2445,32 +2524,21 @@
                 const patternRow = document.getElementById("pattern-row");
                 const regionSection =
                     document.getElementById("region-section");
-                // Shapes that actually use the cluster-size slider.
-                const CLUSTERED = new Set([
-                    "Ring",
-                    "Disc",
-                    "TwoBlobs",
-                    "FourBlobs",
-                ]);
-                // Friendly chip labels (state keeps the internal names).
-                const patternLabels = {
-                    TwoBlobs: "Two blobs",
-                    FourBlobs: "Four blobs",
-                };
                 function updateRegionVisibility() {
-                    regionSection.style.display = CLUSTERED.has(
+                    // Only clustered shapes use the cluster-size slider.
+                    regionSection.style.display = PATTERNS.byId(
                         state.pattern.name,
-                    )
+                    ).clustered
                         ? ""
                         : "none";
                 }
-                patternNames.forEach((name) => {
+                PATTERNS.items.forEach((pat) => {
                     const btn = document.createElement("button");
                     btn.className = "chip";
-                    btn.textContent = patternLabels[name] || name;
-                    btn.dataset.pattern = name;
+                    btn.textContent = pat.label;
+                    btn.dataset.pattern = pat.id;
                     btn.addEventListener("click", () => {
-                        state.pattern.name = name;
+                        state.pattern.name = pat.id;
                         markActivePattern();
                         resetAll();
                         persistState();
@@ -2491,19 +2559,13 @@
                 const headingAngleSection = document.getElementById(
                     "heading-angle-section",
                 );
-                // Friendly chip labels (state keeps the internal names).
-                const headingLabels = {
-                    Inward: "Toward center",
-                    Outward: "Away from center",
-                    Tangential: "Spinning",
-                };
-                headingNames.forEach((name) => {
+                HEADINGS.items.forEach((head) => {
                     const btn = document.createElement("button");
                     btn.className = "chip";
-                    btn.textContent = headingLabels[name] || name;
-                    btn.dataset.heading = name;
+                    btn.textContent = head.label;
+                    btn.dataset.heading = head.id;
                     btn.addEventListener("click", () => {
-                        state.pattern.heading = name;
+                        state.pattern.heading = head.id;
                         markActiveHeading();
                         resetAll();
                         persistState();
@@ -2517,8 +2579,11 @@
                             btn.dataset.heading === state.pattern.heading,
                         );
                     });
-                    headingAngleSection.style.display =
-                        state.pattern.heading === "Fixed" ? "" : "none";
+                    headingAngleSection.style.display = HEADINGS.byId(
+                        state.pattern.heading,
+                    ).usesAngle
+                        ? ""
+                        : "none";
                 }
 
                 const angleSlider = document.getElementById("s-angle");
@@ -2600,17 +2665,20 @@
                     updateToolbarVisibility();
                 }
 
-                document
-                    .querySelectorAll("#seg-quality button")
-                    .forEach((b) => {
-                        b.addEventListener("click", () => {
-                            state.settings.quality = b.dataset.q;
-                            syncSettings();
-                            const { W: nw, H: nh } = computeGridSize();
-                            if (nw !== W || nh !== H) allocateField(nw, nh);
-                            persistState();
-                        });
+                const qualityRow = document.getElementById("seg-quality");
+                QUALITIES.items.forEach((q) => {
+                    const btn = document.createElement("button");
+                    btn.textContent = q.label;
+                    btn.dataset.q = q.id;
+                    btn.addEventListener("click", () => {
+                        state.settings.quality = q.id;
+                        syncSettings();
+                        const { W: nw, H: nh } = computeGridSize();
+                        if (nw !== W || nh !== H) allocateField(nw, nh);
+                        persistState();
                     });
+                    qualityRow.appendChild(btn);
+                });
 
                 document
                     .getElementById("fab-share")
@@ -2696,23 +2764,15 @@
                     applyParamsToSliders();
 
                     if (state.settings.randomizeColor) {
-                        const names = Object.keys(palettes);
                         state.palette.mode = "preset";
-                        state.palette.name =
-                            names[Math.floor(Math.random() * names.length)];
+                        state.palette.name = randItem(PALETTES.items).id;
                         refreshPalette();
                         markActiveColor();
                     }
 
                     if (state.settings.randomizePattern) {
-                        state.pattern.name =
-                            patternNames[
-                                Math.floor(Math.random() * patternNames.length)
-                            ];
-                        state.pattern.heading =
-                            headingNames[
-                                Math.floor(Math.random() * headingNames.length)
-                            ];
+                        state.pattern.name = randItem(PATTERNS.items).id;
+                        state.pattern.heading = randItem(HEADINGS.items).id;
                         state.pattern.fixedAngle = Math.floor(
                             Math.random() * 360,
                         );
