@@ -29,6 +29,7 @@
                         randomizeColor: true,
                         randomizePattern: true,
                         quality: "high",
+                        fps: 60,
                         simSpeed: 1,
                         showRecord: false,
                         showShareLink: false,
@@ -333,6 +334,8 @@
 
                 let paletteLUT;
                 let playing = true;
+                // ms between rendered frames; kept in sync with state.settings.fps.
+                let frameInterval = 1000 / 60;
 
                 function computeGridSize() {
                     const vw = window.innerWidth;
@@ -1262,6 +1265,10 @@
                         document.getElementById(id).checked =
                             !!state.settings[key];
                     });
+                    const fps = state.settings.fps || 60;
+                    frameInterval = 1000 / fps;
+                    fpsSlider.value = fps;
+                    fpsVal.textContent = fps;
                     [
                         ...document.querySelectorAll("#seg-quality button"),
                     ].forEach((b) => {
@@ -1286,6 +1293,16 @@
                         persistState();
                     });
                     qualityRow.appendChild(btn);
+                });
+
+                const fpsSlider = document.getElementById("s-fps");
+                const fpsVal = document.getElementById("v-fps");
+                fpsSlider.addEventListener("input", () => {
+                    const v = parseInt(fpsSlider.value, 10) || 60;
+                    state.settings.fps = v;
+                    fpsVal.textContent = v;
+                    frameInterval = 1000 / v;
+                    persistState();
                 });
 
                 document
@@ -1617,14 +1634,42 @@
                 // ============================================================
                 // MAIN LOOP
                 // ============================================================
-                function loop() {
-                    if (pointerDown) depositAtPointer();
-                    if (playing) {
-                        const iters = state.settings.simSpeed || 1;
-                        for (let i = 0; i < iters; i++) simulate();
-                    }
-                    render();
+                // The FPS slider only caps how often we *render* (saves battery
+                // on high-refresh displays). The simulation advances on its own
+                // fixed timestep — SIM_FPS steps/sec at 1× speed, scaled by the
+                // speed multiplier — so motion speed stays constant regardless of
+                // the render rate. Each rendered frame runs as many sim steps as
+                // the real elapsed time calls for (caught up via an accumulator).
+                const SIM_FPS = 60;
+                const MAX_CATCHUP_MS = 100; // bound catch-up after a stall (e.g. tab switch)
+                let lastFrame = 0;
+                let lastSim = 0;
+                let simAccumulator = 0;
+                function loop(now) {
                     requestAnimationFrame(loop);
+                    if (now - lastFrame < frameInterval) return;
+                    // Snap to the interval grid so cadence stays steady without drift.
+                    lastFrame = now - ((now - lastFrame) % frameInterval);
+
+                    if (pointerDown) depositAtPointer();
+
+                    if (playing) {
+                        const stepMs =
+                            1000 / (SIM_FPS * (state.settings.simSpeed || 1));
+                        simAccumulator += now - (lastSim || now);
+                        if (simAccumulator > MAX_CATCHUP_MS)
+                            simAccumulator = MAX_CATCHUP_MS;
+                        while (simAccumulator >= stepMs) {
+                            simulate();
+                            simAccumulator -= stepMs;
+                        }
+                    } else {
+                        // Drop any backlog so resuming doesn't fast-forward.
+                        simAccumulator = 0;
+                    }
+                    lastSim = now;
+
+                    render();
                 }
                 requestAnimationFrame(loop);
             })();
