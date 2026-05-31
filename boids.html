@@ -1,0 +1,3275 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#0a0d14" />
+        <title>Boids</title>
+        <meta
+            name="description"
+            content="An interactive boids flocking simulation: a swarm of agents follows three simple rules and a flock emerges. Tweak the colors, starting shape, and behavior, then share what you make."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <!-- Social sharing (text only; no preview image yet) -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Boids" />
+        <meta
+            property="og:description"
+            content="An interactive boids flocking simulation: a swarm of agents follows three simple rules and a flock emerges. Tweak the colors, starting shape, and behavior, then share what you make."
+        />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Boids" />
+        <meta
+            name="twitter:description"
+            content="An interactive boids flocking simulation: a swarm of agents follows three simple rules and a flock emerges. Tweak the colors, starting shape, and behavior, then share what you make."
+        />
+
+        <style>
+            :root {
+                --ink: #f5f8fc;
+                --muted: rgba(245, 248, 252, 0.62);
+                --accent: #66d9c2;
+                --accent-2: #f6c177;
+                --danger: #ff6e5e;
+                --glass-bg: rgba(18, 22, 30, 0.45);
+                --glass-bg-strong: rgba(20, 25, 35, 0.72);
+                /* Modals use a more transparent fill so the sim stays visible
+                   behind them; the heavier blur keeps text legible. */
+                --glass-modal: rgba(20, 25, 35, 0.4);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --glass-border-strong: rgba(255, 255, 255, 0.18);
+                --glass-highlight: rgba(255, 255, 255, 0.07);
+                --fab-size: 50px;
+            }
+
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+                background: #000;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                    sans-serif;
+                line-height: 1.5;
+                -webkit-font-smoothing: antialiased;
+                /* This is an interactive sim, not a reading page: block the
+                   accidental text-selection and long-press callout that touch
+                   users trigger while dragging on the canvas / tapping the UI. */
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
+            }
+
+            #canvas {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh; /* fallback for browsers without dvh */
+                height: 100dvh; /* tracks the visible viewport as Safari's toolbar shows/hides */
+                display: block;
+                background: #000;
+                touch-action: none;
+                cursor: crosshair;
+            }
+
+            /* ---------- FAB toolbar ---------- */
+            .fab-toolbar {
+                position: fixed;
+                bottom: max(20px, env(safe-area-inset-bottom, 0px));
+                right: max(20px, env(safe-area-inset-right, 0px));
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 50;
+                transition:
+                    opacity 0.25s,
+                    transform 0.25s;
+            }
+
+            .fab {
+                width: var(--fab-size);
+                height: var(--fab-size);
+                border-radius: 50%;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: rgba(255, 255, 255, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition:
+                    transform 0.15s,
+                    background 0.15s,
+                    border-color 0.15s,
+                    color 0.15s;
+                padding: 0;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+            }
+            .fab:hover {
+                background: var(--glass-bg-strong);
+                color: #fff;
+                transform: scale(1.06);
+            }
+            .fab:active {
+                transform: scale(0.95);
+            }
+            .fab svg {
+                width: 22px;
+                height: 22px;
+            }
+            .fab.hidden {
+                display: none !important;
+            }
+
+            .fab-primary {
+                background: rgba(102, 217, 194, 0.18);
+                border-color: rgba(102, 217, 194, 0.45);
+                color: var(--accent);
+            }
+            .fab-primary:hover {
+                background: rgba(102, 217, 194, 0.3);
+                color: #b1eedf;
+            }
+
+            .fab-record.recording {
+                background: rgba(255, 110, 94, 0.22);
+                border-color: var(--danger);
+                color: var(--danger);
+                animation: pulse 1.5s infinite ease-in-out;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    box-shadow: 0 0 0 0 rgba(255, 110, 94, 0.5);
+                }
+                50% {
+                    box-shadow: 0 0 0 6px rgba(255, 110, 94, 0);
+                }
+            }
+
+            .fab.spin svg {
+                animation: spin 0.5s ease-out;
+            }
+            @keyframes spin {
+                from {
+                    transform: rotate(0);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .speed-label {
+                font-size: 15px;
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.02em;
+            }
+
+            /* ---------- Recording indicator ---------- */
+            .rec-indicator {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                left: max(20px, env(safe-area-inset-left, 0px));
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                padding: 8px 14px 8px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                z-index: 60;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+            }
+            .rec-indicator.hidden {
+                display: none;
+            }
+            .rec-dot {
+                width: 8px;
+                height: 8px;
+                background: var(--danger);
+                border-radius: 50%;
+                animation: blink 1.2s infinite ease-in-out;
+            }
+            @keyframes blink {
+                0%,
+                50% {
+                    opacity: 1;
+                }
+                50.1%,
+                100% {
+                    opacity: 0.3;
+                }
+            }
+
+            /* ---------- Top-right settings menu ---------- */
+            .settings-menu {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                right: max(20px, env(safe-area-inset-right, 0px));
+                z-index: 70;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+            }
+            #settings-trigger svg {
+                transition: transform 0.3s ease;
+            }
+            #settings-trigger.open {
+                background: var(--glass-bg-strong);
+                color: #fff;
+            }
+            #settings-trigger.open svg {
+                transform: rotate(60deg);
+            }
+
+            /* Items fan out below the cog as circular glass buttons (drilldown) */
+            .menu-dropdown {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+                pointer-events: none;
+            }
+            .menu-dropdown.open {
+                pointer-events: auto;
+            }
+
+            .dropdown-item {
+                width: var(--fab-size);
+                height: var(--fab-size);
+                border-radius: 50%;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: rgba(255, 255, 255, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+                opacity: 0;
+                transform: scale(0.2) translateY(-14px) rotate(-140deg);
+                transform-origin: center;
+                pointer-events: none;
+                transition:
+                    opacity 0.22s ease,
+                    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    background 0.15s,
+                    color 0.15s,
+                    border-color 0.15s;
+            }
+            .menu-dropdown.open .dropdown-item {
+                opacity: 1;
+                transform: scale(1) translateY(0) rotate(0);
+                pointer-events: auto;
+            }
+            /* Staggered "spin out" reveal, top to bottom */
+            .menu-dropdown.open .dropdown-item:nth-child(1) {
+                transition-delay: 0.02s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(2) {
+                transition-delay: 0.06s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(3) {
+                transition-delay: 0.1s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(4) {
+                transition-delay: 0.14s;
+            }
+
+            .dropdown-item:hover {
+                background: var(--glass-bg-strong);
+                color: #fff;
+            }
+            .dropdown-item.active {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .dropdown-item svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            /* ---------- Hide-UI banner ---------- */
+            .hide-banner {
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--glass-bg-strong);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                padding: 10px 18px;
+                border-radius: 999px;
+                font-size: 13px;
+                z-index: 200;
+                opacity: 1;
+                transition: opacity 0.6s;
+                pointer-events: none;
+            }
+            .hide-banner.hidden {
+                opacity: 0;
+            }
+            .hide-banner kbd {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 11px;
+                margin: 0 2px;
+            }
+
+            /* ---------- Hide-UI mode ---------- */
+            body.ui-hidden .fab-toolbar,
+            body.ui-hidden .settings-menu,
+            body.ui-hidden .backdrop,
+            body.ui-hidden .modal {
+                display: none !important;
+            }
+
+            /* ---------- Backdrop ---------- */
+            .backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0);
+                z-index: 100;
+                pointer-events: none;
+                transition: background 0.2s;
+            }
+            .backdrop.open {
+                background: rgba(0, 0, 0, 0.2);
+                pointer-events: auto;
+            }
+
+            /* ---------- Modal ---------- */
+            .modal {
+                position: fixed;
+                background: var(--glass-modal);
+                -webkit-backdrop-filter: blur(40px) saturate(180%);
+                backdrop-filter: blur(40px) saturate(180%);
+                border: 1px solid var(--glass-border-strong);
+                color: var(--ink);
+                z-index: 110;
+                opacity: 0;
+                pointer-events: none;
+                transition:
+                    opacity 0.22s ease-out,
+                    transform 0.22s ease-out;
+                box-shadow:
+                    0 20px 60px rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 var(--glass-highlight);
+            }
+
+            /* Desktop: centered modal */
+            @media (min-width: 720px) {
+                .modal {
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, calc(-50% + 12px));
+                    width: min(92vw, 460px);
+                    max-height: min(85vh, 720px);
+                    border-radius: 20px;
+                }
+                .modal.open {
+                    opacity: 1;
+                    pointer-events: auto;
+                    transform: translate(-50%, -50%);
+                }
+                /* Drag-by-header (pointer devices only; gated again in JS) */
+                .modal-header {
+                    cursor: grab;
+                }
+                .modal.dragging {
+                    transition: none;
+                    cursor: grabbing;
+                    background: rgba(20, 25, 35, 0.92);
+                    -webkit-backdrop-filter: none;
+                    backdrop-filter: none;
+                    user-select: none;
+                }
+                .modal.dragging .modal-header {
+                    cursor: grabbing;
+                }
+                /* Floating-window mode: keep chrome above the panels so the menu and
+                   toolbar stay reachable while panels float over the canvas. */
+                body.floating-windows .settings-menu,
+                body.floating-windows .fab-toolbar {
+                    z-index: 210;
+                }
+            }
+
+            /* Mobile: bottom sheet */
+            @media (max-width: 719px) {
+                .modal {
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    max-height: 85vh;
+                    border-radius: 22px 22px 0 0;
+                    transform: translateY(24px);
+                }
+                .modal.open {
+                    opacity: 1;
+                    pointer-events: auto;
+                    transform: translateY(0);
+                }
+            }
+
+            .modal-body {
+                padding: 22px 22px 26px;
+                max-height: inherit;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+            .modal-body::-webkit-scrollbar {
+                width: 6px;
+            }
+            .modal-body::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.12);
+                border-radius: 3px;
+            }
+
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 18px;
+            }
+            .modal-title {
+                font-size: 17px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .modal-close {
+                width: 30px;
+                height: 30px;
+                background: rgba(255, 255, 255, 0.08);
+                border: none;
+                border-radius: 50%;
+                color: rgba(255, 255, 255, 0.75);
+                cursor: pointer;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+            }
+            .modal-close:hover {
+                background: rgba(255, 255, 255, 0.18);
+                color: #fff;
+            }
+            .modal-close svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* Sections inside modals */
+            .section {
+                margin-top: 22px;
+            }
+            .section:first-of-type {
+                margin-top: 0;
+            }
+            .section-label {
+                color: var(--muted);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-weight: 700;
+                margin-bottom: 12px;
+            }
+
+            /* Chip rows */
+            .chip-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .chip {
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: var(--ink);
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.15s;
+                font-family: inherit;
+            }
+            .chip:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+            .chip.active {
+                background: rgba(102, 217, 194, 0.18);
+                border-color: rgba(102, 217, 194, 0.55);
+                color: var(--accent);
+            }
+            .chip .swatch {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                margin-right: 6px;
+                transform: translateY(1px);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                background-repeat: no-repeat;
+                background-origin: border-box;
+            }
+
+            /* Sliders inside modals */
+            .ctrl {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 13px;
+            }
+            .ctrl + .ctrl {
+                margin-top: 14px;
+            }
+            .ctrl-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 8px;
+            }
+            .ctrl-name {
+                color: var(--ink);
+                font-weight: 500;
+                font-size: 11.5px;
+            }
+
+            /* Panel-level intro blurb, divided from the controls below it */
+            .panel-intro {
+                font-size: 12px;
+                line-height: 1.55;
+                color: var(--muted);
+                margin: -4px 0 18px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            /* Per-section description footer (Parameters modal) */
+            .section-desc {
+                margin-top: 14px;
+                font-size: 11.5px;
+                color: var(--muted);
+                line-height: 1.5;
+            }
+            .section-desc p {
+                margin: 0 0 6px;
+            }
+            .section-desc p:last-child {
+                margin-bottom: 0;
+            }
+            .section-desc strong {
+                color: var(--ink);
+                font-weight: 600;
+            }
+            .ctrl-val {
+                color: var(--accent-2);
+                font-variant-numeric: tabular-nums;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 11.5px;
+            }
+            .ctrl-hint {
+                color: var(--muted);
+                font-size: 11.5px;
+            }
+
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.14);
+                border-radius: 999px;
+                outline: none;
+                margin: 4px 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                background: var(--accent);
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid rgba(20, 25, 35, 0.9);
+                box-shadow: 0 0 0 1px rgba(102, 217, 194, 0.6);
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                background: var(--accent);
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid rgba(20, 25, 35, 0.9);
+            }
+
+            /* Color sliders: a meaningful gradient sits behind the track */
+            #s-hue,
+            #s-accent,
+            #s-sat {
+                height: 10px;
+                background-repeat: no-repeat;
+            }
+            #s-hue,
+            #s-accent {
+                background-image: linear-gradient(
+                    90deg,
+                    hsl(0, 85%, 55%),
+                    hsl(60, 85%, 55%),
+                    hsl(120, 85%, 55%),
+                    hsl(180, 85%, 55%),
+                    hsl(240, 85%, 55%),
+                    hsl(300, 85%, 55%),
+                    hsl(360, 85%, 55%)
+                );
+            }
+            /* #s-sat is recolored from the current base hue in JS */
+            #s-sat {
+                background-image: linear-gradient(
+                    90deg,
+                    hsl(130, 0%, 55%),
+                    hsl(130, 85%, 55%)
+                );
+            }
+
+            /* Color preview */
+            .palette-preview {
+                height: 28px;
+                border-radius: 8px;
+                margin-top: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-repeat: no-repeat;
+            }
+            .palette-legend {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 6px;
+                font-size: 10.5px;
+                color: var(--muted);
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                font-weight: 600;
+            }
+
+            /* Toggles */
+            .toggle-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .toggle {
+                display: grid;
+                grid-template-columns: 38px 1fr;
+                column-gap: 14px;
+                align-items: center;
+                cursor: pointer;
+                padding: 8px 0;
+                user-select: none;
+            }
+            .toggle input {
+                display: none;
+            }
+            .toggle-track {
+                width: 36px;
+                height: 20px;
+                background: rgba(255, 255, 255, 0.16);
+                border-radius: 999px;
+                position: relative;
+                transition: background 0.15s;
+                grid-row: 1 / span 2;
+            }
+            .toggle-thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background: #fff;
+                border-radius: 50%;
+                transition: transform 0.15s;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+            .toggle input:checked + .toggle-track {
+                background: var(--accent);
+            }
+            .toggle input:checked + .toggle-track .toggle-thumb {
+                transform: translateX(16px);
+            }
+            .toggle-label {
+                color: var(--ink);
+                font-size: 11.5px;
+                font-weight: 500;
+                line-height: 1.3;
+            }
+            .toggle-hint {
+                color: var(--muted);
+                font-size: 11.5px;
+                line-height: 1.3;
+            }
+
+            /* Action buttons inside modals */
+            .modal-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 22px;
+            }
+            .btn {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: var(--ink);
+                padding: 9px 14px;
+                border-radius: 8px;
+                font-size: 13px;
+                cursor: pointer;
+                font-family: inherit;
+                transition:
+                    background 0.15s,
+                    border-color 0.15s;
+            }
+            .btn:hover {
+                background: rgba(255, 255, 255, 0.14);
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .toast {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0.9);
+                background: var(--glass-bg-strong);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border-strong);
+                color: var(--ink);
+                padding: 12px 22px;
+                border-radius: 12px;
+                font-size: 14px;
+                z-index: 300;
+                pointer-events: none;
+                opacity: 0;
+                transition:
+                    opacity 0.2s,
+                    transform 0.2s;
+            }
+            .toast.show {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            /* Mobile: smaller FABs */
+            @media (max-width: 480px) {
+                :root {
+                    --fab-size: 46px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+
+        <div class="settings-menu" id="settings-menu">
+            <button
+                class="fab"
+                id="settings-trigger"
+                title="Menu"
+                aria-label="Menu"
+                aria-haspopup="true"
+                aria-expanded="false"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    />
+                </svg>
+            </button>
+            <div class="menu-dropdown" id="menu-dropdown" role="menu">
+                <button
+                    class="dropdown-item"
+                    data-modal="color"
+                    role="menuitem"
+                    title="Color"
+                    aria-label="Color"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z"
+                        />
+                        <circle cx="8" cy="11" r="1" fill="currentColor" />
+                        <circle cx="11" cy="7" r="1" fill="currentColor" />
+                        <circle cx="15" cy="7" r="1" fill="currentColor" />
+                        <circle cx="17" cy="11" r="1" fill="currentColor" />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="pattern"
+                    role="menuitem"
+                    title="Shape"
+                    aria-label="Shape"
+                >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="5" r="1.6" />
+                        <circle cx="12" cy="5" r="1.6" />
+                        <circle cx="19" cy="5" r="1.6" />
+                        <circle cx="5" cy="12" r="1.6" />
+                        <circle cx="12" cy="12" r="1.6" />
+                        <circle cx="19" cy="12" r="1.6" />
+                        <circle cx="5" cy="19" r="1.6" />
+                        <circle cx="12" cy="19" r="1.6" />
+                        <circle cx="19" cy="19" r="1.6" />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="params"
+                    role="menuitem"
+                    title="Parameters"
+                    aria-label="Parameters"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    >
+                        <line x1="4" y1="6" x2="20" y2="6" />
+                        <line x1="4" y1="12" x2="20" y2="12" />
+                        <line x1="4" y1="18" x2="20" y2="18" />
+                        <circle
+                            cx="9"
+                            cy="6"
+                            r="2.5"
+                            fill="rgba(20,25,35,0.95)"
+                        />
+                        <circle
+                            cx="16"
+                            cy="12"
+                            r="2.5"
+                            fill="rgba(20,25,35,0.95)"
+                        />
+                        <circle
+                            cx="7"
+                            cy="18"
+                            r="2.5"
+                            fill="rgba(20,25,35,0.95)"
+                        />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="settings"
+                    role="menuitem"
+                    title="Settings"
+                    aria-label="Settings"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="5" width="18" height="6" rx="3" />
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="1.7"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                        <rect x="3" y="13" width="18" height="6" rx="3" />
+                        <circle
+                            cx="16"
+                            cy="16"
+                            r="1.7"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="rec-indicator" class="rec-indicator hidden">
+            <span class="rec-dot"></span>
+            <span id="rec-time">0:00</span>
+        </div>
+
+        <div id="hide-banner" class="hide-banner hidden">
+            Press <kbd>H</kbd> to bring back the controls
+        </div>
+
+        <div class="fab-toolbar" id="fab-toolbar">
+            <button
+                class="fab fab-record"
+                id="fab-record"
+                title="Record video"
+                aria-label="Record video"
+            >
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="6" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-share"
+                title="Copy share link"
+                aria-label="Copy share link"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path
+                        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                    />
+                    <path
+                        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                    />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-hide"
+                title="Hide controls (H)"
+                aria-label="Hide controls"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-speed"
+                title="Simulation speed"
+                aria-label="Simulation speed"
+            >
+                <span class="speed-label" id="speed-label">1×</span>
+            </button>
+            <button
+                class="fab"
+                id="fab-reset"
+                title="Reset"
+                aria-label="Reset"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-pause"
+                title="Pause / play"
+                aria-label="Pause"
+            >
+                <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="7" y="5" width="3.5" height="14" rx="1" />
+                    <rect x="13.5" y="5" width="3.5" height="14" rx="1" />
+                </svg>
+                <svg
+                    class="icon-play"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    style="display: none"
+                >
+                    <polygon points="7,4 19,12 7,20" />
+                </svg>
+            </button>
+            <button
+                class="fab fab-primary"
+                id="fab-randomize"
+                title="Randomize"
+                aria-label="Randomize"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <circle cx="8" cy="8" r="1" fill="currentColor" />
+                    <circle cx="16" cy="8" r="1" fill="currentColor" />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                    <circle cx="8" cy="16" r="1" fill="currentColor" />
+                    <circle cx="16" cy="16" r="1" fill="currentColor" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="backdrop" id="backdrop"></div>
+
+        <!-- COLOR MODAL -->
+        <div class="modal" id="modal-color">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Color</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    Set the colors your flock glows through. Each boid is tinted
+                    by its speed — the faster it flies, the brighter it burns.
+                    Tap a preset or mix your own.
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Presets</div>
+                    <div class="chip-row" id="color-row"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Custom</div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Base hue</span
+                            ><span class="ctrl-val" id="v-hue">130°</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-hue"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value="130"
+                        />
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Accent hue</span
+                            ><span class="ctrl-val" id="v-accent">60°</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-accent"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value="60"
+                        />
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Saturation</span
+                            ><span class="ctrl-val" id="v-sat">85%</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-sat"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value="85"
+                        />
+                    </div>
+                    <div class="palette-preview" id="palette-preview"></div>
+                    <div class="palette-legend">
+                        <span>Slow</span>
+                        <span>Fast</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATTERN MODAL -->
+        <div class="modal" id="modal-pattern">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Starting shape</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    Choose where the flock spawns and which way the boids first
+                    head. Changes restart the flock right away.
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Where they start</div>
+                    <div class="chip-row" id="pattern-row"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Which way they head</div>
+                    <div class="chip-row" id="heading-row"></div>
+                </div>
+
+                <div
+                    class="section"
+                    id="heading-angle-section"
+                    style="display: none"
+                >
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Heading direction</span
+                            ><span class="ctrl-val" id="v-angle">0°</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-angle"
+                            min="0"
+                            max="359"
+                            step="1"
+                            value="0"
+                        />
+                    </div>
+                </div>
+
+                <div class="section" id="region-section">
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Cluster size</span
+                            ><span class="ctrl-val" id="v-region">0.50</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-region"
+                            min="0.1"
+                            max="1"
+                            step="0.01"
+                            value="0.5"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARAMETERS MODAL -->
+        <div class="modal" id="modal-params">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Parameters</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    Each boid knows only its neighbors. Every frame it sums three
+                    steering urges — keep your distance, match headings, and
+                    drift toward the group — and a flock emerges with no leader.
+                    These sliders weight the rules and shape how the flock moves.
+                </div>
+
+                <div id="params-section"></div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div class="modal" id="modal-settings">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Settings</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Performance</div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Max FPS</span
+                            ><span class="ctrl-val" id="v-fps">60</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-fps"
+                            min="15"
+                            max="120"
+                            step="5"
+                            value="60"
+                        />
+                    </div>
+
+                    <div class="ctrl-hint" style="margin-top: 8px">
+                        Lower values run smoother on slower devices and save
+                        battery. For big flocks, drop the crowd size in
+                        Parameters.
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Randomize behavior</div>
+                    <div class="toggle-list">
+                        <label class="toggle">
+                            <input type="checkbox" id="t-rand-color" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Randomize color</span>
+                            <span class="toggle-hint"
+                                >Pick a new palette when randomizing.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-reset-on-rand" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Reset on randomize</span>
+                            <span class="toggle-hint"
+                                >Re-spawn the flock each time you
+                                randomize.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-rand-pattern" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Randomize shape</span>
+                            <span class="toggle-hint"
+                                >Pick a new starting shape when randomizing
+                                (auto-resets).</span
+                            >
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Sharing tools</div>
+                    <div class="toggle-list">
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-record" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Record button</span>
+                            <span class="toggle-hint"
+                                >Show the record-to-WebM button in the
+                                toolbar.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-share" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Share link button</span>
+                            <span class="toggle-hint"
+                                >Show a button that copies a shareable
+                                link.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-hideui" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Hide-UI button</span>
+                            <span class="toggle-hint"
+                                >Show a button that hides the interface for
+                                clean recordings.</span
+                            >
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Restore</div>
+                    <div class="modal-actions" style="margin-top: 6px">
+                        <button class="btn" id="btn-restore-defaults">
+                            Restore default settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast">Link copied</div>
+
+        <script>
+            (() => {
+                // ============================================================
+                // STATE
+                // ============================================================
+                const state = {
+                    params: {
+                        count: 250,
+                        vision: 65,
+                        sepDist: 22,
+                        sep: 0.06,
+                        align: 0.06,
+                        coh: 0.006,
+                        speed: 3.2,
+                        edge: 0.6,
+                    },
+                    pattern: {
+                        name: "Scatter",
+                        heading: "Random",
+                        fixedAngle: 0,
+                        regionSize: 0.5,
+                    },
+                    palette: {
+                        mode: "preset", // 'preset' | 'custom'
+                        name: "Inferno",
+                        custom: { hue: 130, accentHue: 60, saturation: 85 },
+                    },
+                    settings: {
+                        resetOnRandomize: true,
+                        randomizeColor: true,
+                        randomizePattern: true,
+                        fps: 60,
+                        simSpeed: 1,
+                        showRecord: false,
+                        showShareLink: false,
+                        showHideUI: false,
+                    },
+                };
+                const defaultState = JSON.parse(JSON.stringify(state));
+
+                // ============================================================
+                // STATIC DATA
+                // ============================================================
+                // The eight flocking controls, ported from the reference boids
+                // sketch. Grouped so the Parameters panel reads top to bottom:
+                // the flock itself, what each boid senses, the three rules that
+                // weight its steering, and how walls turn it back inward.
+                const slidersDef = [
+                    {
+                        key: "count",
+                        group: "The flock",
+                        label: "Crowd size",
+                        hint: "How many boids fly at once.",
+                        min: 20,
+                        max: 1500,
+                        step: 1,
+                        fmt: (v) => v.toFixed(0),
+                    },
+                    {
+                        key: "speed",
+                        group: "The flock",
+                        label: "Top speed",
+                        hint: "The fastest a boid is allowed to fly.",
+                        min: 0.5,
+                        max: 8,
+                        step: 0.1,
+                        fmt: (v) => v.toFixed(1),
+                    },
+                    {
+                        key: "vision",
+                        group: "What they sense",
+                        label: "Vision range",
+                        hint: "How far a boid sees its neighbors.",
+                        min: 10,
+                        max: 200,
+                        step: 1,
+                        fmt: (v) => v.toFixed(0),
+                    },
+                    {
+                        key: "sepDist",
+                        group: "What they sense",
+                        label: "Personal space",
+                        hint: "How close a neighbor gets before a boid pushes away.",
+                        min: 2,
+                        max: 80,
+                        step: 1,
+                        fmt: (v) => v.toFixed(0),
+                    },
+                    {
+                        key: "sep",
+                        group: "Flocking rules",
+                        label: "Separation",
+                        hint: "Strength of the avoid-crowding push.",
+                        min: 0,
+                        max: 0.3,
+                        step: 0.005,
+                        fmt: (v) => v.toFixed(3),
+                    },
+                    {
+                        key: "align",
+                        group: "Flocking rules",
+                        label: "Alignment",
+                        hint: "How strongly boids match their neighbors' heading.",
+                        min: 0,
+                        max: 0.3,
+                        step: 0.005,
+                        fmt: (v) => v.toFixed(3),
+                    },
+                    {
+                        key: "coh",
+                        group: "Flocking rules",
+                        label: "Cohesion",
+                        hint: "Pull toward the average position of nearby boids.",
+                        min: 0,
+                        max: 0.03,
+                        step: 0.0005,
+                        fmt: (v) => v.toFixed(4),
+                    },
+                    {
+                        key: "edge",
+                        group: "Edges",
+                        label: "Edge push",
+                        hint: "How firmly the walls steer boids back inward.",
+                        min: 0,
+                        max: 1.5,
+                        step: 0.05,
+                        fmt: (v) => v.toFixed(2),
+                    },
+                ];
+
+                // One ordered registry per enumeration. Each entry is a
+                // descriptor: { id, label, ...metadata }. `id` is the single
+                // stable key the sim branches on and that state serializes;
+                // `label` is the only field copy edits touch. registry.byId()
+                // resolves an id to its descriptor, falling back to the default
+                // if an unknown id ever turns up.
+                function registry(items, defaultId) {
+                    return {
+                        items,
+                        byId: (id) =>
+                            items.find((d) => d.id === id) ||
+                            items.find((d) => d.id === defaultId),
+                    };
+                }
+                const randItem = (arr) =>
+                    arr[Math.floor(Math.random() * arr.length)];
+
+                const PALETTES = registry(
+                    [
+                        {
+                            id: "Acid",
+                            label: "Acid",
+                            stops: [
+                                "#000000",
+                                "#082a14",
+                                "#1a8a3c",
+                                "#7af066",
+                                "#f5ffa8",
+                            ],
+                        },
+                        {
+                            id: "Coral",
+                            label: "Coral",
+                            stops: [
+                                "#0a0612",
+                                "#2b0a26",
+                                "#a83a5c",
+                                "#ff7da3",
+                                "#ffe3ea",
+                            ],
+                        },
+                        {
+                            id: "Ember",
+                            label: "Ember",
+                            stops: [
+                                "#000000",
+                                "#2c0500",
+                                "#a02000",
+                                "#ff7a2e",
+                                "#ffde8a",
+                            ],
+                        },
+                        {
+                            id: "Frost",
+                            label: "Frost",
+                            stops: [
+                                "#000814",
+                                "#0a2e58",
+                                "#3a86d0",
+                                "#9ed4ff",
+                                "#f0faff",
+                            ],
+                        },
+                        {
+                            id: "Toxic",
+                            label: "Toxic",
+                            stops: [
+                                "#040010",
+                                "#1a0828",
+                                "#6a0aa8",
+                                "#c850f5",
+                                "#f8d4ff",
+                            ],
+                        },
+                        {
+                            id: "Inferno",
+                            label: "Inferno",
+                            stops: [
+                                "#000000",
+                                "#1a0000",
+                                "#a00010",
+                                "#ff4020",
+                                "#ffec70",
+                            ],
+                        },
+                        {
+                            id: "Cyber",
+                            label: "Cyber",
+                            stops: [
+                                "#000810",
+                                "#0a2030",
+                                "#0a8a98",
+                                "#5af0d8",
+                                "#fff088",
+                            ],
+                        },
+                        {
+                            id: "Verdant",
+                            label: "Verdant",
+                            stops: [
+                                "#020808",
+                                "#0a2818",
+                                "#187058",
+                                "#54d8b8",
+                                "#dcfff0",
+                            ],
+                        },
+                        {
+                            id: "Twilight",
+                            label: "Twilight",
+                            stops: [
+                                "#040208",
+                                "#280a40",
+                                "#8a2080",
+                                "#ff60c0",
+                                "#ffe098",
+                            ],
+                        },
+                        {
+                            id: "Iris",
+                            label: "Iris",
+                            stops: [
+                                "#000018",
+                                "#0c1448",
+                                "#4a3ac0",
+                                "#c060e0",
+                                "#ffd0e0",
+                            ],
+                        },
+                    ],
+                    "Inferno",
+                );
+
+                const PATTERNS = registry(
+                    [
+                        { id: "Scatter", label: "Scatter" },
+                        { id: "Ring", label: "Ring", clustered: true },
+                        { id: "Disc", label: "Disc", clustered: true },
+                        { id: "Center", label: "Center" },
+                        { id: "Edges", label: "Edges" },
+                        { id: "Grid", label: "Grid" },
+                        {
+                            id: "TwoBlobs",
+                            label: "Two Blobs",
+                            clustered: true,
+                            blobCount: 2,
+                        },
+                        {
+                            id: "FourBlobs",
+                            label: "Four Blobs",
+                            clustered: true,
+                            blobCount: 4,
+                        },
+                    ],
+                    "Scatter",
+                );
+
+                const HEADINGS = registry(
+                    [
+                        { id: "Random", label: "Random" },
+                        { id: "Inward", label: "Toward center" },
+                        { id: "Outward", label: "Away from center" },
+                        { id: "Tangential", label: "Spinning" },
+                        { id: "Fixed", label: "Fixed", usesAngle: true },
+                    ],
+                    "Random",
+                );
+
+                const MAX_BOIDS = 1500;
+
+                const randomRanges = {
+                    count: [80, 600],
+                    vision: [30, 140],
+                    sepDist: [10, 45],
+                    sep: [0.02, 0.2],
+                    align: [0.02, 0.2],
+                    coh: [0.002, 0.02],
+                    speed: [2, 6],
+                    edge: [0.2, 1.0],
+                };
+
+                // ============================================================
+                // CANVAS
+                // ============================================================
+                const canvas = document.getElementById("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Logical (CSS-pixel) viewport size; boids live in this space.
+                let W = 0,
+                    H = 0;
+                let dpr = 1;
+
+                // Boids: position + velocity in parallel typed arrays.
+                const px = new Float32Array(MAX_BOIDS);
+                const py = new Float32Array(MAX_BOIDS);
+                const vx = new Float32Array(MAX_BOIDS);
+                const vy = new Float32Array(MAX_BOIDS);
+
+                let playing = true;
+                // ms between rendered frames; kept in sync with state.settings.fps.
+                let frameInterval = 1000 / 60;
+                // Faint motion trail: each frame we wash the canvas toward the
+                // background color at this alpha, so boids leave a short fading
+                // streak that makes the palette gradient read on screen.
+                const TRAIL_ALPHA = 0.32;
+
+                // ============================================================
+                // COLOR / PALETTE
+                // ============================================================
+                let paletteLUT;
+                // 256 prebuilt "rgb(r,g,b)" strings indexed by palette position,
+                // so the render loop never builds a color string per boid.
+                const colorStr = new Array(256);
+                let bgR = 0,
+                    bgG = 0,
+                    bgB = 0;
+
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildPaletteLUT(stops) {
+                    const lut = new Uint8ClampedArray(256 * 4);
+                    const segCount = stops.length - 1;
+                    for (let i = 0; i < 256; i++) {
+                        const t = i / 255;
+                        const sf = t * segCount;
+                        const seg = Math.min(Math.floor(sf), segCount - 1);
+                        const u = sf - seg;
+                        const c0 = hexToRgb(stops[seg]);
+                        const c1 = hexToRgb(stops[seg + 1]);
+                        lut[i * 4 + 0] = c0[0] + (c1[0] - c0[0]) * u;
+                        lut[i * 4 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        lut[i * 4 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                        lut[i * 4 + 3] = 255;
+                    }
+                    return lut;
+                }
+
+                // HSL -> hex
+                function hslHex(h, s, l) {
+                    h = ((h % 360) + 360) % 360;
+                    s = Math.max(0, Math.min(100, s)) / 100;
+                    l = Math.max(0, Math.min(100, l)) / 100;
+                    const k = (n) => (n + h / 30) % 12;
+                    const a = s * Math.min(l, 1 - l);
+                    const f = (n) =>
+                        l -
+                        a *
+                            Math.max(
+                                -1,
+                                Math.min(k(n) - 3, Math.min(9 - k(n), 1)),
+                            );
+                    const r = Math.round(f(0) * 255);
+                    const g = Math.round(f(8) * 255);
+                    const b = Math.round(f(4) * 255);
+                    return (
+                        "#" +
+                        [r, g, b]
+                            .map((x) => x.toString(16).padStart(2, "0"))
+                            .join("")
+                    );
+                }
+
+                // hex -> HSL ({ h: 0-360, s: 0-100, l: 0-100 })
+                function hexToHsl(hex) {
+                    const [r0, g0, b0] = hexToRgb(hex);
+                    const r = r0 / 255,
+                        g = g0 / 255,
+                        b = b0 / 255;
+                    const max = Math.max(r, g, b),
+                        min = Math.min(r, g, b);
+                    const l = (max + min) / 2;
+                    let h = 0,
+                        s = 0;
+                    const d = max - min;
+                    if (d !== 0) {
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+                        else if (max === g) h = (b - r) / d + 2;
+                        else h = (r - g) / d + 4;
+                        h *= 60;
+                    }
+                    return { h, s: s * 100, l: l * 100 };
+                }
+
+                function generateCustomPalette(hue, accentHue, saturation) {
+                    return [
+                        hslHex(hue, saturation * 0.5, 2),
+                        hslHex(hue, saturation * 0.75, 10),
+                        hslHex(hue, saturation * 0.95, 36),
+                        hslHex(hue, saturation * 0.9, 65),
+                        hslHex(accentHue, saturation * 0.7, 86),
+                    ];
+                }
+
+                function currentPaletteStops() {
+                    if (state.palette.mode === "custom") {
+                        const c = state.palette.custom;
+                        return generateCustomPalette(
+                            c.hue,
+                            c.accentHue,
+                            c.saturation,
+                        );
+                    }
+                    return PALETTES.byId(state.palette.name).stops;
+                }
+
+                function refreshPalette() {
+                    const stops = currentPaletteStops();
+                    paletteLUT = buildPaletteLUT(stops);
+                    for (let i = 0; i < 256; i++) {
+                        const q = i * 4;
+                        colorStr[i] =
+                            "rgb(" +
+                            paletteLUT[q] +
+                            "," +
+                            paletteLUT[q + 1] +
+                            "," +
+                            paletteLUT[q + 2] +
+                            ")";
+                    }
+                    // Darkest stop is the canvas background the trails fade into.
+                    const bg = hexToRgb(stops[0]);
+                    bgR = bg[0];
+                    bgG = bg[1];
+                    bgB = bg[2];
+                    updatePalettePreview();
+                }
+
+                // ============================================================
+                // BOID SEEDING
+                // ============================================================
+                function headingAngle(x, y, cx, cy, mode, fixedAngle) {
+                    const angleFromCenter = Math.atan2(y - cy, x - cx);
+                    switch (mode) {
+                        case "Inward":
+                            return (
+                                angleFromCenter +
+                                Math.PI +
+                                (Math.random() - 0.5) * 0.3
+                            );
+                        case "Outward":
+                            return angleFromCenter + (Math.random() - 0.5) * 0.3;
+                        case "Tangential":
+                            return (
+                                angleFromCenter +
+                                Math.PI / 2 +
+                                (Math.random() - 0.5) * 0.3
+                            );
+                        case "Fixed":
+                            return fixedAngle + (Math.random() - 0.5) * 0.3;
+                        case "Random":
+                        default:
+                            return Math.random() * Math.PI * 2;
+                    }
+                }
+
+                function seedBoids() {
+                    const n = state.params.count;
+                    const cx = W / 2,
+                        cy = H / 2;
+                    const maxR =
+                        Math.min(W, H) * 0.45 * state.pattern.regionSize;
+                    const headingMode = state.pattern.heading;
+                    const fixedAngle =
+                        (state.pattern.fixedAngle * Math.PI) / 180;
+                    // Seed velocity magnitude: a touch under top speed so the
+                    // flock settles into its own pace within a few frames.
+                    const sp = state.params.speed * 0.6;
+
+                    for (let i = 0; i < n; i++) {
+                        let x, y;
+                        switch (state.pattern.name) {
+                            case "Scatter": {
+                                x = Math.random() * W;
+                                y = Math.random() * H;
+                                break;
+                            }
+                            case "Ring": {
+                                const theta = Math.random() * Math.PI * 2;
+                                x = cx + Math.cos(theta) * maxR;
+                                y = cy + Math.sin(theta) * maxR;
+                                break;
+                            }
+                            case "Disc": {
+                                const r = Math.sqrt(Math.random()) * maxR;
+                                const theta = Math.random() * Math.PI * 2;
+                                x = cx + Math.cos(theta) * r;
+                                y = cy + Math.sin(theta) * r;
+                                break;
+                            }
+                            case "Center": {
+                                x = cx + (Math.random() - 0.5) * 8;
+                                y = cy + (Math.random() - 0.5) * 8;
+                                break;
+                            }
+                            case "Edges": {
+                                const edge = Math.floor(Math.random() * 4);
+                                if (edge === 0) {
+                                    x = Math.random() * W;
+                                    y = 2;
+                                } else if (edge === 1) {
+                                    x = W - 2;
+                                    y = Math.random() * H;
+                                } else if (edge === 2) {
+                                    x = Math.random() * W;
+                                    y = H - 2;
+                                } else {
+                                    x = 2;
+                                    y = Math.random() * H;
+                                }
+                                break;
+                            }
+                            case "Grid": {
+                                const cols = Math.ceil(
+                                    Math.sqrt((n * W) / Math.max(H, 1)),
+                                );
+                                const col = i % cols;
+                                const row = Math.floor(i / cols);
+                                x =
+                                    ((col + 0.5) * W) / cols +
+                                    (Math.random() - 0.5) * 4;
+                                y =
+                                    ((row + 0.5) * H) / Math.ceil(n / cols) +
+                                    (Math.random() - 0.5) * 4;
+                                break;
+                            }
+                            case "TwoBlobs":
+                            case "FourBlobs": {
+                                const blobCount = PATTERNS.byId(
+                                    state.pattern.name,
+                                ).blobCount;
+                                const blobIdx = i % blobCount;
+                                const blobAngle =
+                                    (blobIdx / blobCount) * Math.PI * 2;
+                                const bdist =
+                                    Math.min(W, H) *
+                                    0.28 *
+                                    state.pattern.regionSize;
+                                const bcx = cx + Math.cos(blobAngle) * bdist;
+                                const bcy = cy + Math.sin(blobAngle) * bdist;
+                                const r =
+                                    Math.sqrt(Math.random()) *
+                                    Math.min(W, H) *
+                                    0.08;
+                                const theta = Math.random() * Math.PI * 2;
+                                x = bcx + Math.cos(theta) * r;
+                                y = bcy + Math.sin(theta) * r;
+                                break;
+                            }
+                            default:
+                                x = Math.random() * W;
+                                y = Math.random() * H;
+                        }
+
+                        // Clamp to canvas
+                        if (x < 0) x = 0;
+                        else if (x >= W) x = W - 1;
+                        if (y < 0) y = 0;
+                        else if (y >= H) y = H - 1;
+
+                        const a = headingAngle(
+                            x,
+                            y,
+                            cx,
+                            cy,
+                            headingMode,
+                            fixedAngle,
+                        );
+                        px[i] = x;
+                        py[i] = y;
+                        vx[i] = Math.cos(a) * sp;
+                        vy[i] = Math.sin(a) * sp;
+                    }
+                }
+
+                // Spawn a single fresh boid (used when the crowd grows): drop it
+                // somewhere random with a random heading so it can join in.
+                function spawnBoid(i) {
+                    px[i] = Math.random() * W;
+                    py[i] = Math.random() * H;
+                    const a = Math.random() * Math.PI * 2;
+                    const sp = state.params.speed * 0.6;
+                    vx[i] = Math.cos(a) * sp;
+                    vy[i] = Math.sin(a) * sp;
+                }
+
+                function resetAll() {
+                    seedBoids();
+                    hardClear();
+                }
+
+                // ============================================================
+                // SPATIAL GRID
+                // ============================================================
+                // Boids only react to neighbors within their vision radius, so a
+                // uniform grid (cell = the larger sensing radius) turns the naive
+                // O(n^2) neighbor scan into roughly O(n): each boid only walks its
+                // own cell plus the eight around it. Buckets are a head/next
+                // linked list over reused typed arrays, so a frame allocates
+                // nothing. This is what lets the crowd-size slider go well past a
+                // few hundred boids and stay smooth.
+                let gridHead = null;
+                const gridNext = new Int32Array(MAX_BOIDS);
+                let gCols = 0,
+                    gRows = 0;
+
+                function buildGrid(n, cell) {
+                    gCols = Math.max(1, Math.ceil(W / cell));
+                    gRows = Math.max(1, Math.ceil(H / cell));
+                    const cells = gCols * gRows;
+                    if (!gridHead || gridHead.length < cells) {
+                        gridHead = new Int32Array(cells);
+                    }
+                    gridHead.fill(-1, 0, cells);
+                    for (let i = 0; i < n; i++) {
+                        let cx = (px[i] / cell) | 0;
+                        if (cx < 0) cx = 0;
+                        else if (cx >= gCols) cx = gCols - 1;
+                        let cy = (py[i] / cell) | 0;
+                        if (cy < 0) cy = 0;
+                        else if (cy >= gRows) cy = gRows - 1;
+                        const c = cy * gCols + cx;
+                        gridNext[i] = gridHead[c];
+                        gridHead[c] = i;
+                    }
+                }
+
+                // ============================================================
+                // SIMULATION
+                // ============================================================
+                function simulate() {
+                    const n = state.params.count;
+                    const vision = state.params.vision;
+                    const sepDist = state.params.sepDist;
+                    const visionSq = vision * vision;
+                    const sepSq = sepDist * sepDist;
+                    const sepW = state.params.sep;
+                    const alignW = state.params.align;
+                    const cohW = state.params.coh;
+                    const maxSpeed = state.params.speed;
+                    const minSpeed = maxSpeed * 0.5;
+                    const edge = state.params.edge;
+                    const cell = Math.max(vision, sepDist, 1);
+                    const margin = Math.max(40, Math.min(W, H) * 0.08);
+                    const pull = pointerActive ? 0.0009 : 0;
+                    const pullR2 = 180 * 180;
+
+                    buildGrid(n, cell);
+
+                    for (let i = 0; i < n; i++) {
+                        const x = px[i],
+                            y = py[i];
+                        let avgVX = 0,
+                            avgVY = 0;
+                        let avgPX = 0,
+                            avgPY = 0;
+                        let sepX = 0,
+                            sepY = 0;
+                        let neighbors = 0;
+
+                        let cgx = (x / cell) | 0;
+                        if (cgx < 0) cgx = 0;
+                        else if (cgx >= gCols) cgx = gCols - 1;
+                        let cgy = (y / cell) | 0;
+                        if (cgy < 0) cgy = 0;
+                        else if (cgy >= gRows) cgy = gRows - 1;
+
+                        const gx0 = cgx > 0 ? cgx - 1 : 0;
+                        const gx1 = cgx < gCols - 1 ? cgx + 1 : gCols - 1;
+                        const gy0 = cgy > 0 ? cgy - 1 : 0;
+                        const gy1 = cgy < gRows - 1 ? cgy + 1 : gRows - 1;
+
+                        for (let gy = gy0; gy <= gy1; gy++) {
+                            const rowBase = gy * gCols;
+                            for (let gx = gx0; gx <= gx1; gx++) {
+                                let j = gridHead[rowBase + gx];
+                                while (j !== -1) {
+                                    if (j !== i) {
+                                        const dx = px[j] - x;
+                                        const dy = py[j] - y;
+                                        const d2 = dx * dx + dy * dy;
+                                        if (d2 < visionSq) {
+                                            neighbors++;
+                                            avgVX += vx[j];
+                                            avgVY += vy[j];
+                                            avgPX += px[j];
+                                            avgPY += py[j];
+                                            if (d2 < sepSq) {
+                                                sepX -= dx;
+                                                sepY -= dy;
+                                            }
+                                        }
+                                    }
+                                    j = gridNext[j];
+                                }
+                            }
+                        }
+
+                        let nvx = vx[i],
+                            nvy = vy[i];
+
+                        if (neighbors > 0) {
+                            avgVX /= neighbors;
+                            avgVY /= neighbors;
+                            avgPX /= neighbors;
+                            avgPY /= neighbors;
+
+                            // Alignment: steer toward neighbors' average heading.
+                            nvx += (avgVX - nvx) * alignW;
+                            nvy += (avgVY - nvy) * alignW;
+
+                            // Cohesion: drift toward the local flock center.
+                            nvx += (avgPX - x) * cohW;
+                            nvy += (avgPY - y) * cohW;
+                        }
+
+                        // Separation: push away from anyone too close.
+                        nvx += sepX * sepW;
+                        nvy += sepY * sepW;
+
+                        // Pointer attraction while pressed.
+                        if (pull > 0) {
+                            const ddx = pointerX - x;
+                            const ddy = pointerY - y;
+                            if (ddx * ddx + ddy * ddy < pullR2) {
+                                nvx += ddx * pull;
+                                nvy += ddy * pull;
+                            }
+                        }
+
+                        // Edge turn: a gentle inward nudge near the walls instead
+                        // of wrapping, so the flock stays on screen.
+                        if (x < margin) nvx += edge;
+                        else if (x > W - margin) nvx -= edge;
+                        if (y < margin) nvy += edge;
+                        else if (y > H - margin) nvy -= edge;
+
+                        // Clamp speed into [minSpeed, maxSpeed].
+                        const spd = Math.hypot(nvx, nvy);
+                        if (spd > maxSpeed) {
+                            nvx = (nvx / spd) * maxSpeed;
+                            nvy = (nvy / spd) * maxSpeed;
+                        } else if (spd < minSpeed && spd > 0) {
+                            nvx = (nvx / spd) * minSpeed;
+                            nvy = (nvy / spd) * minSpeed;
+                        }
+
+                        vx[i] = nvx;
+                        vy[i] = nvy;
+                    }
+
+                    // Integrate positions in a second pass so every boid steered
+                    // off the same snapshot of the flock.
+                    for (let i = 0; i < n; i++) {
+                        let nx = px[i] + vx[i];
+                        let ny = py[i] + vy[i];
+                        if (nx < 0) nx = 0;
+                        else if (nx > W) nx = W;
+                        if (ny < 0) ny = 0;
+                        else if (ny > H) ny = H;
+                        px[i] = nx;
+                        py[i] = ny;
+                    }
+                }
+
+                // ============================================================
+                // RENDER
+                // ============================================================
+                function hardClear() {
+                    ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
+                    ctx.fillRect(0, 0, W, H);
+                }
+
+                function render() {
+                    const n = state.params.count;
+                    const maxSpeed = state.params.speed;
+                    const minSpeed = maxSpeed * 0.5;
+                    const span = maxSpeed - minSpeed || 1;
+
+                    // Wash the previous frame toward the background for trails.
+                    ctx.fillStyle =
+                        "rgba(" +
+                        bgR +
+                        "," +
+                        bgG +
+                        "," +
+                        bgB +
+                        "," +
+                        TRAIL_ALPHA +
+                        ")";
+                    ctx.fillRect(0, 0, W, H);
+
+                    for (let i = 0; i < n; i++) {
+                        const x = px[i],
+                            y = py[i];
+                        let dx = vx[i],
+                            dy = vy[i];
+                        const spd = Math.hypot(dx, dy);
+                        let ux = 1,
+                            uy = 0;
+                        if (spd > 1e-4) {
+                            ux = dx / spd;
+                            uy = dy / spd;
+                        }
+
+                        // Faster boids burn toward the bright end; keep them in
+                        // the upper portion of the ramp so none vanish into the
+                        // dark background.
+                        let t = (spd - minSpeed) / span;
+                        if (t < 0) t = 0;
+                        else if (t > 1) t = 1;
+                        let idx = ((0.4 + 0.6 * t) * 255) | 0;
+                        if (idx > 255) idx = 255;
+                        ctx.fillStyle = colorStr[idx];
+
+                        // A little arrowhead pointing along the velocity.
+                        const nx = x + ux * 5.5;
+                        const ny = y + uy * 5.5;
+                        const bx = x - ux * 4;
+                        const by = y - uy * 4;
+                        ctx.beginPath();
+                        ctx.moveTo(nx, ny);
+                        ctx.lineTo(bx - uy * 3, by + ux * 3);
+                        ctx.lineTo(bx + uy * 3, by - ux * 3);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // ============================================================
+                // RESIZE
+                // ============================================================
+                function resizeCanvas(rescale) {
+                    const newW = window.innerWidth;
+                    const newH = window.innerHeight;
+                    const oldW = W,
+                        oldH = H;
+                    dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    W = newW;
+                    H = newH;
+                    canvas.width = Math.round(W * dpr);
+                    canvas.height = Math.round(H * dpr);
+                    canvas.style.width = W + "px";
+                    canvas.style.height = H + "px";
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                    if (rescale && oldW > 0 && oldH > 0) {
+                        const sx = W / oldW,
+                            sy = H / oldH;
+                        for (let i = 0; i < MAX_BOIDS; i++) {
+                            px[i] *= sx;
+                            py[i] *= sy;
+                        }
+                    }
+                    hardClear();
+                }
+
+                let resizeTimer = null;
+                function onResize() {
+                    if (resizeTimer) clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => resizeCanvas(true), 150);
+                }
+                window.addEventListener("resize", onResize);
+                window.addEventListener("orientationchange", onResize);
+
+                // ============================================================
+                // INTERACTION (mouse / touch) — pointer attracts the flock
+                // ============================================================
+                let pointerActive = false;
+                let pointerX = 0,
+                    pointerY = 0;
+
+                function pointerToCanvas(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    pointerX = ((e.clientX - rect.left) / rect.width) * W;
+                    pointerY = ((e.clientY - rect.top) / rect.height) * H;
+                }
+
+                canvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    pointerActive = true;
+                    pointerToCanvas(e);
+                });
+                canvas.addEventListener("pointermove", (e) => {
+                    if (!pointerActive) return;
+                    pointerToCanvas(e);
+                });
+                window.addEventListener("pointerup", () => {
+                    pointerActive = false;
+                });
+
+                // ============================================================
+                // MODALS
+                // ============================================================
+                // Floating mode = desktop pointer devices. Phones keep the
+                // single bottom-sheet + dimmed backdrop behavior.
+                const dragQuery = window.matchMedia(
+                    "(min-width: 720px) and (pointer: fine)",
+                );
+                const floating = () => dragQuery.matches;
+                const backdrop = document.getElementById("backdrop");
+                const byId = (id) => document.getElementById(id);
+
+                const WIN_KEY = "boids-windows";
+                let savedWindows = {};
+                try {
+                    savedWindows =
+                        JSON.parse(localStorage.getItem(WIN_KEY)) || {};
+                } catch (_) {}
+                function saveWindows() {
+                    if (!floating()) return;
+                    const data = {};
+                    document.querySelectorAll(".modal").forEach((m) => {
+                        if (m.style.left)
+                            data[m.id] = {
+                                left: m.style.left,
+                                top: m.style.top,
+                            };
+                    });
+                    try {
+                        localStorage.setItem(WIN_KEY, JSON.stringify(data));
+                    } catch (_) {}
+                }
+
+                let zStack = [];
+                function bringToFront(modal) {
+                    zStack = zStack.filter((x) => x !== modal.id);
+                    zStack.push(modal.id);
+                    zStack.forEach((id, i) => {
+                        const m = byId(id);
+                        if (m) m.style.zIndex = 111 + i;
+                    });
+                }
+
+                let cascadeIdx = 0;
+                function placeFloating(modal) {
+                    if (modal.dataset.placed) return;
+                    const saved = savedWindows[modal.id];
+                    let left, top;
+                    if (saved) {
+                        left = parseFloat(saved.left);
+                        top = parseFloat(saved.top);
+                    } else {
+                        const off = (cascadeIdx++ % 6) * 34;
+                        left = Math.max(20, window.innerWidth / 2 - 230) + off;
+                        top = 76 + off;
+                    }
+                    modal.style.right = "auto";
+                    modal.style.bottom = "auto";
+                    modal.style.transform = "none";
+                    modal.style.left = left + "px";
+                    modal.style.top = top + "px";
+                    const rect = modal.getBoundingClientRect();
+                    const maxX = window.innerWidth - rect.width - 8;
+                    const maxY = window.innerHeight - rect.height - 8;
+                    modal.style.left = Math.max(8, Math.min(left, maxX)) + "px";
+                    modal.style.top = Math.max(8, Math.min(top, maxY)) + "px";
+                    modal.dataset.placed = "1";
+                }
+
+                function refreshDropdownActive() {
+                    document.querySelectorAll(".dropdown-item").forEach((f) => {
+                        const m = byId("modal-" + f.dataset.modal);
+                        f.classList.toggle(
+                            "active",
+                            !!(m && m.classList.contains("open")),
+                        );
+                    });
+                }
+
+                function openModal(id) {
+                    const modal = byId(id);
+                    if (!modal) return;
+                    closeDropdown();
+                    if (floating()) {
+                        if (!modal.classList.contains("open")) {
+                            placeFloating(modal);
+                            modal.classList.add("open");
+                        }
+                        bringToFront(modal);
+                    } else {
+                        closeAllModals();
+                        modal.classList.add("open");
+                        backdrop.classList.add("open");
+                    }
+                    if (id === "modal-color") syncColorControls();
+                    refreshDropdownActive();
+                }
+
+                function closeModal(id) {
+                    const modal = byId(id);
+                    if (!modal || !modal.classList.contains("open")) return;
+                    modal.classList.remove("open");
+                    if (!document.querySelector(".modal.open"))
+                        backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+
+                function closeAllModals() {
+                    document
+                        .querySelectorAll(".modal.open")
+                        .forEach((m) => m.classList.remove("open"));
+                    backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+
+                document.body.classList.toggle("floating-windows", floating());
+
+                backdrop.addEventListener("click", closeAllModals);
+                document.querySelectorAll("[data-close]").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        const m = b.closest(".modal");
+                        if (m) closeModal(m.id);
+                    });
+                });
+
+                document.querySelectorAll("[data-modal]").forEach((f) => {
+                    f.addEventListener("click", () => {
+                        const id = "modal-" + f.dataset.modal;
+                        const m = byId(id);
+                        if (m && m.classList.contains("open")) closeModal(id);
+                        else openModal(id);
+                    });
+                });
+
+                // ---------- Drag modals by their header (floating mode only) ----
+                document.querySelectorAll(".modal").forEach((modal) => {
+                    modal.addEventListener("pointerdown", () => {
+                        if (floating()) bringToFront(modal);
+                    });
+
+                    const header = modal.querySelector(".modal-header");
+                    if (!header) return;
+                    let dragging = false;
+                    let startX = 0,
+                        startY = 0,
+                        baseLeft = 0,
+                        baseTop = 0;
+
+                    header.addEventListener("pointerdown", (e) => {
+                        if (!floating()) return;
+                        if (e.button !== 0) return;
+                        if (e.target.closest(".modal-close")) return;
+                        const rect = modal.getBoundingClientRect();
+                        baseLeft = rect.left;
+                        baseTop = rect.top;
+                        modal.style.left = baseLeft + "px";
+                        modal.style.top = baseTop + "px";
+                        modal.style.right = "auto";
+                        modal.style.bottom = "auto";
+                        modal.style.transform = "none";
+                        modal.dataset.placed = "1";
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        dragging = true;
+                        modal.classList.add("dragging");
+                        header.setPointerCapture(e.pointerId);
+                    });
+
+                    header.addEventListener("pointermove", (e) => {
+                        if (!dragging) return;
+                        const rect = modal.getBoundingClientRect();
+                        const maxX = window.innerWidth - rect.width;
+                        const maxY = window.innerHeight - rect.height;
+                        let nx = baseLeft + (e.clientX - startX);
+                        let ny = baseTop + (e.clientY - startY);
+                        nx = Math.max(0, Math.min(nx, maxX));
+                        ny = Math.max(0, Math.min(ny, maxY));
+                        modal.style.left = nx + "px";
+                        modal.style.top = ny + "px";
+                    });
+
+                    function endDrag(e) {
+                        if (!dragging) return;
+                        dragging = false;
+                        modal.classList.remove("dragging");
+                        try {
+                            header.releasePointerCapture(e.pointerId);
+                        } catch (_) {}
+                        saveWindows();
+                    }
+                    header.addEventListener("pointerup", endDrag);
+                    header.addEventListener("pointercancel", endDrag);
+                });
+
+                // ---------- Top-right cogwheel dropdown ----------
+                const settingsMenu = document.getElementById("settings-menu");
+                const settingsTrigger =
+                    document.getElementById("settings-trigger");
+                const menuDropdown = document.getElementById("menu-dropdown");
+                let dropdownOpen = false;
+
+                function openDropdown() {
+                    if (dropdownOpen) return;
+                    if (!floating()) closeAllModals();
+                    dropdownOpen = true;
+                    menuDropdown.classList.add("open");
+                    settingsTrigger.classList.add("open");
+                    settingsTrigger.setAttribute("aria-expanded", "true");
+                }
+                function closeDropdown() {
+                    if (!dropdownOpen) return;
+                    dropdownOpen = false;
+                    menuDropdown.classList.remove("open");
+                    settingsTrigger.classList.remove("open");
+                    settingsTrigger.setAttribute("aria-expanded", "false");
+                }
+
+                settingsTrigger.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (dropdownOpen) closeDropdown();
+                    else openDropdown();
+                });
+                document.addEventListener("click", (e) => {
+                    if (dropdownOpen && !settingsMenu.contains(e.target))
+                        closeDropdown();
+                });
+
+                // ============================================================
+                // SLIDER HELPERS
+                // ============================================================
+                function makeSlider(container, def, getValue, setValue) {
+                    const wrap = document.createElement("div");
+                    wrap.className = "ctrl";
+                    wrap.innerHTML = `
+      <div class="ctrl-head">
+        <span class="ctrl-name">${def.label}</span>
+        <span class="ctrl-val"></span>
+      </div>
+      <input type="range" min="${def.min}" max="${def.max}" step="${def.step}">
+    `;
+                    container.appendChild(wrap);
+                    const inp = wrap.querySelector("input");
+                    const val = wrap.querySelector(".ctrl-val");
+
+                    function sync() {
+                        const v = getValue();
+                        inp.value = v;
+                        val.textContent = def.fmt(v);
+                    }
+                    inp.addEventListener("input", () => {
+                        const v = parseFloat(inp.value);
+                        setValue(v);
+                        val.textContent = def.fmt(v);
+                        persistState();
+                    });
+                    sync();
+                    return { sync };
+                }
+
+                // ============================================================
+                // PARAMETERS MODAL
+                // ============================================================
+                const paramsSection = document.getElementById("params-section");
+                const paramSliders = {};
+                const groupSections = {};
+                function groupContainer(name) {
+                    if (!groupSections[name]) {
+                        const sec = document.createElement("div");
+                        sec.className = "section";
+                        const label = document.createElement("div");
+                        label.className = "section-label";
+                        label.textContent = name;
+                        const sliders = document.createElement("div");
+                        const desc = document.createElement("div");
+                        desc.className = "section-desc";
+                        sec.append(label, sliders, desc);
+                        paramsSection.appendChild(sec);
+                        groupSections[name] = { sliders, desc };
+                    }
+                    return groupSections[name];
+                }
+                const lcFirst = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+                slidersDef.forEach((def) => {
+                    const g = groupContainer(def.group);
+                    paramSliders[def.key] = makeSlider(
+                        g.sliders,
+                        def,
+                        () => state.params[def.key],
+                        (v) => {
+                            if (def.key === "count" && v > state.params.count) {
+                                for (let i = state.params.count; i < v; i++)
+                                    spawnBoid(i);
+                            }
+                            state.params[def.key] = v;
+                        },
+                    );
+                    const p = document.createElement("p");
+                    p.innerHTML = `<strong>${def.label}</strong> — ${lcFirst(def.hint)}`;
+                    g.desc.appendChild(p);
+                });
+
+                function applyParamsToSliders() {
+                    slidersDef.forEach((def) => paramSliders[def.key].sync());
+                }
+
+                const fabPause = document.getElementById("fab-pause");
+                const iconPause = fabPause.querySelector(".icon-pause");
+                const iconPlay = fabPause.querySelector(".icon-play");
+
+                function updatePauseButton() {
+                    iconPause.style.display = playing ? "" : "none";
+                    iconPlay.style.display = playing ? "none" : "";
+                    fabPause.title = playing ? "Pause" : "Play";
+                    fabPause.setAttribute(
+                        "aria-label",
+                        playing ? "Pause" : "Play",
+                    );
+                }
+                fabPause.addEventListener("click", () => {
+                    playing = !playing;
+                    updatePauseButton();
+                });
+                document
+                    .getElementById("fab-reset")
+                    .addEventListener("click", resetAll);
+
+                // Speed FAB — cycles through multipliers
+                const SPEED_STEPS = [1, 2, 4, 8];
+                const fabSpeed = document.getElementById("fab-speed");
+                const speedLabel = document.getElementById("speed-label");
+                function updateSpeedLabel() {
+                    speedLabel.textContent = state.settings.simSpeed + "×";
+                }
+                fabSpeed.addEventListener("click", () => {
+                    const curIdx = SPEED_STEPS.indexOf(state.settings.simSpeed);
+                    const nextIdx = (curIdx + 1) % SPEED_STEPS.length;
+                    state.settings.simSpeed = SPEED_STEPS[nextIdx];
+                    updateSpeedLabel();
+                    persistState();
+                });
+
+                // ============================================================
+                // COLOR MODAL
+                // ============================================================
+                const colorRow = document.getElementById("color-row");
+                PALETTES.items.forEach((pal) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chip";
+                    const swatch = document.createElement("span");
+                    swatch.className = "swatch";
+                    const p = pal.stops;
+                    swatch.style.backgroundImage = `linear-gradient(90deg, ${p[1]}, ${p[3]})`;
+                    btn.appendChild(swatch);
+                    btn.appendChild(document.createTextNode(pal.label));
+                    btn.dataset.palette = pal.id;
+                    btn.addEventListener("click", () => {
+                        state.palette.mode = "preset";
+                        state.palette.name = pal.id;
+                        const mid = hexToHsl(p[2]);
+                        const accent = hexToHsl(p[4]);
+                        state.palette.custom.hue = Math.round(mid.h);
+                        state.palette.custom.accentHue = Math.round(accent.h);
+                        state.palette.custom.saturation = Math.round(
+                            Math.min(100, mid.s),
+                        );
+                        refreshPalette();
+                        syncColorControls();
+                        persistState();
+                    });
+                    colorRow.appendChild(btn);
+                });
+
+                function markActiveColor() {
+                    [...colorRow.children].forEach((btn) => {
+                        btn.classList.toggle(
+                            "active",
+                            state.palette.mode === "preset" &&
+                                btn.dataset.palette === state.palette.name,
+                        );
+                    });
+                }
+
+                const hueSlider = document.getElementById("s-hue");
+                const accentSlider = document.getElementById("s-accent");
+                const satSlider = document.getElementById("s-sat");
+                const hueVal = document.getElementById("v-hue");
+                const accentVal = document.getElementById("v-accent");
+                const satVal = document.getElementById("v-sat");
+                const palettePreview =
+                    document.getElementById("palette-preview");
+
+                function updatePalettePreview() {
+                    if (!palettePreview) return;
+                    const stops = currentPaletteStops().slice(1);
+                    palettePreview.style.backgroundImage = `linear-gradient(90deg, ${stops.join(", ")})`;
+                }
+
+                function updateSatSliderBg() {
+                    let h = state.palette.custom.hue;
+                    if (state.palette.mode === "preset") {
+                        const pal = PALETTES.byId(state.palette.name);
+                        if (pal) h = Math.round(hexToHsl(pal.stops[2]).h);
+                    }
+                    satSlider.style.backgroundImage = `linear-gradient(90deg, hsl(${h}, 0%, 55%), hsl(${h}, 85%, 55%))`;
+                }
+
+                function onCustomColorChange() {
+                    state.palette.mode = "custom";
+                    state.palette.custom.hue = parseFloat(hueSlider.value);
+                    state.palette.custom.accentHue = parseFloat(
+                        accentSlider.value,
+                    );
+                    state.palette.custom.saturation = parseFloat(
+                        satSlider.value,
+                    );
+                    hueVal.textContent = state.palette.custom.hue + "°";
+                    accentVal.textContent =
+                        state.palette.custom.accentHue + "°";
+                    satVal.textContent = state.palette.custom.saturation + "%";
+                    updateSatSliderBg();
+                    refreshPalette();
+                    markActiveColor();
+                    persistState();
+                }
+
+                hueSlider.addEventListener("input", onCustomColorChange);
+                accentSlider.addEventListener("input", onCustomColorChange);
+                satSlider.addEventListener("input", onCustomColorChange);
+
+                function syncColorControls() {
+                    hueSlider.value = state.palette.custom.hue;
+                    accentSlider.value = state.palette.custom.accentHue;
+                    satSlider.value = state.palette.custom.saturation;
+                    hueVal.textContent = state.palette.custom.hue + "°";
+                    accentVal.textContent =
+                        state.palette.custom.accentHue + "°";
+                    satVal.textContent = state.palette.custom.saturation + "%";
+                    updateSatSliderBg();
+                    markActiveColor();
+                    updatePalettePreview();
+                }
+
+                // ============================================================
+                // PATTERN (STARTING SHAPE) MODAL
+                // ============================================================
+                const patternRow = document.getElementById("pattern-row");
+                const regionSection =
+                    document.getElementById("region-section");
+                function updateRegionVisibility() {
+                    regionSection.style.display = PATTERNS.byId(
+                        state.pattern.name,
+                    ).clustered
+                        ? ""
+                        : "none";
+                }
+                PATTERNS.items.forEach((pat) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chip";
+                    btn.textContent = pat.label;
+                    btn.dataset.pattern = pat.id;
+                    btn.addEventListener("click", () => {
+                        state.pattern.name = pat.id;
+                        markActivePattern();
+                        resetAll();
+                        persistState();
+                    });
+                    patternRow.appendChild(btn);
+                });
+                function markActivePattern() {
+                    [...patternRow.children].forEach((btn) => {
+                        btn.classList.toggle(
+                            "active",
+                            btn.dataset.pattern === state.pattern.name,
+                        );
+                    });
+                    updateRegionVisibility();
+                }
+
+                const headingRow = document.getElementById("heading-row");
+                const headingAngleSection = document.getElementById(
+                    "heading-angle-section",
+                );
+                HEADINGS.items.forEach((head) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chip";
+                    btn.textContent = head.label;
+                    btn.dataset.heading = head.id;
+                    btn.addEventListener("click", () => {
+                        state.pattern.heading = head.id;
+                        markActiveHeading();
+                        resetAll();
+                        persistState();
+                    });
+                    headingRow.appendChild(btn);
+                });
+                function markActiveHeading() {
+                    [...headingRow.children].forEach((btn) => {
+                        btn.classList.toggle(
+                            "active",
+                            btn.dataset.heading === state.pattern.heading,
+                        );
+                    });
+                    headingAngleSection.style.display = HEADINGS.byId(
+                        state.pattern.heading,
+                    ).usesAngle
+                        ? ""
+                        : "none";
+                }
+
+                const angleSlider = document.getElementById("s-angle");
+                const angleVal = document.getElementById("v-angle");
+                angleSlider.addEventListener("input", () => {
+                    state.pattern.fixedAngle = parseFloat(angleSlider.value);
+                    angleVal.textContent = state.pattern.fixedAngle + "°";
+                    resetAll();
+                    persistState();
+                });
+
+                const regionSlider = document.getElementById("s-region");
+                const regionVal = document.getElementById("v-region");
+                regionSlider.addEventListener("input", () => {
+                    state.pattern.regionSize = parseFloat(regionSlider.value);
+                    regionVal.textContent = state.pattern.regionSize.toFixed(2);
+                    resetAll();
+                    persistState();
+                });
+
+                function syncPatternControls() {
+                    markActivePattern();
+                    markActiveHeading();
+                    angleSlider.value = state.pattern.fixedAngle;
+                    angleVal.textContent = state.pattern.fixedAngle + "°";
+                    regionSlider.value = state.pattern.regionSize;
+                    regionVal.textContent = state.pattern.regionSize.toFixed(2);
+                }
+
+                // ============================================================
+                // SETTINGS MODAL
+                // ============================================================
+                const settingsToggles = [
+                    ["t-reset-on-rand", "resetOnRandomize"],
+                    ["t-rand-color", "randomizeColor"],
+                    ["t-rand-pattern", "randomizePattern"],
+                    ["t-show-record", "showRecord"],
+                    ["t-show-share", "showShareLink"],
+                    ["t-show-hideui", "showHideUI"],
+                ];
+
+                settingsToggles.forEach(([id, key]) => {
+                    const el = document.getElementById(id);
+                    el.addEventListener("change", () => {
+                        state.settings[key] = el.checked;
+                        updateToolbarVisibility();
+                        persistState();
+                    });
+                });
+
+                function updateToolbarVisibility() {
+                    document
+                        .getElementById("fab-record")
+                        .classList.toggle("hidden", !state.settings.showRecord);
+                    document
+                        .getElementById("fab-share")
+                        .classList.toggle(
+                            "hidden",
+                            !state.settings.showShareLink,
+                        );
+                    document
+                        .getElementById("fab-hide")
+                        .classList.toggle("hidden", !state.settings.showHideUI);
+                }
+
+                function syncSettings() {
+                    settingsToggles.forEach(([id, key]) => {
+                        document.getElementById(id).checked =
+                            !!state.settings[key];
+                    });
+                    const fps = state.settings.fps || 60;
+                    frameInterval = 1000 / fps;
+                    fpsSlider.value = fps;
+                    fpsVal.textContent = fps;
+                    updateToolbarVisibility();
+                }
+
+                const fpsSlider = document.getElementById("s-fps");
+                const fpsVal = document.getElementById("v-fps");
+                fpsSlider.addEventListener("input", () => {
+                    const v = parseInt(fpsSlider.value, 10) || 60;
+                    state.settings.fps = v;
+                    fpsVal.textContent = v;
+                    frameInterval = 1000 / v;
+                    persistState();
+                });
+
+                document
+                    .getElementById("fab-share")
+                    .addEventListener("click", () => {
+                        const url = buildShareURL();
+                        navigator.clipboard
+                            .writeText(url)
+                            .then(() => {
+                                showToast();
+                            })
+                            .catch(() => {
+                                window.prompt("Copy this link:", url);
+                            });
+                    });
+                document
+                    .getElementById("fab-hide")
+                    .addEventListener("click", toggleUI);
+
+                document
+                    .getElementById("btn-restore-defaults")
+                    .addEventListener("click", () => {
+                        const fresh = JSON.parse(JSON.stringify(defaultState));
+                        state.params = fresh.params;
+                        state.pattern = fresh.pattern;
+                        state.palette = fresh.palette;
+                        state.settings = fresh.settings;
+
+                        try {
+                            localStorage.removeItem(LS_KEY);
+                        } catch (e) {}
+                        if (location.hash)
+                            history.replaceState(
+                                null,
+                                "",
+                                location.pathname + location.search,
+                            );
+
+                        applyParamsToSliders();
+                        syncColorControls();
+                        syncPatternControls();
+                        syncSettings();
+                        updateSpeedLabel();
+                        refreshPalette();
+                        resetAll();
+
+                        persistState();
+                        showToast("Defaults restored");
+                    });
+
+                // ============================================================
+                // RANDOMIZE
+                // ============================================================
+                const fabRandomize = document.getElementById("fab-randomize");
+                fabRandomize.addEventListener("click", () => {
+                    fabRandomize.classList.remove("spin");
+                    void fabRandomize.offsetWidth;
+                    fabRandomize.classList.add("spin");
+
+                    slidersDef.forEach((def) => {
+                        const [lo, hi] = randomRanges[def.key] || [
+                            def.min,
+                            def.max,
+                        ];
+                        let v = lo + Math.random() * (hi - lo);
+                        v = Math.round(v / def.step) * def.step;
+                        if (v < def.min) v = def.min;
+                        if (v > def.max) v = def.max;
+                        if (def.key === "count" && v > state.params.count) {
+                            for (let i = state.params.count; i < v; i++)
+                                spawnBoid(i);
+                        }
+                        state.params[def.key] = v;
+                    });
+                    applyParamsToSliders();
+
+                    if (state.settings.randomizeColor) {
+                        state.palette.mode = "preset";
+                        state.palette.name = randItem(PALETTES.items).id;
+                        refreshPalette();
+                        markActiveColor();
+                    }
+
+                    if (state.settings.randomizePattern) {
+                        state.pattern.name = randItem(PATTERNS.items).id;
+                        state.pattern.heading = randItem(HEADINGS.items).id;
+                        state.pattern.fixedAngle = Math.floor(
+                            Math.random() * 360,
+                        );
+                        state.pattern.regionSize = 0.25 + Math.random() * 0.65;
+                        syncPatternControls();
+                        resetAll();
+                    } else if (state.settings.resetOnRandomize) {
+                        resetAll();
+                    }
+
+                    persistState();
+                });
+
+                // ============================================================
+                // RECORDING
+                // ============================================================
+                const fabRecord = document.getElementById("fab-record");
+                const recIndicator = document.getElementById("rec-indicator");
+                const recTimeEl = document.getElementById("rec-time");
+                let mediaRecorder = null;
+                let recordChunks = [];
+                let recordStart = 0;
+                let recTimer = null;
+
+                function pickWebmMime() {
+                    const candidates = [
+                        "video/webm;codecs=vp9",
+                        "video/webm;codecs=vp8",
+                        "video/webm",
+                    ];
+                    for (const c of candidates) {
+                        if (
+                            typeof MediaRecorder !== "undefined" &&
+                            MediaRecorder.isTypeSupported(c)
+                        )
+                            return c;
+                    }
+                    return "";
+                }
+
+                function startRecording() {
+                    if (typeof MediaRecorder === "undefined") {
+                        alert(
+                            "MediaRecorder is not supported in this browser.",
+                        );
+                        return;
+                    }
+                    const stream = canvas.captureStream(30);
+                    const mime = pickWebmMime();
+                    try {
+                        mediaRecorder = mime
+                            ? new MediaRecorder(stream, { mimeType: mime })
+                            : new MediaRecorder(stream);
+                    } catch (e) {
+                        alert("Could not start recording: " + e.message);
+                        return;
+                    }
+                    recordChunks = [];
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0)
+                            recordChunks.push(e.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordChunks, {
+                            type: "video/webm",
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `boids-${Date.now()}.webm`;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    };
+                    mediaRecorder.start();
+                    recordStart = Date.now();
+                    fabRecord.classList.add("recording");
+                    recIndicator.classList.remove("hidden");
+                    recTimer = setInterval(() => {
+                        const sec = Math.floor(
+                            (Date.now() - recordStart) / 1000,
+                        );
+                        const mm = Math.floor(sec / 60);
+                        const ss = sec % 60;
+                        recTimeEl.textContent =
+                            mm + ":" + (ss < 10 ? "0" : "") + ss;
+                    }, 250);
+                }
+
+                function stopRecording() {
+                    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                        mediaRecorder.stop();
+                    }
+                    mediaRecorder = null;
+                    fabRecord.classList.remove("recording");
+                    recIndicator.classList.add("hidden");
+                    if (recTimer) {
+                        clearInterval(recTimer);
+                        recTimer = null;
+                    }
+                }
+
+                fabRecord.addEventListener("click", () => {
+                    if (mediaRecorder && mediaRecorder.state !== "inactive")
+                        stopRecording();
+                    else startRecording();
+                });
+
+                // ============================================================
+                // HIDE-UI MODE
+                // ============================================================
+                let uiHidden = false;
+                let hideBannerTimer = null;
+                function toggleUI() {
+                    uiHidden = !uiHidden;
+                    document.body.classList.toggle("ui-hidden", uiHidden);
+                    if (uiHidden) {
+                        const banner = document.getElementById("hide-banner");
+                        banner.classList.remove("hidden");
+                        if (hideBannerTimer) clearTimeout(hideBannerTimer);
+                        hideBannerTimer = setTimeout(
+                            () => banner.classList.add("hidden"),
+                            2200,
+                        );
+                    } else {
+                        document
+                            .getElementById("hide-banner")
+                            .classList.add("hidden");
+                    }
+                }
+
+                document.addEventListener("keydown", (e) => {
+                    if (
+                        e.target.tagName === "INPUT" ||
+                        e.target.tagName === "TEXTAREA"
+                    )
+                        return;
+                    if (e.key === "Escape") {
+                        closeAllModals();
+                        closeDropdown();
+                    } else if (e.key === "h" || e.key === "H") toggleUI();
+                    else if (e.key === " ") {
+                        e.preventDefault();
+                        playing = !playing;
+                        updatePauseButton();
+                    }
+                });
+
+                // ============================================================
+                // PERSISTENCE
+                // ============================================================
+                const LS_KEY = "boids-state";
+                let persistTimer = null;
+
+                function deepMerge(target, src) {
+                    if (!src || typeof src !== "object") return;
+                    for (const k of Object.keys(src)) {
+                        const sv = src[k];
+                        if (
+                            sv &&
+                            typeof sv === "object" &&
+                            !Array.isArray(sv)
+                        ) {
+                            if (!target[k] || typeof target[k] !== "object")
+                                target[k] = {};
+                            deepMerge(target[k], sv);
+                        } else {
+                            target[k] = sv;
+                        }
+                    }
+                }
+
+                function persistState() {
+                    if (persistTimer) clearTimeout(persistTimer);
+                    persistTimer = setTimeout(() => {
+                        try {
+                            localStorage.setItem(LS_KEY, JSON.stringify(state));
+                        } catch (e) {}
+                    }, 200);
+                }
+
+                function loadPersistedState() {
+                    try {
+                        const raw = localStorage.getItem(LS_KEY);
+                        if (raw) deepMerge(state, JSON.parse(raw));
+                    } catch (e) {}
+                }
+
+                // ============================================================
+                // SHARE URL
+                // ============================================================
+                function buildShareURL() {
+                    const json = JSON.stringify(state);
+                    const encoded = btoa(unescape(encodeURIComponent(json)));
+                    return location.origin + location.pathname + "#" + encoded;
+                }
+
+                function loadFromHash() {
+                    const h = location.hash.slice(1);
+                    if (!h) return false;
+                    try {
+                        const json = decodeURIComponent(escape(atob(h)));
+                        deepMerge(state, JSON.parse(json));
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+
+                function showToast(msg) {
+                    const f = document.getElementById("toast");
+                    f.textContent = msg || "Link copied";
+                    f.classList.add("show");
+                    setTimeout(() => f.classList.remove("show"), 1200);
+                }
+
+                // ============================================================
+                // INIT
+                // ============================================================
+                loadPersistedState();
+                loadFromHash();
+                // Crowd size is hard-capped by the boid buffers.
+                if (state.params.count > MAX_BOIDS)
+                    state.params.count = MAX_BOIDS;
+
+                resizeCanvas(false);
+                refreshPalette();
+                seedBoids();
+
+                applyParamsToSliders();
+                syncColorControls();
+                syncPatternControls();
+                syncSettings();
+                updatePauseButton();
+                updateSpeedLabel();
+
+                // ============================================================
+                // MAIN LOOP
+                // ============================================================
+                // The FPS slider only caps how often we *render* (saves battery
+                // on high-refresh displays). The flock advances on its own fixed
+                // timestep — SIM_FPS steps/sec at 1× speed, scaled by the speed
+                // multiplier — so flight speed stays constant regardless of the
+                // render rate. Each rendered frame runs as many sim steps as the
+                // real elapsed time calls for (caught up via an accumulator).
+                const SIM_FPS = 60;
+                const MAX_CATCHUP_MS = 100;
+                let lastFrame = 0;
+                let lastSim = 0;
+                let simAccumulator = 0;
+                function loop(now) {
+                    requestAnimationFrame(loop);
+                    if (now - lastFrame < frameInterval) return;
+                    lastFrame = now - ((now - lastFrame) % frameInterval);
+
+                    if (playing) {
+                        const stepMs =
+                            1000 / (SIM_FPS * (state.settings.simSpeed || 1));
+                        simAccumulator += now - (lastSim || now);
+                        if (simAccumulator > MAX_CATCHUP_MS)
+                            simAccumulator = MAX_CATCHUP_MS;
+                        while (simAccumulator >= stepMs) {
+                            simulate();
+                            simAccumulator -= stepMs;
+                        }
+                    } else {
+                        simAccumulator = 0;
+                    }
+                    lastSim = now;
+
+                    render();
+                }
+                requestAnimationFrame(loop);
+            })();
+        </script>
+    </body>
+</html>
