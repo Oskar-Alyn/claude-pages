@@ -1266,6 +1266,45 @@
                 </div>
 
                 <div class="section">
+                    <div class="section-label">Simulation</div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Particle count</span
+                            ><span class="ctrl-val" id="v-count-set">1200</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-count-set"
+                            min="100"
+                            max="4000"
+                            step="10"
+                            value="1200"
+                        />
+                    </div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Zoom</span
+                            ><span class="ctrl-val" id="v-zoom">1.0×</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-zoom"
+                            min="1"
+                            max="5"
+                            step="0.1"
+                            value="1"
+                        />
+                    </div>
+
+                    <div class="ctrl-hint" style="margin-top: 8px">
+                        Particle count also lives in Parameters; zoom magnifies
+                        the view into the wrapping world.
+                    </div>
+                </div>
+
+                <div class="section">
                     <div class="section-label">Performance</div>
 
                     <div class="ctrl">
@@ -1413,6 +1452,7 @@
                         randomizePattern: true,
                         fps: 60,
                         simSpeed: 1,
+                        zoom: 1,
                         showRecord: false,
                         showShareLink: false,
                         showHideUI: false,
@@ -1996,6 +2036,23 @@
                 let gCols = 0,
                     gRows = 0;
 
+                // Up to three unique neighbor-cell indices along one axis,
+                // wrapped toroidally. Dedups so tiny grids (1-2 cells wide)
+                // never visit the same wrapped cell twice and double-count.
+                const cellX = new Int32Array(3);
+                const cellY = new Int32Array(3);
+                function neighborCells(c, g, out) {
+                    let a = c - 1,
+                        d = c + 1;
+                    if (a < 0) a += g;
+                    if (d >= g) d -= g;
+                    out[0] = c;
+                    let len = 1;
+                    if (a !== c) out[len++] = a;
+                    if (d !== c && d !== a) out[len++] = d;
+                    return len;
+                }
+
                 function buildGrid(n, cell) {
                     gCols = Math.max(1, Math.ceil(W / cell));
                     gRows = Math.max(1, Math.ceil(H / cell));
@@ -2035,6 +2092,8 @@
                     const cap = rMax; // no particle moves more than a reach per step
                     const pull = pointerActive ? 0.0006 : 0;
                     const pullR2 = 200 * 200;
+                    const halfW = W * 0.5,
+                        halfH = H * 0.5;
 
                     buildGrid(n, cell);
 
@@ -2053,19 +2112,24 @@
                         if (cgy < 0) cgy = 0;
                         else if (cgy >= gRows) cgy = gRows - 1;
 
-                        const gx0 = cgx > 0 ? cgx - 1 : 0;
-                        const gx1 = cgx < gCols - 1 ? cgx + 1 : gCols - 1;
-                        const gy0 = cgy > 0 ? cgy - 1 : 0;
-                        const gy1 = cgy < gRows - 1 ? cgy + 1 : gRows - 1;
+                        const nxc = neighborCells(cgx, gCols, cellX);
+                        const nyc = neighborCells(cgy, gRows, cellY);
 
-                        for (let gy = gy0; gy <= gy1; gy++) {
-                            const rowBase = gy * gCols;
-                            for (let gx = gx0; gx <= gx1; gx++) {
-                                let j = gridHead[rowBase + gx];
+                        for (let yi = 0; yi < nyc; yi++) {
+                            const rowBase = cellY[yi] * gCols;
+                            for (let xi = 0; xi < nxc; xi++) {
+                                let j = gridHead[rowBase + cellX[xi]];
                                 while (j !== -1) {
                                     if (j !== i) {
-                                        const dx = px[j] - x;
-                                        const dy = py[j] - y;
+                                        // Minimum-image distance on the torus:
+                                        // each pair interacts through its nearest
+                                        // wrapped copy.
+                                        let dx = px[j] - x;
+                                        let dy = py[j] - y;
+                                        if (dx > halfW) dx -= W;
+                                        else if (dx < -halfW) dx += W;
+                                        if (dy > halfH) dy -= H;
+                                        else if (dy < -halfH) dy += H;
                                         const d2 = dx * dx + dy * dy;
                                         if (d2 > 0 && d2 < rMaxSq) {
                                             const r = Math.sqrt(d2);
@@ -2100,10 +2164,15 @@
                         let nvx = pvx[i] * velRetain + fx * fStr;
                         let nvy = pvy[i] * velRetain + fy * fStr;
 
-                        // Pointer attraction while pressed.
+                        // Pointer attraction while pressed (also via the
+                        // nearest wrapped copy, so it works across the seam).
                         if (pull > 0) {
-                            const ddx = pointerX - x;
-                            const ddy = pointerY - y;
+                            let ddx = pointerX - x;
+                            let ddy = pointerY - y;
+                            if (ddx > halfW) ddx -= W;
+                            else if (ddx < -halfW) ddx += W;
+                            if (ddy > halfH) ddy -= H;
+                            else if (ddy < -halfH) ddy += H;
                             if (ddx * ddx + ddy * ddy < pullR2) {
                                 nvx += ddx * pull;
                                 nvy += ddy * pull;
@@ -2122,25 +2191,13 @@
                     }
 
                     // Integrate positions in a second pass so every particle
-                    // stepped off the same snapshot. Soft wall-bounce keeps the
-                    // swarm on screen without an edge-force knob.
+                    // stepped off the same snapshot. The world is a torus:
+                    // particles that leave one edge re-enter the opposite one.
                     for (let i = 0; i < n; i++) {
                         let nx = px[i] + pvx[i];
                         let ny = py[i] + pvy[i];
-                        if (nx < 0) {
-                            nx = 0;
-                            pvx[i] *= -0.5;
-                        } else if (nx > W) {
-                            nx = W;
-                            pvx[i] *= -0.5;
-                        }
-                        if (ny < 0) {
-                            ny = 0;
-                            pvy[i] *= -0.5;
-                        } else if (ny > H) {
-                            ny = H;
-                            pvy[i] *= -0.5;
-                        }
+                        nx -= Math.floor(nx / W) * W;
+                        ny -= Math.floor(ny / H) * H;
                         px[i] = nx;
                         py[i] = ny;
                     }
@@ -2150,6 +2207,9 @@
                 // RENDER
                 // ============================================================
                 function hardClear() {
+                    // Reset to device space so the fill covers the whole canvas
+                    // regardless of any zoom transform left from rendering.
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                     ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
                     ctx.fillRect(0, 0, W, H);
                 }
@@ -2161,7 +2221,18 @@
                 const DOT_HALF = DOT / 2;
                 function render() {
                     const n = state.params.count;
+                    // Clear the full canvas in device space.
                     hardClear();
+                    // Zoom magnifies the view around the screen center; dots are
+                    // drawn in world coords and scaled by the transform, so the
+                    // wrapping world stays seamless under the lens.
+                    const zoom = state.settings.zoom || 1;
+                    if (zoom !== 1) {
+                        const z = dpr * zoom;
+                        const tx = dpr * (W * 0.5) * (1 - zoom);
+                        const ty = dpr * (H * 0.5) * (1 - zoom);
+                        ctx.setTransform(z, 0, 0, z, tx, ty);
+                    }
                     for (let i = 0; i < n; i++) {
                         ctx.fillStyle = typeColorStr[ptype[i]];
                         ctx.fillRect(
@@ -2218,8 +2289,12 @@
 
                 function pointerToCanvas(e) {
                     const rect = canvas.getBoundingClientRect();
-                    pointerX = ((e.clientX - rect.left) / rect.width) * W;
-                    pointerY = ((e.clientY - rect.top) / rect.height) * H;
+                    const sx = ((e.clientX - rect.left) / rect.width) * W;
+                    const sy = ((e.clientY - rect.top) / rect.height) * H;
+                    // Invert the zoom transform to land in world coordinates.
+                    const zoom = state.settings.zoom || 1;
+                    pointerX = W * 0.5 + (sx - W * 0.5) / zoom;
+                    pointerY = H * 0.5 + (sy - H * 0.5) / zoom;
                 }
 
                 canvas.addEventListener("pointerdown", (e) => {
@@ -2530,9 +2605,9 @@
                                 setTypes(v);
                                 return;
                             }
-                            if (def.key === "count" && v > state.params.count) {
-                                for (let i = state.params.count; i < v; i++)
-                                    spawnParticle(i);
+                            if (def.key === "count") {
+                                applyCount(v);
+                                return;
                             }
                             state.params[def.key] = v;
                         },
@@ -2544,6 +2619,27 @@
 
                 function applyParamsToSliders() {
                     slidersDef.forEach((def) => paramSliders[def.key].sync());
+                }
+
+                // Particle count lives in two places (Parameters and Settings).
+                // Both routes funnel through here so the two sliders, the spawn
+                // of any new particles, and state never drift apart.
+                function applyCount(v) {
+                    v = Math.round(v);
+                    if (v > MAX_PARTICLES) v = MAX_PARTICLES;
+                    if (v > state.params.count) {
+                        for (let i = state.params.count; i < v; i++)
+                            spawnParticle(i);
+                    }
+                    state.params.count = v;
+                    syncCountUI();
+                }
+                function syncCountUI() {
+                    if (paramSliders.count) paramSliders.count.sync();
+                    if (settingsCountSlider) {
+                        settingsCountSlider.value = state.params.count;
+                        settingsCountVal.textContent = state.params.count;
+                    }
                 }
 
                 const fabPause = document.getElementById("fab-pause");
@@ -2793,6 +2889,11 @@
                     frameInterval = 1000 / fps;
                     fpsSlider.value = fps;
                     fpsVal.textContent = fps;
+                    const z = state.settings.zoom || 1;
+                    zoomSlider.value = z;
+                    zoomVal.textContent = z.toFixed(1) + "×";
+                    settingsCountSlider.value = state.params.count;
+                    settingsCountVal.textContent = state.params.count;
                     updateToolbarVisibility();
                 }
 
@@ -2803,6 +2904,23 @@
                     state.settings.fps = v;
                     fpsVal.textContent = v;
                     frameInterval = 1000 / v;
+                    persistState();
+                });
+
+                const settingsCountSlider =
+                    document.getElementById("s-count-set");
+                const settingsCountVal = document.getElementById("v-count-set");
+                settingsCountSlider.addEventListener("input", () => {
+                    applyCount(parseFloat(settingsCountSlider.value));
+                    persistState();
+                });
+
+                const zoomSlider = document.getElementById("s-zoom");
+                const zoomVal = document.getElementById("v-zoom");
+                zoomSlider.addEventListener("input", () => {
+                    const z = parseFloat(zoomSlider.value) || 1;
+                    state.settings.zoom = z;
+                    zoomVal.textContent = z.toFixed(1) + "×";
                     persistState();
                 });
 
