@@ -1,0 +1,2862 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#0a0d14" />
+        <title>Reaction–Diffusion</title>
+        <meta
+            name="description"
+            content="An interactive reaction-diffusion (Gray-Scott) simulation: two chemicals react on a wrapping grid and self-organize into living Turing patterns. Tweak the colors, seed shape, and reaction rates, then share what you make."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <!-- Social sharing (text only; no preview image yet) -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Reaction–Diffusion" />
+        <meta
+            property="og:description"
+            content="An interactive reaction-diffusion (Gray-Scott) simulation: two chemicals react on a wrapping grid and self-organize into living Turing patterns. Tweak the colors, seed shape, and reaction rates, then share what you make."
+        />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Reaction–Diffusion" />
+        <meta
+            name="twitter:description"
+            content="An interactive reaction-diffusion (Gray-Scott) simulation: two chemicals react on a wrapping grid and self-organize into living Turing patterns. Tweak the colors, seed shape, and reaction rates, then share what you make."
+        />
+
+        <style>
+            :root {
+                --ink: #f5f8fc;
+                --muted: rgba(245, 248, 252, 0.62);
+                --accent: #66d9c2;
+                --accent-2: #f6c177;
+                --danger: #ff6e5e;
+                --glass-bg: rgba(18, 22, 30, 0.45);
+                --glass-bg-strong: rgba(20, 25, 35, 0.72);
+                --glass-modal: rgba(20, 25, 35, 0.4);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --glass-border-strong: rgba(255, 255, 255, 0.18);
+                --glass-highlight: rgba(255, 255, 255, 0.07);
+                --fab-size: 50px;
+            }
+
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+                background: #000;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                    sans-serif;
+                line-height: 1.5;
+                -webkit-font-smoothing: antialiased;
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
+            }
+
+            #canvas {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                display: block;
+                background: #000;
+                touch-action: none;
+                cursor: crosshair;
+            }
+
+            /* ---------- FAB toolbar ---------- */
+            .fab-toolbar {
+                position: fixed;
+                bottom: max(20px, env(safe-area-inset-bottom, 0px));
+                right: max(20px, env(safe-area-inset-right, 0px));
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 50;
+                transition:
+                    opacity 0.25s,
+                    transform 0.25s;
+            }
+
+            .fab {
+                width: var(--fab-size);
+                height: var(--fab-size);
+                border-radius: 50%;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: rgba(255, 255, 255, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition:
+                    transform 0.15s,
+                    background 0.15s,
+                    border-color 0.15s,
+                    color 0.15s;
+                padding: 0;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+            }
+            .fab:hover {
+                background: var(--glass-bg-strong);
+                color: #fff;
+                transform: scale(1.06);
+            }
+            .fab:active {
+                transform: scale(0.95);
+            }
+            .fab svg {
+                width: 22px;
+                height: 22px;
+            }
+            .fab.hidden {
+                display: none !important;
+            }
+
+            .fab-primary {
+                background: rgba(102, 217, 194, 0.18);
+                border-color: rgba(102, 217, 194, 0.45);
+                color: var(--accent);
+            }
+            .fab-primary:hover {
+                background: rgba(102, 217, 194, 0.3);
+                color: #b1eedf;
+            }
+
+            .fab-record.recording {
+                background: rgba(255, 110, 94, 0.22);
+                border-color: var(--danger);
+                color: var(--danger);
+                animation: pulse 1.5s infinite ease-in-out;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    box-shadow: 0 0 0 0 rgba(255, 110, 94, 0.5);
+                }
+                50% {
+                    box-shadow: 0 0 0 6px rgba(255, 110, 94, 0);
+                }
+            }
+
+            .fab.spin svg {
+                animation: spin 0.5s ease-out;
+            }
+            @keyframes spin {
+                from {
+                    transform: rotate(0);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .speed-label {
+                font-size: 15px;
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.02em;
+            }
+
+            /* ---------- Recording indicator ---------- */
+            .rec-indicator {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                left: max(20px, env(safe-area-inset-left, 0px));
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                padding: 8px 14px 8px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                z-index: 60;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+            }
+            .rec-indicator.hidden {
+                display: none;
+            }
+            .rec-dot {
+                width: 8px;
+                height: 8px;
+                background: var(--danger);
+                border-radius: 50%;
+                animation: blink 1.2s infinite ease-in-out;
+            }
+            @keyframes blink {
+                0%,
+                50% {
+                    opacity: 1;
+                }
+                50.1%,
+                100% {
+                    opacity: 0.3;
+                }
+            }
+
+            /* ---------- Top-right settings menu ---------- */
+            .settings-menu {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                right: max(20px, env(safe-area-inset-right, 0px));
+                z-index: 70;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+            }
+            #settings-trigger svg {
+                transition: transform 0.3s ease;
+            }
+            #settings-trigger.open {
+                background: var(--glass-bg-strong);
+                color: #fff;
+            }
+            #settings-trigger.open svg {
+                transform: rotate(60deg);
+            }
+
+            .menu-dropdown {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 10px;
+                pointer-events: none;
+            }
+            .menu-dropdown.open {
+                pointer-events: auto;
+            }
+
+            .dropdown-item {
+                width: var(--fab-size);
+                height: var(--fab-size);
+                border-radius: 50%;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: rgba(255, 255, 255, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+                opacity: 0;
+                transform: scale(0.2) translateY(-14px) rotate(-140deg);
+                transform-origin: center;
+                pointer-events: none;
+                transition:
+                    opacity 0.22s ease,
+                    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    background 0.15s,
+                    color 0.15s,
+                    border-color 0.15s;
+            }
+            .menu-dropdown.open .dropdown-item {
+                opacity: 1;
+                transform: scale(1) translateY(0) rotate(0);
+                pointer-events: auto;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(1) {
+                transition-delay: 0.02s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(2) {
+                transition-delay: 0.06s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(3) {
+                transition-delay: 0.1s;
+            }
+            .menu-dropdown.open .dropdown-item:nth-child(4) {
+                transition-delay: 0.14s;
+            }
+
+            .dropdown-item:hover {
+                background: var(--glass-bg-strong);
+                color: #fff;
+            }
+            .dropdown-item.active {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .dropdown-item svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            /* ---------- Hide-UI banner ---------- */
+            .hide-banner {
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--glass-bg-strong);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                padding: 10px 18px;
+                border-radius: 999px;
+                font-size: 13px;
+                z-index: 200;
+                opacity: 1;
+                transition: opacity 0.6s;
+                pointer-events: none;
+            }
+            .hide-banner.hidden {
+                opacity: 0;
+            }
+            .hide-banner kbd {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 11px;
+                margin: 0 2px;
+            }
+
+            body.ui-hidden .fab-toolbar,
+            body.ui-hidden .settings-menu,
+            body.ui-hidden .backdrop,
+            body.ui-hidden .modal {
+                display: none !important;
+            }
+
+            /* ---------- Backdrop ---------- */
+            .backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0);
+                z-index: 100;
+                pointer-events: none;
+                transition: background 0.2s;
+            }
+            .backdrop.open {
+                background: rgba(0, 0, 0, 0.2);
+                pointer-events: auto;
+            }
+
+            /* ---------- Modal ---------- */
+            .modal {
+                position: fixed;
+                background: var(--glass-modal);
+                -webkit-backdrop-filter: blur(40px) saturate(180%);
+                backdrop-filter: blur(40px) saturate(180%);
+                border: 1px solid var(--glass-border-strong);
+                color: var(--ink);
+                z-index: 110;
+                opacity: 0;
+                pointer-events: none;
+                transition:
+                    opacity 0.22s ease-out,
+                    transform 0.22s ease-out;
+                box-shadow:
+                    0 20px 60px rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 var(--glass-highlight);
+            }
+
+            @media (min-width: 720px) {
+                .modal {
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, calc(-50% + 12px));
+                    width: min(92vw, 460px);
+                    max-height: min(85vh, 720px);
+                    border-radius: 20px;
+                }
+                .modal.open {
+                    opacity: 1;
+                    pointer-events: auto;
+                    transform: translate(-50%, -50%);
+                }
+                .modal-header {
+                    cursor: grab;
+                }
+                .modal.dragging {
+                    transition: none;
+                    cursor: grabbing;
+                    background: rgba(20, 25, 35, 0.92);
+                    -webkit-backdrop-filter: none;
+                    backdrop-filter: none;
+                    user-select: none;
+                }
+                .modal.dragging .modal-header {
+                    cursor: grabbing;
+                }
+                body.floating-windows .settings-menu,
+                body.floating-windows .fab-toolbar {
+                    z-index: 210;
+                }
+            }
+
+            @media (max-width: 719px) {
+                .modal {
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    max-height: 85vh;
+                    border-radius: 22px 22px 0 0;
+                    transform: translateY(24px);
+                }
+                .modal.open {
+                    opacity: 1;
+                    pointer-events: auto;
+                    transform: translateY(0);
+                }
+            }
+
+            .modal-body {
+                padding: 22px 22px 26px;
+                max-height: inherit;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+            .modal-body::-webkit-scrollbar {
+                width: 6px;
+            }
+            .modal-body::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.12);
+                border-radius: 3px;
+            }
+
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 18px;
+            }
+            .modal-title {
+                font-size: 17px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .modal-close {
+                width: 30px;
+                height: 30px;
+                background: rgba(255, 255, 255, 0.08);
+                border: none;
+                border-radius: 50%;
+                color: rgba(255, 255, 255, 0.75);
+                cursor: pointer;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+            }
+            .modal-close:hover {
+                background: rgba(255, 255, 255, 0.18);
+                color: #fff;
+            }
+            .modal-close svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .section {
+                margin-top: 22px;
+            }
+            .section:first-of-type {
+                margin-top: 0;
+            }
+            .section-label {
+                color: var(--muted);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-weight: 700;
+                margin-bottom: 12px;
+            }
+
+            .chip-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .chip {
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: var(--ink);
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.15s;
+                font-family: inherit;
+            }
+            .chip:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+            .chip.active {
+                background: rgba(102, 217, 194, 0.18);
+                border-color: rgba(102, 217, 194, 0.55);
+                color: var(--accent);
+            }
+            .chip .swatch {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                margin-right: 6px;
+                transform: translateY(1px);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                background-repeat: no-repeat;
+                background-origin: border-box;
+            }
+
+            .ctrl {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 13px;
+            }
+            .ctrl + .ctrl {
+                margin-top: 14px;
+            }
+            .ctrl-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 8px;
+            }
+            .ctrl-name {
+                color: var(--ink);
+                font-weight: 500;
+                font-size: 11.5px;
+            }
+
+            .panel-intro {
+                font-size: 12px;
+                line-height: 1.55;
+                color: var(--muted);
+                margin: -4px 0 18px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .section-desc {
+                margin-top: 14px;
+                font-size: 11.5px;
+                color: var(--muted);
+                line-height: 1.5;
+            }
+            .section-desc p {
+                margin: 0 0 6px;
+            }
+            .section-desc p:last-child {
+                margin-bottom: 0;
+            }
+            .section-desc strong {
+                color: var(--ink);
+                font-weight: 600;
+            }
+            .ctrl-val {
+                color: var(--accent-2);
+                font-variant-numeric: tabular-nums;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 11.5px;
+            }
+            .ctrl-hint {
+                color: var(--muted);
+                font-size: 11.5px;
+            }
+
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.14);
+                border-radius: 999px;
+                outline: none;
+                margin: 4px 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                background: var(--accent);
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid rgba(20, 25, 35, 0.9);
+                box-shadow: 0 0 0 1px rgba(102, 217, 194, 0.6);
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                background: var(--accent);
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid rgba(20, 25, 35, 0.9);
+            }
+
+            #s-hue,
+            #s-accent,
+            #s-sat {
+                height: 10px;
+                background-repeat: no-repeat;
+            }
+            #s-hue,
+            #s-accent {
+                background-image: linear-gradient(
+                    90deg,
+                    hsl(0, 85%, 55%),
+                    hsl(60, 85%, 55%),
+                    hsl(120, 85%, 55%),
+                    hsl(180, 85%, 55%),
+                    hsl(240, 85%, 55%),
+                    hsl(300, 85%, 55%),
+                    hsl(360, 85%, 55%)
+                );
+            }
+            #s-sat {
+                background-image: linear-gradient(
+                    90deg,
+                    hsl(130, 0%, 55%),
+                    hsl(130, 85%, 55%)
+                );
+            }
+
+            .palette-preview {
+                height: 28px;
+                border-radius: 8px;
+                margin-top: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-repeat: no-repeat;
+            }
+            .palette-legend {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+                font-size: 10.5px;
+                color: var(--muted);
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                font-weight: 600;
+            }
+
+            .toggle-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .toggle {
+                display: grid;
+                grid-template-columns: 38px 1fr;
+                column-gap: 14px;
+                align-items: center;
+                cursor: pointer;
+                padding: 8px 0;
+                user-select: none;
+            }
+            .toggle input {
+                display: none;
+            }
+            .toggle-track {
+                width: 36px;
+                height: 20px;
+                background: rgba(255, 255, 255, 0.16);
+                border-radius: 999px;
+                position: relative;
+                transition: background 0.15s;
+                grid-row: 1 / span 2;
+            }
+            .toggle-thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background: #fff;
+                border-radius: 50%;
+                transition: transform 0.15s;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+            .toggle input:checked + .toggle-track {
+                background: var(--accent);
+            }
+            .toggle input:checked + .toggle-track .toggle-thumb {
+                transform: translateX(16px);
+            }
+            .toggle-label {
+                color: var(--ink);
+                font-size: 11.5px;
+                font-weight: 500;
+                line-height: 1.3;
+            }
+            .toggle-hint {
+                color: var(--muted);
+                font-size: 11.5px;
+                line-height: 1.3;
+            }
+
+            .modal-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 22px;
+            }
+            .btn {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: var(--ink);
+                padding: 9px 14px;
+                border-radius: 8px;
+                font-size: 13px;
+                cursor: pointer;
+                font-family: inherit;
+                transition:
+                    background 0.15s,
+                    border-color 0.15s;
+            }
+            .btn:hover {
+                background: rgba(255, 255, 255, 0.14);
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .toast {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0.9);
+                background: var(--glass-bg-strong);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid var(--glass-border-strong);
+                color: var(--ink);
+                padding: 12px 22px;
+                border-radius: 12px;
+                font-size: 14px;
+                z-index: 300;
+                pointer-events: none;
+                opacity: 0;
+                transition:
+                    opacity 0.2s,
+                    transform 0.2s;
+            }
+            .toast.show {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            @media (max-width: 480px) {
+                :root {
+                    --fab-size: 46px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+
+        <div class="settings-menu" id="settings-menu">
+            <button
+                class="fab"
+                id="settings-trigger"
+                title="Menu"
+                aria-label="Menu"
+                aria-haspopup="true"
+                aria-expanded="false"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    />
+                </svg>
+            </button>
+            <div class="menu-dropdown" id="menu-dropdown" role="menu">
+                <button
+                    class="dropdown-item"
+                    data-modal="color"
+                    role="menuitem"
+                    title="Color"
+                    aria-label="Color"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z"
+                        />
+                        <circle cx="8" cy="11" r="1" fill="currentColor" />
+                        <circle cx="11" cy="7" r="1" fill="currentColor" />
+                        <circle cx="15" cy="7" r="1" fill="currentColor" />
+                        <circle cx="17" cy="11" r="1" fill="currentColor" />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="pattern"
+                    role="menuitem"
+                    title="Shape"
+                    aria-label="Shape"
+                >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="5" r="1.6" />
+                        <circle cx="12" cy="5" r="1.6" />
+                        <circle cx="19" cy="5" r="1.6" />
+                        <circle cx="5" cy="12" r="1.6" />
+                        <circle cx="12" cy="12" r="1.6" />
+                        <circle cx="19" cy="12" r="1.6" />
+                        <circle cx="5" cy="19" r="1.6" />
+                        <circle cx="12" cy="19" r="1.6" />
+                        <circle cx="19" cy="19" r="1.6" />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="params"
+                    role="menuitem"
+                    title="Parameters"
+                    aria-label="Parameters"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    >
+                        <line x1="4" y1="6" x2="20" y2="6" />
+                        <line x1="4" y1="12" x2="20" y2="12" />
+                        <line x1="4" y1="18" x2="20" y2="18" />
+                        <circle cx="9" cy="6" r="2.5" fill="rgba(20,25,35,0.95)" />
+                        <circle
+                            cx="16"
+                            cy="12"
+                            r="2.5"
+                            fill="rgba(20,25,35,0.95)"
+                        />
+                        <circle cx="7" cy="18" r="2.5" fill="rgba(20,25,35,0.95)" />
+                    </svg>
+                </button>
+                <button
+                    class="dropdown-item"
+                    data-modal="settings"
+                    role="menuitem"
+                    title="Settings"
+                    aria-label="Settings"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="5" width="18" height="6" rx="3" />
+                        <circle
+                            cx="8"
+                            cy="8"
+                            r="1.7"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                        <rect x="3" y="13" width="18" height="6" rx="3" />
+                        <circle
+                            cx="16"
+                            cy="16"
+                            r="1.7"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="rec-indicator" class="rec-indicator hidden">
+            <span class="rec-dot"></span>
+            <span id="rec-time">0:00</span>
+        </div>
+
+        <div id="hide-banner" class="hide-banner hidden">
+            Press <kbd>H</kbd> to bring back the controls
+        </div>
+
+        <div class="fab-toolbar" id="fab-toolbar">
+            <button
+                class="fab fab-record"
+                id="fab-record"
+                title="Record video"
+                aria-label="Record video"
+            >
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="6" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-share"
+                title="Copy share link"
+                aria-label="Copy share link"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path
+                        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                    />
+                    <path
+                        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                    />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-hide"
+                title="Hide controls (H)"
+                aria-label="Hide controls"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-speed"
+                title="Simulation speed"
+                aria-label="Simulation speed"
+            >
+                <span class="speed-label" id="speed-label">1×</span>
+            </button>
+            <button class="fab" id="fab-reset" title="Reset" aria-label="Reset">
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+            </button>
+            <button
+                class="fab"
+                id="fab-pause"
+                title="Pause / play"
+                aria-label="Pause"
+            >
+                <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="7" y="5" width="3.5" height="14" rx="1" />
+                    <rect x="13.5" y="5" width="3.5" height="14" rx="1" />
+                </svg>
+                <svg
+                    class="icon-play"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    style="display: none"
+                >
+                    <polygon points="7,4 19,12 7,20" />
+                </svg>
+            </button>
+            <button
+                class="fab fab-primary"
+                id="fab-randomize"
+                title="Randomize"
+                aria-label="Randomize"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <circle cx="8" cy="8" r="1" fill="currentColor" />
+                    <circle cx="16" cy="8" r="1" fill="currentColor" />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                    <circle cx="8" cy="16" r="1" fill="currentColor" />
+                    <circle cx="16" cy="16" r="1" fill="currentColor" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="backdrop" id="backdrop"></div>
+
+        <!-- COLOR MODAL -->
+        <div class="modal" id="modal-color">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Color</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    The palette maps reagent concentration to color — dark where
+                    the medium is empty, bright where the reaction is dense. Tap
+                    a preset or mix your own.
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Presets</div>
+                    <div class="chip-row" id="color-row"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Custom</div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Base hue</span
+                            ><span class="ctrl-val" id="v-hue">130°</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-hue"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value="130"
+                        />
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Accent hue</span
+                            ><span class="ctrl-val" id="v-accent">60°</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-accent"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value="60"
+                        />
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Saturation</span
+                            ><span class="ctrl-val" id="v-sat">85%</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-sat"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value="85"
+                        />
+                    </div>
+                    <div class="palette-preview" id="palette-preview"></div>
+                    <div class="palette-legend">
+                        <span>Empty</span>
+                        <span>Dense</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATTERN MODAL -->
+        <div class="modal" id="modal-pattern">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Seed shape</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    Choose where the reaction ignites — a drop of reagent in this
+                    shape against an empty medium, from which the pattern grows.
+                    Changes restart the simulation right away.
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Where it ignites</div>
+                    <div class="chip-row" id="pattern-row"></div>
+                </div>
+
+                <div class="section" id="region-section">
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Seed size</span
+                            ><span class="ctrl-val" id="v-region">0.50</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-region"
+                            min="0.1"
+                            max="1"
+                            step="0.01"
+                            value="0.5"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARAMETERS MODAL -->
+        <div class="modal" id="modal-params">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Parameters</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-intro">
+                    Two chemicals share the grid: one is fed in, the other eats
+                    it and is killed off. Diffusion spreads them at different
+                    rates, and from that tug-of-war Turing patterns emerge —
+                    spots, stripes, and mazes. Tiny changes transform everything.
+                </div>
+
+                <div id="params-section"></div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div class="modal" id="modal-settings">
+            <div class="modal-body">
+                <div class="modal-header">
+                    <div class="modal-title">Settings</div>
+                    <button class="modal-close" data-close aria-label="Close">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Simulation</div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Resolution</span
+                            ><span class="ctrl-val" id="v-res">4 px</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-res"
+                            min="2"
+                            max="8"
+                            step="1"
+                            value="4"
+                        />
+                    </div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Zoom</span
+                            ><span class="ctrl-val" id="v-zoom">1.0×</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-zoom"
+                            min="1"
+                            max="5"
+                            step="0.1"
+                            value="1"
+                        />
+                    </div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Brush strength</span
+                            ><span class="ctrl-val" id="v-brush">0.90</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-brush"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value="0.9"
+                        />
+                    </div>
+
+                    <div class="ctrl-hint" style="margin-top: 8px">
+                        Smaller resolution is finer but heavier — raise it if the
+                        sim stutters (changing it restarts). Zoom magnifies the
+                        view; click or touch the canvas to paint fresh reagent
+                        with the brush.
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Performance</div>
+
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Max FPS</span
+                            ><span class="ctrl-val" id="v-fps">60</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-fps"
+                            min="15"
+                            max="120"
+                            step="5"
+                            value="60"
+                        />
+                    </div>
+
+                    <div class="ctrl-hint" style="margin-top: 8px">
+                        Lower values run smoother on slower devices and save
+                        battery. Use the speed button to fast-forward the
+                        reaction.
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Randomize behavior</div>
+                    <div class="toggle-list">
+                        <label class="toggle">
+                            <input type="checkbox" id="t-rand-color" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Randomize color</span>
+                            <span class="toggle-hint"
+                                >Pick a new palette when randomizing.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-reset-on-rand" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Reset on randomize</span>
+                            <span class="toggle-hint"
+                                >Re-seed the medium each time you randomize.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-rand-pattern" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Randomize shape</span>
+                            <span class="toggle-hint"
+                                >Pick a new seed shape when randomizing
+                                (auto-resets).</span
+                            >
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Sharing tools</div>
+                    <div class="toggle-list">
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-record" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Record button</span>
+                            <span class="toggle-hint"
+                                >Show the record-to-WebM button in the
+                                toolbar.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-share" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Share link button</span>
+                            <span class="toggle-hint"
+                                >Show a button that copies a shareable
+                                link.</span
+                            >
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="t-show-hideui" />
+                            <span class="toggle-track"
+                                ><span class="toggle-thumb"></span
+                            ></span>
+                            <span class="toggle-label">Hide-UI button</span>
+                            <span class="toggle-hint"
+                                >Show a button that hides the interface for clean
+                                recordings.</span
+                            >
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label">Restore</div>
+                    <div class="modal-actions" style="margin-top: 6px">
+                        <button class="btn" id="btn-restore-defaults">
+                            Restore default settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast">Link copied</div>
+
+        <script>
+            (() => {
+                const TAU = Math.PI * 2;
+
+                // ============================================================
+                // STATE
+                // ============================================================
+                const state = {
+                    params: {
+                        feed: 0.055,
+                        kill: 0.062,
+                        dA: 1.0,
+                        dB: 0.5,
+                    },
+                    pattern: {
+                        name: "Scatter",
+                        regionSize: 0.5,
+                    },
+                    palette: {
+                        mode: "preset",
+                        name: "Inferno",
+                        custom: { hue: 130, accentHue: 60, saturation: 85 },
+                    },
+                    settings: {
+                        resetOnRandomize: true,
+                        randomizeColor: true,
+                        randomizePattern: true,
+                        fps: 60,
+                        simSpeed: 1,
+                        zoom: 1,
+                        resolution: 4,
+                        brush: 0.9,
+                        showRecord: false,
+                        showShareLink: false,
+                        showHideUI: false,
+                    },
+                };
+                const defaultState = JSON.parse(JSON.stringify(state));
+
+                // ============================================================
+                // STATIC DATA
+                // ============================================================
+                const slidersDef = [
+                    {
+                        key: "feed",
+                        group: "Feed & kill",
+                        label: "Feed rate",
+                        hint: "How fast chemical A is replenished.",
+                        min: 0.005,
+                        max: 0.1,
+                        step: 0.001,
+                        fmt: (v) => v.toFixed(3),
+                    },
+                    {
+                        key: "kill",
+                        group: "Feed & kill",
+                        label: "Kill rate",
+                        hint: "How fast chemical B is removed.",
+                        min: 0.03,
+                        max: 0.075,
+                        step: 0.001,
+                        fmt: (v) => v.toFixed(3),
+                    },
+                    {
+                        key: "dA",
+                        group: "Diffusion",
+                        label: "Diffusion A",
+                        hint: "How quickly chemical A spreads.",
+                        min: 0.2,
+                        max: 1.2,
+                        step: 0.01,
+                        fmt: (v) => v.toFixed(2),
+                    },
+                    {
+                        key: "dB",
+                        group: "Diffusion",
+                        label: "Diffusion B",
+                        hint: "How quickly chemical B spreads — usually about half of A.",
+                        min: 0.1,
+                        max: 0.8,
+                        step: 0.01,
+                        fmt: (v) => v.toFixed(2),
+                    },
+                ];
+
+                function registry(items, defaultId) {
+                    return {
+                        items,
+                        byId: (id) =>
+                            items.find((d) => d.id === id) ||
+                            items.find((d) => d.id === defaultId),
+                    };
+                }
+                const randItem = (arr) =>
+                    arr[Math.floor(Math.random() * arr.length)];
+
+                const PALETTES = registry(
+                    [
+                        {
+                            id: "Acid",
+                            label: "Acid",
+                            stops: ["#000000", "#082a14", "#1a8a3c", "#7af066", "#f5ffa8"],
+                        },
+                        {
+                            id: "Coral",
+                            label: "Coral",
+                            stops: ["#0a0612", "#2b0a26", "#a83a5c", "#ff7da3", "#ffe3ea"],
+                        },
+                        {
+                            id: "Ember",
+                            label: "Ember",
+                            stops: ["#000000", "#2c0500", "#a02000", "#ff7a2e", "#ffde8a"],
+                        },
+                        {
+                            id: "Frost",
+                            label: "Frost",
+                            stops: ["#000814", "#0a2e58", "#3a86d0", "#9ed4ff", "#f0faff"],
+                        },
+                        {
+                            id: "Toxic",
+                            label: "Toxic",
+                            stops: ["#040010", "#1a0828", "#6a0aa8", "#c850f5", "#f8d4ff"],
+                        },
+                        {
+                            id: "Inferno",
+                            label: "Inferno",
+                            stops: ["#000000", "#1a0000", "#a00010", "#ff4020", "#ffec70"],
+                        },
+                        {
+                            id: "Cyber",
+                            label: "Cyber",
+                            stops: ["#000810", "#0a2030", "#0a8a98", "#5af0d8", "#fff088"],
+                        },
+                        {
+                            id: "Verdant",
+                            label: "Verdant",
+                            stops: ["#020808", "#0a2818", "#187058", "#54d8b8", "#dcfff0"],
+                        },
+                        {
+                            id: "Twilight",
+                            label: "Twilight",
+                            stops: ["#040208", "#280a40", "#8a2080", "#ff60c0", "#ffe098"],
+                        },
+                        {
+                            id: "Iris",
+                            label: "Iris",
+                            stops: ["#000018", "#0c1448", "#4a3ac0", "#c060e0", "#ffd0e0"],
+                        },
+                    ],
+                    "Inferno",
+                );
+
+                const PATTERNS = registry(
+                    [
+                        { id: "Scatter", label: "Scatter" },
+                        { id: "Ring", label: "Ring", clustered: true },
+                        { id: "Disc", label: "Disc", clustered: true },
+                        { id: "Center", label: "Center", clustered: true },
+                        { id: "Edges", label: "Edges" },
+                        { id: "Grid", label: "Grid" },
+                        {
+                            id: "TwoBlobs",
+                            label: "Two Blobs",
+                            clustered: true,
+                            blobCount: 2,
+                        },
+                        {
+                            id: "FourBlobs",
+                            label: "Four Blobs",
+                            clustered: true,
+                            blobCount: 4,
+                        },
+                    ],
+                    "Scatter",
+                );
+
+                // Stay inside the band of feed/kill values that actually
+                // produce living patterns rather than a flat wash.
+                const randomRanges = {
+                    feed: [0.014, 0.062],
+                    kill: [0.045, 0.066],
+                    dA: [0.9, 1.05],
+                    dB: [0.34, 0.55],
+                };
+
+                // ============================================================
+                // CANVAS & GRID
+                // ============================================================
+                const canvas = document.getElementById("canvas");
+                const ctx = canvas.getContext("2d");
+                const offscreen = document.createElement("canvas");
+                const offCtx = offscreen.getContext("2d");
+
+                let W = 0,
+                    H = 0; // logical viewport (CSS px)
+                let dpr = 1;
+                let Wg = 0,
+                    Hg = 0; // simulation grid
+                let A, B, A2, B2; // chemical fields
+                let offImage;
+
+                let playing = true;
+                let frameInterval = 1000 / 60;
+
+                // ============================================================
+                // COLOR / PALETTE
+                // ============================================================
+                let paletteLUT;
+                let bgR = 0,
+                    bgG = 0,
+                    bgB = 0;
+
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildPaletteLUT(stops) {
+                    const lut = new Uint8ClampedArray(256 * 4);
+                    const segCount = stops.length - 1;
+                    for (let i = 0; i < 256; i++) {
+                        const t = i / 255;
+                        const sf = t * segCount;
+                        const seg = Math.min(Math.floor(sf), segCount - 1);
+                        const u = sf - seg;
+                        const c0 = hexToRgb(stops[seg]);
+                        const c1 = hexToRgb(stops[seg + 1]);
+                        lut[i * 4 + 0] = c0[0] + (c1[0] - c0[0]) * u;
+                        lut[i * 4 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        lut[i * 4 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                        lut[i * 4 + 3] = 255;
+                    }
+                    return lut;
+                }
+                function hslHex(h, s, l) {
+                    h = ((h % 360) + 360) % 360;
+                    s = Math.max(0, Math.min(100, s)) / 100;
+                    l = Math.max(0, Math.min(100, l)) / 100;
+                    const k = (n) => (n + h / 30) % 12;
+                    const a = s * Math.min(l, 1 - l);
+                    const f = (n) =>
+                        l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+                    const r = Math.round(f(0) * 255);
+                    const g = Math.round(f(8) * 255);
+                    const b = Math.round(f(4) * 255);
+                    return (
+                        "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")
+                    );
+                }
+                function hexToHsl(hex) {
+                    const [r0, g0, b0] = hexToRgb(hex);
+                    const r = r0 / 255,
+                        g = g0 / 255,
+                        b = b0 / 255;
+                    const max = Math.max(r, g, b),
+                        min = Math.min(r, g, b);
+                    const l = (max + min) / 2;
+                    let h = 0,
+                        s = 0;
+                    const d = max - min;
+                    if (d !== 0) {
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+                        else if (max === g) h = (b - r) / d + 2;
+                        else h = (r - g) / d + 4;
+                        h *= 60;
+                    }
+                    return { h, s: s * 100, l: l * 100 };
+                }
+                function generateCustomPalette(hue, accentHue, saturation) {
+                    return [
+                        hslHex(hue, saturation * 0.5, 2),
+                        hslHex(hue, saturation * 0.75, 10),
+                        hslHex(hue, saturation * 0.95, 36),
+                        hslHex(hue, saturation * 0.9, 65),
+                        hslHex(accentHue, saturation * 0.7, 86),
+                    ];
+                }
+                function currentPaletteStops() {
+                    if (state.palette.mode === "custom") {
+                        const c = state.palette.custom;
+                        return generateCustomPalette(c.hue, c.accentHue, c.saturation);
+                    }
+                    return PALETTES.byId(state.palette.name).stops;
+                }
+                function refreshPalette() {
+                    const stops = currentPaletteStops();
+                    paletteLUT = buildPaletteLUT(stops);
+                    const bg = hexToRgb(stops[0]);
+                    bgR = bg[0];
+                    bgG = bg[1];
+                    bgB = bg[2];
+                    updatePalettePreview();
+                }
+
+                // ============================================================
+                // GRID ALLOCATION & SEEDING
+                // ============================================================
+                function allocateGrid() {
+                    const scale = state.settings.resolution || 4;
+                    Wg = Math.max(80, Math.round(W / scale));
+                    Hg = Math.max(60, Math.round(H / scale));
+                    const cells = Wg * Hg;
+                    A = new Float32Array(cells);
+                    B = new Float32Array(cells);
+                    A2 = new Float32Array(cells);
+                    B2 = new Float32Array(cells);
+                    offscreen.width = Wg;
+                    offscreen.height = Hg;
+                    offImage = offCtx.createImageData(Wg, Hg);
+                }
+
+                // Drop a filled circle of reagent B (clearing A) at a grid cell.
+                function splat(gx, gy, r) {
+                    const r2 = r * r;
+                    for (let dy = -r; dy <= r; dy++) {
+                        for (let dx = -r; dx <= r; dx++) {
+                            if (dx * dx + dy * dy > r2) continue;
+                            let ix = gx + dx,
+                                iy = gy + dy;
+                            ix -= Math.floor(ix / Wg) * Wg;
+                            iy -= Math.floor(iy / Hg) * Hg;
+                            const i = iy * Wg + ix;
+                            B[i] = 1;
+                            A[i] = 0;
+                        }
+                    }
+                }
+
+                // Lay down the initial reagent: a medium full of A, with B seeded
+                // in the chosen shape so the reaction grows from there.
+                function seedField() {
+                    A.fill(1);
+                    B.fill(0);
+                    const cx = Wg / 2,
+                        cy = Hg / 2;
+                    const reg = state.pattern.regionSize;
+                    const maxR = Math.min(Wg, Hg) * 0.45 * reg;
+
+                    switch (state.pattern.name) {
+                        case "Scatter": {
+                            const count = Math.round(20 + 60 * reg);
+                            for (let k = 0; k < count; k++)
+                                splat(
+                                    Math.floor(Math.random() * Wg),
+                                    Math.floor(Math.random() * Hg),
+                                    3,
+                                );
+                            break;
+                        }
+                        case "Ring": {
+                            const rr = maxR * 0.7;
+                            const steps = Math.max(24, Math.round(rr * 2));
+                            for (let k = 0; k < steps; k++) {
+                                const th = (k / steps) * TAU;
+                                splat(
+                                    Math.round(cx + Math.cos(th) * rr),
+                                    Math.round(cy + Math.sin(th) * rr),
+                                    2,
+                                );
+                            }
+                            break;
+                        }
+                        case "Disc": {
+                            const rr = Math.round(maxR * 0.5);
+                            splat(Math.round(cx), Math.round(cy), rr);
+                            break;
+                        }
+                        case "Center": {
+                            splat(
+                                Math.round(cx),
+                                Math.round(cy),
+                                Math.max(3, Math.round(maxR * 0.12)),
+                            );
+                            break;
+                        }
+                        case "Edges": {
+                            const t = 3;
+                            for (let x = 0; x < Wg; x++) {
+                                for (let d = 0; d < t; d++) {
+                                    B[d * Wg + x] = 1;
+                                    A[d * Wg + x] = 0;
+                                    B[(Hg - 1 - d) * Wg + x] = 1;
+                                    A[(Hg - 1 - d) * Wg + x] = 0;
+                                }
+                            }
+                            for (let y = 0; y < Hg; y++) {
+                                for (let d = 0; d < t; d++) {
+                                    B[y * Wg + d] = 1;
+                                    A[y * Wg + d] = 0;
+                                    B[y * Wg + (Wg - 1 - d)] = 1;
+                                    A[y * Wg + (Wg - 1 - d)] = 0;
+                                }
+                            }
+                            break;
+                        }
+                        case "Grid": {
+                            const n = Math.max(2, Math.round(3 + reg * 5));
+                            for (let r = 0; r < n; r++) {
+                                for (let c = 0; c < n; c++) {
+                                    splat(
+                                        Math.round(((c + 0.5) * Wg) / n),
+                                        Math.round(((r + 0.5) * Hg) / n),
+                                        3,
+                                    );
+                                }
+                            }
+                            break;
+                        }
+                        case "TwoBlobs":
+                        case "FourBlobs": {
+                            const bc = PATTERNS.byId(state.pattern.name).blobCount;
+                            const bd = Math.min(Wg, Hg) * 0.28 * reg;
+                            const rr = Math.max(4, Math.round(Math.min(Wg, Hg) * 0.08));
+                            for (let b = 0; b < bc; b++) {
+                                const ba = (b / bc) * TAU;
+                                splat(
+                                    Math.round(cx + Math.cos(ba) * bd),
+                                    Math.round(cy + Math.sin(ba) * bd),
+                                    rr,
+                                );
+                            }
+                            break;
+                        }
+                        default:
+                            splat(Math.round(cx), Math.round(cy), 6);
+                    }
+                }
+
+                function clearCanvas() {
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
+                    ctx.fillRect(0, 0, W, H);
+                }
+
+                // Reset only re-seeds the existing grid (same resolution).
+                function resetAll() {
+                    seedField();
+                    clearCanvas();
+                }
+                // Rebuild reallocates for a new size/resolution, then seeds.
+                function rebuildGrid() {
+                    allocateGrid();
+                    seedField();
+                    clearCanvas();
+                }
+
+                // ============================================================
+                // SIMULATION (Gray-Scott, toroidal)
+                // ============================================================
+                // Laplacian kernel: orthogonal neighbors 0.2, diagonals 0.05,
+                // center -1. Interior cells use a fast branch-free loop; the
+                // perimeter wraps toroidally so the medium is seamless.
+                function gsEdgeCell(x, y, feed, kill, dA, dB) {
+                    const xm = x === 0 ? Wg - 1 : x - 1;
+                    const xp = x === Wg - 1 ? 0 : x + 1;
+                    const ym = y === 0 ? Hg - 1 : y - 1;
+                    const yp = y === Hg - 1 ? 0 : y + 1;
+                    const r = y * Wg,
+                        rm = ym * Wg,
+                        rp = yp * Wg;
+                    const i = r + x;
+                    const a = A[i],
+                        b = B[i];
+                    const lapA =
+                        (A[r + xm] + A[r + xp] + A[rm + x] + A[rp + x]) * 0.2 +
+                        (A[rm + xm] + A[rm + xp] + A[rp + xm] + A[rp + xp]) * 0.05 -
+                        a;
+                    const lapB =
+                        (B[r + xm] + B[r + xp] + B[rm + x] + B[rp + x]) * 0.2 +
+                        (B[rm + xm] + B[rm + xp] + B[rp + xm] + B[rp + xp]) * 0.05 -
+                        b;
+                    const abb = a * b * b;
+                    let na = a + (dA * lapA - abb + feed * (1 - a));
+                    let nb = b + (dB * lapB + abb - (kill + feed) * b);
+                    A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                    B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                }
+
+                function gsStep() {
+                    const feed = state.params.feed,
+                        kill = state.params.kill,
+                        dA = state.params.dA,
+                        dB = state.params.dB;
+                    const wg = Wg,
+                        hg = Hg;
+
+                    for (let y = 1; y < hg - 1; y++) {
+                        const row = y * wg;
+                        for (let x = 1; x < wg - 1; x++) {
+                            const i = row + x;
+                            const a = A[i],
+                                b = B[i];
+                            const lapA =
+                                (A[i - 1] + A[i + 1] + A[i - wg] + A[i + wg]) * 0.2 +
+                                (A[i - wg - 1] +
+                                    A[i - wg + 1] +
+                                    A[i + wg - 1] +
+                                    A[i + wg + 1]) *
+                                    0.05 -
+                                a;
+                            const lapB =
+                                (B[i - 1] + B[i + 1] + B[i - wg] + B[i + wg]) * 0.2 +
+                                (B[i - wg - 1] +
+                                    B[i - wg + 1] +
+                                    B[i + wg - 1] +
+                                    B[i + wg + 1]) *
+                                    0.05 -
+                                b;
+                            const abb = a * b * b;
+                            let na = a + (dA * lapA - abb + feed * (1 - a));
+                            let nb = b + (dB * lapB + abb - (kill + feed) * b);
+                            A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                            B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                        }
+                    }
+                    for (let x = 0; x < wg; x++) {
+                        gsEdgeCell(x, 0, feed, kill, dA, dB);
+                        gsEdgeCell(x, hg - 1, feed, kill, dA, dB);
+                    }
+                    for (let y = 1; y < hg - 1; y++) {
+                        gsEdgeCell(0, y, feed, kill, dA, dB);
+                        gsEdgeCell(wg - 1, y, feed, kill, dA, dB);
+                    }
+
+                    let t = A;
+                    A = A2;
+                    A2 = t;
+                    t = B;
+                    B = B2;
+                    B2 = t;
+                }
+
+                function paintBrush() {
+                    const br = state.settings.brush;
+                    if (br <= 0) return;
+                    const r = Math.max(2, Math.round(Math.min(Wg, Hg) * 0.02));
+                    const r2 = r * r;
+                    for (let dy = -r; dy <= r; dy++) {
+                        for (let dx = -r; dx <= r; dx++) {
+                            if (dx * dx + dy * dy > r2) continue;
+                            let ix = pointerGX + dx,
+                                iy = pointerGY + dy;
+                            ix -= Math.floor(ix / Wg) * Wg;
+                            iy -= Math.floor(iy / Hg) * Hg;
+                            const i = iy * Wg + ix;
+                            B[i] = Math.min(1, B[i] + br);
+                            A[i] = Math.max(0, A[i] - br);
+                        }
+                    }
+                }
+
+                function simulate() {
+                    if (pointerActive) paintBrush();
+                    gsStep();
+                }
+
+                // ============================================================
+                // RENDER
+                // ============================================================
+                function render() {
+                    // Map reagent B to color through the palette LUT.
+                    const data = offImage.data;
+                    const cells = Wg * Hg;
+                    for (let i = 0; i < cells; i++) {
+                        let idx = (B[i] * 560) | 0;
+                        if (idx > 255) idx = 255;
+                        const q = idx * 4;
+                        const p = i * 4;
+                        data[p] = paletteLUT[q];
+                        data[p + 1] = paletteLUT[q + 1];
+                        data[p + 2] = paletteLUT[q + 2];
+                        data[p + 3] = 255;
+                    }
+                    offCtx.putImageData(offImage, 0, 0);
+
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
+                    ctx.fillRect(0, 0, W, H);
+
+                    const zoom = state.settings.zoom || 1;
+                    if (zoom !== 1) {
+                        const z = dpr * zoom;
+                        const tx = dpr * (W * 0.5) * (1 - zoom);
+                        const ty = dpr * (H * 0.5) * (1 - zoom);
+                        ctx.setTransform(z, 0, 0, z, tx, ty);
+                    }
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.drawImage(offscreen, 0, 0, W, H);
+                }
+
+                // ============================================================
+                // RESIZE
+                // ============================================================
+                function resizeCanvas() {
+                    W = window.innerWidth;
+                    H = window.innerHeight;
+                    dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    canvas.width = Math.round(W * dpr);
+                    canvas.height = Math.round(H * dpr);
+                    canvas.style.width = W + "px";
+                    canvas.style.height = H + "px";
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+
+                let resizeTimer = null;
+                function onResize() {
+                    if (resizeTimer) clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => {
+                        resizeCanvas();
+                        // Grid is tied to viewport size, so rebuild and re-seed.
+                        rebuildGrid();
+                    }, 150);
+                }
+                window.addEventListener("resize", onResize);
+                window.addEventListener("orientationchange", onResize);
+
+                // ============================================================
+                // INTERACTION (mouse / touch) — paint reagent
+                // ============================================================
+                let pointerActive = false;
+                let pointerGX = 0,
+                    pointerGY = 0;
+                function pointerToGrid(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const sx = ((e.clientX - rect.left) / rect.width) * W;
+                    const sy = ((e.clientY - rect.top) / rect.height) * H;
+                    const zoom = state.settings.zoom || 1;
+                    const wx = W * 0.5 + (sx - W * 0.5) / zoom;
+                    const wy = H * 0.5 + (sy - H * 0.5) / zoom;
+                    pointerGX = Math.floor((wx / W) * Wg);
+                    pointerGY = Math.floor((wy / H) * Hg);
+                }
+                canvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    pointerActive = true;
+                    pointerToGrid(e);
+                });
+                canvas.addEventListener("pointermove", (e) => {
+                    if (!pointerActive) return;
+                    pointerToGrid(e);
+                });
+                window.addEventListener("pointerup", () => {
+                    pointerActive = false;
+                });
+
+                // ============================================================
+                // MODALS
+                // ============================================================
+                const dragQuery = window.matchMedia(
+                    "(min-width: 720px) and (pointer: fine)",
+                );
+                const floating = () => dragQuery.matches;
+                const backdrop = document.getElementById("backdrop");
+                const byId = (id) => document.getElementById(id);
+
+                const WIN_KEY = "rd-windows";
+                let savedWindows = {};
+                try {
+                    savedWindows = JSON.parse(localStorage.getItem(WIN_KEY)) || {};
+                } catch (_) {}
+                function saveWindows() {
+                    if (!floating()) return;
+                    const data = {};
+                    document.querySelectorAll(".modal").forEach((m) => {
+                        if (m.style.left)
+                            data[m.id] = { left: m.style.left, top: m.style.top };
+                    });
+                    try {
+                        localStorage.setItem(WIN_KEY, JSON.stringify(data));
+                    } catch (_) {}
+                }
+
+                let zStack = [];
+                function bringToFront(modal) {
+                    zStack = zStack.filter((x) => x !== modal.id);
+                    zStack.push(modal.id);
+                    zStack.forEach((id, i) => {
+                        const m = byId(id);
+                        if (m) m.style.zIndex = 111 + i;
+                    });
+                }
+
+                let cascadeIdx = 0;
+                function placeFloating(modal) {
+                    if (modal.dataset.placed) return;
+                    const saved = savedWindows[modal.id];
+                    let left, top;
+                    if (saved) {
+                        left = parseFloat(saved.left);
+                        top = parseFloat(saved.top);
+                    } else {
+                        const off = (cascadeIdx++ % 6) * 34;
+                        left = Math.max(20, window.innerWidth / 2 - 230) + off;
+                        top = 76 + off;
+                    }
+                    modal.style.right = "auto";
+                    modal.style.bottom = "auto";
+                    modal.style.transform = "none";
+                    modal.style.left = left + "px";
+                    modal.style.top = top + "px";
+                    const rect = modal.getBoundingClientRect();
+                    const maxX = window.innerWidth - rect.width - 8;
+                    const maxY = window.innerHeight - rect.height - 8;
+                    modal.style.left = Math.max(8, Math.min(left, maxX)) + "px";
+                    modal.style.top = Math.max(8, Math.min(top, maxY)) + "px";
+                    modal.dataset.placed = "1";
+                }
+
+                function refreshDropdownActive() {
+                    document.querySelectorAll(".dropdown-item").forEach((f) => {
+                        const m = byId("modal-" + f.dataset.modal);
+                        f.classList.toggle(
+                            "active",
+                            !!(m && m.classList.contains("open")),
+                        );
+                    });
+                }
+                function openModal(id) {
+                    const modal = byId(id);
+                    if (!modal) return;
+                    closeDropdown();
+                    if (floating()) {
+                        if (!modal.classList.contains("open")) {
+                            placeFloating(modal);
+                            modal.classList.add("open");
+                        }
+                        bringToFront(modal);
+                    } else {
+                        closeAllModals();
+                        modal.classList.add("open");
+                        backdrop.classList.add("open");
+                    }
+                    if (id === "modal-color") syncColorControls();
+                    refreshDropdownActive();
+                }
+                function closeModal(id) {
+                    const modal = byId(id);
+                    if (!modal || !modal.classList.contains("open")) return;
+                    modal.classList.remove("open");
+                    if (!document.querySelector(".modal.open"))
+                        backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+                function closeAllModals() {
+                    document
+                        .querySelectorAll(".modal.open")
+                        .forEach((m) => m.classList.remove("open"));
+                    backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+
+                document.body.classList.toggle("floating-windows", floating());
+                backdrop.addEventListener("click", closeAllModals);
+                document.querySelectorAll("[data-close]").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        const m = b.closest(".modal");
+                        if (m) closeModal(m.id);
+                    });
+                });
+                document.querySelectorAll("[data-modal]").forEach((f) => {
+                    f.addEventListener("click", () => {
+                        const id = "modal-" + f.dataset.modal;
+                        const m = byId(id);
+                        if (m && m.classList.contains("open")) closeModal(id);
+                        else openModal(id);
+                    });
+                });
+
+                document.querySelectorAll(".modal").forEach((modal) => {
+                    modal.addEventListener("pointerdown", () => {
+                        if (floating()) bringToFront(modal);
+                    });
+                    const header = modal.querySelector(".modal-header");
+                    if (!header) return;
+                    let dragging = false;
+                    let startX = 0,
+                        startY = 0,
+                        baseLeft = 0,
+                        baseTop = 0;
+                    header.addEventListener("pointerdown", (e) => {
+                        if (!floating()) return;
+                        if (e.button !== 0) return;
+                        if (e.target.closest(".modal-close")) return;
+                        const rect = modal.getBoundingClientRect();
+                        baseLeft = rect.left;
+                        baseTop = rect.top;
+                        modal.style.left = baseLeft + "px";
+                        modal.style.top = baseTop + "px";
+                        modal.style.right = "auto";
+                        modal.style.bottom = "auto";
+                        modal.style.transform = "none";
+                        modal.dataset.placed = "1";
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        dragging = true;
+                        modal.classList.add("dragging");
+                        header.setPointerCapture(e.pointerId);
+                    });
+                    header.addEventListener("pointermove", (e) => {
+                        if (!dragging) return;
+                        const rect = modal.getBoundingClientRect();
+                        const maxX = window.innerWidth - rect.width;
+                        const maxY = window.innerHeight - rect.height;
+                        let nx = baseLeft + (e.clientX - startX);
+                        let ny = baseTop + (e.clientY - startY);
+                        nx = Math.max(0, Math.min(nx, maxX));
+                        ny = Math.max(0, Math.min(ny, maxY));
+                        modal.style.left = nx + "px";
+                        modal.style.top = ny + "px";
+                    });
+                    function endDrag(e) {
+                        if (!dragging) return;
+                        dragging = false;
+                        modal.classList.remove("dragging");
+                        try {
+                            header.releasePointerCapture(e.pointerId);
+                        } catch (_) {}
+                        saveWindows();
+                    }
+                    header.addEventListener("pointerup", endDrag);
+                    header.addEventListener("pointercancel", endDrag);
+                });
+
+                const settingsMenu = document.getElementById("settings-menu");
+                const settingsTrigger = document.getElementById("settings-trigger");
+                const menuDropdown = document.getElementById("menu-dropdown");
+                let dropdownOpen = false;
+                function openDropdown() {
+                    if (dropdownOpen) return;
+                    if (!floating()) closeAllModals();
+                    dropdownOpen = true;
+                    menuDropdown.classList.add("open");
+                    settingsTrigger.classList.add("open");
+                    settingsTrigger.setAttribute("aria-expanded", "true");
+                }
+                function closeDropdown() {
+                    if (!dropdownOpen) return;
+                    dropdownOpen = false;
+                    menuDropdown.classList.remove("open");
+                    settingsTrigger.classList.remove("open");
+                    settingsTrigger.setAttribute("aria-expanded", "false");
+                }
+                settingsTrigger.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (dropdownOpen) closeDropdown();
+                    else openDropdown();
+                });
+                document.addEventListener("click", (e) => {
+                    if (dropdownOpen && !settingsMenu.contains(e.target)) closeDropdown();
+                });
+
+                // ============================================================
+                // SLIDER HELPERS
+                // ============================================================
+                function makeSlider(container, def, getValue, setValue) {
+                    const wrap = document.createElement("div");
+                    wrap.className = "ctrl";
+                    wrap.innerHTML = `
+      <div class="ctrl-head">
+        <span class="ctrl-name">${def.label}</span>
+        <span class="ctrl-val"></span>
+      </div>
+      <input type="range" min="${def.min}" max="${def.max}" step="${def.step}">
+    `;
+                    container.appendChild(wrap);
+                    const inp = wrap.querySelector("input");
+                    const val = wrap.querySelector(".ctrl-val");
+                    function sync() {
+                        const v = getValue();
+                        inp.value = v;
+                        val.textContent = def.fmt(v);
+                    }
+                    inp.addEventListener("input", () => {
+                        const v = parseFloat(inp.value);
+                        setValue(v);
+                        val.textContent = def.fmt(v);
+                        persistState();
+                    });
+                    sync();
+                    return { sync };
+                }
+
+                // ============================================================
+                // PARAMETERS MODAL
+                // ============================================================
+                const paramsSection = document.getElementById("params-section");
+                const paramSliders = {};
+                const groupSections = {};
+                function groupContainer(name) {
+                    if (!groupSections[name]) {
+                        const sec = document.createElement("div");
+                        sec.className = "section";
+                        const label = document.createElement("div");
+                        label.className = "section-label";
+                        label.textContent = name;
+                        const sliders = document.createElement("div");
+                        const desc = document.createElement("div");
+                        desc.className = "section-desc";
+                        sec.append(label, sliders, desc);
+                        paramsSection.appendChild(sec);
+                        groupSections[name] = { sliders, desc };
+                    }
+                    return groupSections[name];
+                }
+                const lcFirst = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+                slidersDef.forEach((def) => {
+                    const g = groupContainer(def.group);
+                    paramSliders[def.key] = makeSlider(
+                        g.sliders,
+                        def,
+                        () => state.params[def.key],
+                        (v) => {
+                            state.params[def.key] = v;
+                        },
+                    );
+                    const p = document.createElement("p");
+                    p.innerHTML = `<strong>${def.label}</strong> — ${lcFirst(def.hint)}`;
+                    g.desc.appendChild(p);
+                });
+                function applyParamsToSliders() {
+                    slidersDef.forEach((def) => paramSliders[def.key].sync());
+                }
+
+                const fabPause = document.getElementById("fab-pause");
+                const iconPause = fabPause.querySelector(".icon-pause");
+                const iconPlay = fabPause.querySelector(".icon-play");
+                function updatePauseButton() {
+                    iconPause.style.display = playing ? "" : "none";
+                    iconPlay.style.display = playing ? "none" : "";
+                    fabPause.title = playing ? "Pause" : "Play";
+                    fabPause.setAttribute("aria-label", playing ? "Pause" : "Play");
+                }
+                fabPause.addEventListener("click", () => {
+                    playing = !playing;
+                    updatePauseButton();
+                });
+                document.getElementById("fab-reset").addEventListener("click", resetAll);
+
+                const SPEED_STEPS = [1, 2, 4, 8];
+                const fabSpeed = document.getElementById("fab-speed");
+                const speedLabel = document.getElementById("speed-label");
+                function updateSpeedLabel() {
+                    speedLabel.textContent = state.settings.simSpeed + "×";
+                }
+                fabSpeed.addEventListener("click", () => {
+                    const curIdx = SPEED_STEPS.indexOf(state.settings.simSpeed);
+                    const nextIdx = (curIdx + 1) % SPEED_STEPS.length;
+                    state.settings.simSpeed = SPEED_STEPS[nextIdx];
+                    updateSpeedLabel();
+                    persistState();
+                });
+
+                // ============================================================
+                // COLOR MODAL
+                // ============================================================
+                const colorRow = document.getElementById("color-row");
+                PALETTES.items.forEach((pal) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chip";
+                    const swatch = document.createElement("span");
+                    swatch.className = "swatch";
+                    const p = pal.stops;
+                    swatch.style.backgroundImage = `linear-gradient(90deg, ${p[1]}, ${p[3]})`;
+                    btn.appendChild(swatch);
+                    btn.appendChild(document.createTextNode(pal.label));
+                    btn.dataset.palette = pal.id;
+                    btn.addEventListener("click", () => {
+                        state.palette.mode = "preset";
+                        state.palette.name = pal.id;
+                        const mid = hexToHsl(p[2]);
+                        const accent = hexToHsl(p[4]);
+                        state.palette.custom.hue = Math.round(mid.h);
+                        state.palette.custom.accentHue = Math.round(accent.h);
+                        state.palette.custom.saturation = Math.round(Math.min(100, mid.s));
+                        refreshPalette();
+                        syncColorControls();
+                        persistState();
+                    });
+                    colorRow.appendChild(btn);
+                });
+                function markActiveColor() {
+                    [...colorRow.children].forEach((btn) => {
+                        btn.classList.toggle(
+                            "active",
+                            state.palette.mode === "preset" &&
+                                btn.dataset.palette === state.palette.name,
+                        );
+                    });
+                }
+                const hueSlider = document.getElementById("s-hue");
+                const accentSlider = document.getElementById("s-accent");
+                const satSlider = document.getElementById("s-sat");
+                const hueVal = document.getElementById("v-hue");
+                const accentVal = document.getElementById("v-accent");
+                const satVal = document.getElementById("v-sat");
+                const palettePreview = document.getElementById("palette-preview");
+                function updatePalettePreview() {
+                    if (!palettePreview) return;
+                    const stops = currentPaletteStops().slice(1);
+                    palettePreview.style.backgroundImage = `linear-gradient(90deg, ${stops.join(", ")})`;
+                }
+                function updateSatSliderBg() {
+                    let h = state.palette.custom.hue;
+                    if (state.palette.mode === "preset") {
+                        const pal = PALETTES.byId(state.palette.name);
+                        if (pal) h = Math.round(hexToHsl(pal.stops[2]).h);
+                    }
+                    satSlider.style.backgroundImage = `linear-gradient(90deg, hsl(${h}, 0%, 55%), hsl(${h}, 85%, 55%))`;
+                }
+                function onCustomColorChange() {
+                    state.palette.mode = "custom";
+                    state.palette.custom.hue = parseFloat(hueSlider.value);
+                    state.palette.custom.accentHue = parseFloat(accentSlider.value);
+                    state.palette.custom.saturation = parseFloat(satSlider.value);
+                    hueVal.textContent = state.palette.custom.hue + "°";
+                    accentVal.textContent = state.palette.custom.accentHue + "°";
+                    satVal.textContent = state.palette.custom.saturation + "%";
+                    updateSatSliderBg();
+                    refreshPalette();
+                    markActiveColor();
+                    persistState();
+                }
+                hueSlider.addEventListener("input", onCustomColorChange);
+                accentSlider.addEventListener("input", onCustomColorChange);
+                satSlider.addEventListener("input", onCustomColorChange);
+                function syncColorControls() {
+                    hueSlider.value = state.palette.custom.hue;
+                    accentSlider.value = state.palette.custom.accentHue;
+                    satSlider.value = state.palette.custom.saturation;
+                    hueVal.textContent = state.palette.custom.hue + "°";
+                    accentVal.textContent = state.palette.custom.accentHue + "°";
+                    satVal.textContent = state.palette.custom.saturation + "%";
+                    updateSatSliderBg();
+                    markActiveColor();
+                    updatePalettePreview();
+                }
+
+                // ============================================================
+                // PATTERN (SEED SHAPE) MODAL
+                // ============================================================
+                const patternRow = document.getElementById("pattern-row");
+                const regionSection = document.getElementById("region-section");
+                function updateRegionVisibility() {
+                    regionSection.style.display = PATTERNS.byId(state.pattern.name)
+                        .clustered
+                        ? ""
+                        : "none";
+                }
+                PATTERNS.items.forEach((pat) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chip";
+                    btn.textContent = pat.label;
+                    btn.dataset.pattern = pat.id;
+                    btn.addEventListener("click", () => {
+                        state.pattern.name = pat.id;
+                        markActivePattern();
+                        resetAll();
+                        persistState();
+                    });
+                    patternRow.appendChild(btn);
+                });
+                function markActivePattern() {
+                    [...patternRow.children].forEach((btn) => {
+                        btn.classList.toggle(
+                            "active",
+                            btn.dataset.pattern === state.pattern.name,
+                        );
+                    });
+                    updateRegionVisibility();
+                }
+                const regionSlider = document.getElementById("s-region");
+                const regionVal = document.getElementById("v-region");
+                regionSlider.addEventListener("input", () => {
+                    state.pattern.regionSize = parseFloat(regionSlider.value);
+                    regionVal.textContent = state.pattern.regionSize.toFixed(2);
+                    resetAll();
+                    persistState();
+                });
+                function syncPatternControls() {
+                    markActivePattern();
+                    regionSlider.value = state.pattern.regionSize;
+                    regionVal.textContent = state.pattern.regionSize.toFixed(2);
+                }
+
+                // ============================================================
+                // SETTINGS MODAL
+                // ============================================================
+                const settingsToggles = [
+                    ["t-reset-on-rand", "resetOnRandomize"],
+                    ["t-rand-color", "randomizeColor"],
+                    ["t-rand-pattern", "randomizePattern"],
+                    ["t-show-record", "showRecord"],
+                    ["t-show-share", "showShareLink"],
+                    ["t-show-hideui", "showHideUI"],
+                ];
+                settingsToggles.forEach(([id, key]) => {
+                    const el = document.getElementById(id);
+                    el.addEventListener("change", () => {
+                        state.settings[key] = el.checked;
+                        updateToolbarVisibility();
+                        persistState();
+                    });
+                });
+                function updateToolbarVisibility() {
+                    document
+                        .getElementById("fab-record")
+                        .classList.toggle("hidden", !state.settings.showRecord);
+                    document
+                        .getElementById("fab-share")
+                        .classList.toggle("hidden", !state.settings.showShareLink);
+                    document
+                        .getElementById("fab-hide")
+                        .classList.toggle("hidden", !state.settings.showHideUI);
+                }
+                function syncSettings() {
+                    settingsToggles.forEach(([id, key]) => {
+                        document.getElementById(id).checked = !!state.settings[key];
+                    });
+                    const fps = state.settings.fps || 60;
+                    frameInterval = 1000 / fps;
+                    fpsSlider.value = fps;
+                    fpsVal.textContent = fps;
+                    const z = state.settings.zoom || 1;
+                    zoomSlider.value = z;
+                    zoomVal.textContent = z.toFixed(1) + "×";
+                    const res = state.settings.resolution || 4;
+                    resSlider.value = res;
+                    resVal.textContent = res + " px";
+                    const br = state.settings.brush == null ? 0.9 : state.settings.brush;
+                    brushSlider.value = br;
+                    brushVal.textContent = br.toFixed(2);
+                    updateToolbarVisibility();
+                }
+
+                const fpsSlider = document.getElementById("s-fps");
+                const fpsVal = document.getElementById("v-fps");
+                fpsSlider.addEventListener("input", () => {
+                    const v = parseInt(fpsSlider.value, 10) || 60;
+                    state.settings.fps = v;
+                    fpsVal.textContent = v;
+                    frameInterval = 1000 / v;
+                    persistState();
+                });
+
+                const resSlider = document.getElementById("s-res");
+                const resVal = document.getElementById("v-res");
+                resSlider.addEventListener("input", () => {
+                    const v = parseInt(resSlider.value, 10) || 4;
+                    state.settings.resolution = v;
+                    resVal.textContent = v + " px";
+                    rebuildGrid();
+                    persistState();
+                });
+
+                const zoomSlider = document.getElementById("s-zoom");
+                const zoomVal = document.getElementById("v-zoom");
+                zoomSlider.addEventListener("input", () => {
+                    const z = parseFloat(zoomSlider.value) || 1;
+                    state.settings.zoom = z;
+                    zoomVal.textContent = z.toFixed(1) + "×";
+                    persistState();
+                });
+
+                const brushSlider = document.getElementById("s-brush");
+                const brushVal = document.getElementById("v-brush");
+                brushSlider.addEventListener("input", () => {
+                    const v = parseFloat(brushSlider.value);
+                    state.settings.brush = v;
+                    brushVal.textContent = v.toFixed(2);
+                    persistState();
+                });
+
+                document.getElementById("fab-share").addEventListener("click", () => {
+                    const url = buildShareURL();
+                    navigator.clipboard
+                        .writeText(url)
+                        .then(() => showToast())
+                        .catch(() => window.prompt("Copy this link:", url));
+                });
+                document.getElementById("fab-hide").addEventListener("click", toggleUI);
+
+                document
+                    .getElementById("btn-restore-defaults")
+                    .addEventListener("click", () => {
+                        const fresh = JSON.parse(JSON.stringify(defaultState));
+                        state.params = fresh.params;
+                        state.pattern = fresh.pattern;
+                        state.palette = fresh.palette;
+                        state.settings = fresh.settings;
+                        try {
+                            localStorage.removeItem(LS_KEY);
+                        } catch (e) {}
+                        if (location.hash)
+                            history.replaceState(
+                                null,
+                                "",
+                                location.pathname + location.search,
+                            );
+                        applyParamsToSliders();
+                        syncColorControls();
+                        syncPatternControls();
+                        syncSettings();
+                        updateSpeedLabel();
+                        refreshPalette();
+                        rebuildGrid();
+                        persistState();
+                        showToast("Defaults restored");
+                    });
+
+                // ============================================================
+                // RANDOMIZE
+                // ============================================================
+                const fabRandomize = document.getElementById("fab-randomize");
+                fabRandomize.addEventListener("click", () => {
+                    fabRandomize.classList.remove("spin");
+                    void fabRandomize.offsetWidth;
+                    fabRandomize.classList.add("spin");
+
+                    slidersDef.forEach((def) => {
+                        const [lo, hi] = randomRanges[def.key] || [def.min, def.max];
+                        let v = lo + Math.random() * (hi - lo);
+                        v = Math.round(v / def.step) * def.step;
+                        if (v < def.min) v = def.min;
+                        if (v > def.max) v = def.max;
+                        state.params[def.key] = v;
+                    });
+                    applyParamsToSliders();
+
+                    if (state.settings.randomizeColor) {
+                        state.palette.mode = "preset";
+                        state.palette.name = randItem(PALETTES.items).id;
+                        refreshPalette();
+                        markActiveColor();
+                    }
+
+                    if (state.settings.randomizePattern) {
+                        state.pattern.name = randItem(PATTERNS.items).id;
+                        state.pattern.regionSize = 0.25 + Math.random() * 0.65;
+                        syncPatternControls();
+                        resetAll();
+                    } else if (state.settings.resetOnRandomize) {
+                        resetAll();
+                    }
+
+                    persistState();
+                });
+
+                // ============================================================
+                // RECORDING
+                // ============================================================
+                const fabRecord = document.getElementById("fab-record");
+                const recIndicator = document.getElementById("rec-indicator");
+                const recTimeEl = document.getElementById("rec-time");
+                let mediaRecorder = null;
+                let recordChunks = [];
+                let recordStart = 0;
+                let recTimer = null;
+                function pickWebmMime() {
+                    const candidates = [
+                        "video/webm;codecs=vp9",
+                        "video/webm;codecs=vp8",
+                        "video/webm",
+                    ];
+                    for (const c of candidates) {
+                        if (
+                            typeof MediaRecorder !== "undefined" &&
+                            MediaRecorder.isTypeSupported(c)
+                        )
+                            return c;
+                    }
+                    return "";
+                }
+                function startRecording() {
+                    if (typeof MediaRecorder === "undefined") {
+                        alert("MediaRecorder is not supported in this browser.");
+                        return;
+                    }
+                    const stream = canvas.captureStream(30);
+                    const mime = pickWebmMime();
+                    try {
+                        mediaRecorder = mime
+                            ? new MediaRecorder(stream, { mimeType: mime })
+                            : new MediaRecorder(stream);
+                    } catch (e) {
+                        alert("Could not start recording: " + e.message);
+                        return;
+                    }
+                    recordChunks = [];
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) recordChunks.push(e.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordChunks, { type: "video/webm" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `reaction-diffusion-${Date.now()}.webm`;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    };
+                    mediaRecorder.start();
+                    recordStart = Date.now();
+                    fabRecord.classList.add("recording");
+                    recIndicator.classList.remove("hidden");
+                    recTimer = setInterval(() => {
+                        const sec = Math.floor((Date.now() - recordStart) / 1000);
+                        const mm = Math.floor(sec / 60);
+                        const ss = sec % 60;
+                        recTimeEl.textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+                    }, 250);
+                }
+                function stopRecording() {
+                    if (mediaRecorder && mediaRecorder.state !== "inactive")
+                        mediaRecorder.stop();
+                    mediaRecorder = null;
+                    fabRecord.classList.remove("recording");
+                    recIndicator.classList.add("hidden");
+                    if (recTimer) {
+                        clearInterval(recTimer);
+                        recTimer = null;
+                    }
+                }
+                fabRecord.addEventListener("click", () => {
+                    if (mediaRecorder && mediaRecorder.state !== "inactive")
+                        stopRecording();
+                    else startRecording();
+                });
+
+                // ============================================================
+                // HIDE-UI MODE
+                // ============================================================
+                let uiHidden = false;
+                let hideBannerTimer = null;
+                function toggleUI() {
+                    uiHidden = !uiHidden;
+                    document.body.classList.toggle("ui-hidden", uiHidden);
+                    if (uiHidden) {
+                        const banner = document.getElementById("hide-banner");
+                        banner.classList.remove("hidden");
+                        if (hideBannerTimer) clearTimeout(hideBannerTimer);
+                        hideBannerTimer = setTimeout(
+                            () => banner.classList.add("hidden"),
+                            2200,
+                        );
+                    } else {
+                        document.getElementById("hide-banner").classList.add("hidden");
+                    }
+                }
+                document.addEventListener("keydown", (e) => {
+                    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+                        return;
+                    if (e.key === "Escape") {
+                        closeAllModals();
+                        closeDropdown();
+                    } else if (e.key === "h" || e.key === "H") toggleUI();
+                    else if (e.key === " ") {
+                        e.preventDefault();
+                        playing = !playing;
+                        updatePauseButton();
+                    }
+                });
+
+                // ============================================================
+                // PERSISTENCE
+                // ============================================================
+                const LS_KEY = "rd-state";
+                let persistTimer = null;
+                function deepMerge(target, src) {
+                    if (!src || typeof src !== "object") return;
+                    for (const k of Object.keys(src)) {
+                        const sv = src[k];
+                        if (sv && typeof sv === "object" && !Array.isArray(sv)) {
+                            if (!target[k] || typeof target[k] !== "object") target[k] = {};
+                            deepMerge(target[k], sv);
+                        } else {
+                            target[k] = sv;
+                        }
+                    }
+                }
+                function persistState() {
+                    if (persistTimer) clearTimeout(persistTimer);
+                    persistTimer = setTimeout(() => {
+                        try {
+                            localStorage.setItem(LS_KEY, JSON.stringify(state));
+                        } catch (e) {}
+                    }, 200);
+                }
+                function loadPersistedState() {
+                    try {
+                        const raw = localStorage.getItem(LS_KEY);
+                        if (raw) deepMerge(state, JSON.parse(raw));
+                    } catch (e) {}
+                }
+
+                // ============================================================
+                // SHARE URL
+                // ============================================================
+                function buildShareURL() {
+                    const json = JSON.stringify(state);
+                    const encoded = btoa(unescape(encodeURIComponent(json)));
+                    return location.origin + location.pathname + "#" + encoded;
+                }
+                function loadFromHash() {
+                    const h = location.hash.slice(1);
+                    if (!h) return false;
+                    try {
+                        const json = decodeURIComponent(escape(atob(h)));
+                        deepMerge(state, JSON.parse(json));
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+                function showToast(msg) {
+                    const f = document.getElementById("toast");
+                    f.textContent = msg || "Link copied";
+                    f.classList.add("show");
+                    setTimeout(() => f.classList.remove("show"), 1200);
+                }
+
+                // ============================================================
+                // INIT
+                // ============================================================
+                loadPersistedState();
+                loadFromHash();
+
+                resizeCanvas();
+                refreshPalette();
+                allocateGrid();
+                seedField();
+
+                applyParamsToSliders();
+                syncColorControls();
+                syncPatternControls();
+                syncSettings();
+                updatePauseButton();
+                updateSpeedLabel();
+
+                // ============================================================
+                // MAIN LOOP
+                // ============================================================
+                const SIM_FPS = 60;
+                const MAX_CATCHUP_MS = 100;
+                let lastFrame = 0;
+                let lastSim = 0;
+                let simAccumulator = 0;
+                function loop(now) {
+                    requestAnimationFrame(loop);
+                    if (now - lastFrame < frameInterval) return;
+                    lastFrame = now - ((now - lastFrame) % frameInterval);
+
+                    if (playing) {
+                        const stepMs = 1000 / (SIM_FPS * (state.settings.simSpeed || 1));
+                        simAccumulator += now - (lastSim || now);
+                        if (simAccumulator > MAX_CATCHUP_MS)
+                            simAccumulator = MAX_CATCHUP_MS;
+                        while (simAccumulator >= stepMs) {
+                            simulate();
+                            simAccumulator -= stepMs;
+                        }
+                    } else {
+                        if (pointerActive) paintBrush();
+                        simAccumulator = 0;
+                    }
+                    lastSim = now;
+
+                    render();
+                }
+                requestAnimationFrame(loop);
+            })();
+        </script>
+    </body>
+</html>
