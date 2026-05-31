@@ -852,53 +852,216 @@
                 // ============================================================
                 // MODALS
                 // ============================================================
-                let openModalId = null;
+                // Floating mode = desktop pointer devices. Phones keep the
+                // single bottom-sheet + dimmed backdrop behavior unchanged.
+                const dragQuery = window.matchMedia(
+                    "(min-width: 720px) and (pointer: fine)",
+                );
+                const floating = () => dragQuery.matches;
                 const backdrop = document.getElementById("backdrop");
+                const byId = (id) => document.getElementById(id);
 
-                function openModal(id) {
-                    if (openModalId === id) return;
-                    closeModal();
-                    closeDropdown();
-                    const modal = document.getElementById(id);
-                    if (!modal) return;
-                    openModalId = id;
-                    modal.classList.add("open");
-                    backdrop.classList.add("open");
-                    // Reconcile the color controls with current state on open, so
-                    // the sliders, preview, and saturation track never show values
-                    // left stale by a randomize or shared-link restore.
-                    if (id === "modal-color") syncColorControls();
+                // Remember where each panel was last dropped (positions only;
+                // panels never auto-reopen — opening is always user-initiated).
+                const WIN_KEY = "slime-v2-windows";
+                let savedWindows = {};
+                try {
+                    savedWindows =
+                        JSON.parse(localStorage.getItem(WIN_KEY)) || {};
+                } catch (_) {}
+                function saveWindows() {
+                    if (!floating()) return;
+                    const data = {};
+                    document.querySelectorAll(".modal").forEach((m) => {
+                        if (m.style.left)
+                            data[m.id] = {
+                                left: m.style.left,
+                                top: m.style.top,
+                            };
+                    });
+                    try {
+                        localStorage.setItem(WIN_KEY, JSON.stringify(data));
+                    } catch (_) {}
+                }
+
+                // Stacking: focused panel comes forward, but the whole stack
+                // stays below the cogwheel menu and toolbar (raised in CSS via
+                // .floating-windows) so chrome is always reachable.
+                let zStack = [];
+                function bringToFront(modal) {
+                    zStack = zStack.filter((x) => x !== modal.id);
+                    zStack.push(modal.id);
+                    zStack.forEach((id, i) => {
+                        const m = byId(id);
+                        if (m) m.style.zIndex = 111 + i;
+                    });
+                }
+
+                // Give a freshly opened panel an explicit spot: its last
+                // dropped position, else a cascade so panels don't stack
+                // exactly on top of each other.
+                let cascadeIdx = 0;
+                function placeFloating(modal) {
+                    if (modal.dataset.placed) return;
+                    const saved = savedWindows[modal.id];
+                    let left, top;
+                    if (saved) {
+                        left = parseFloat(saved.left);
+                        top = parseFloat(saved.top);
+                    } else {
+                        const off = (cascadeIdx++ % 6) * 34;
+                        left = Math.max(20, window.innerWidth / 2 - 230) + off;
+                        top = 76 + off;
+                    }
+                    modal.style.right = "auto";
+                    modal.style.bottom = "auto";
+                    modal.style.transform = "none";
+                    modal.style.left = left + "px";
+                    modal.style.top = top + "px";
+                    const rect = modal.getBoundingClientRect();
+                    const maxX = window.innerWidth - rect.width - 8;
+                    const maxY = window.innerHeight - rect.height - 8;
+                    modal.style.left = Math.max(8, Math.min(left, maxX)) + "px";
+                    modal.style.top = Math.max(8, Math.min(top, maxY)) + "px";
+                    modal.dataset.placed = "1";
+                }
+
+                function refreshDropdownActive() {
                     document.querySelectorAll(".dropdown-item").forEach((f) => {
+                        const m = byId("modal-" + f.dataset.modal);
                         f.classList.toggle(
                             "active",
-                            f.dataset.modal &&
-                                "modal-" + f.dataset.modal === id,
+                            !!(m && m.classList.contains("open")),
                         );
                     });
                 }
 
-                function closeModal() {
-                    if (!openModalId) return;
-                    const m = document.getElementById(openModalId);
-                    if (m) m.classList.remove("open");
-                    backdrop.classList.remove("open");
-                    document
-                        .querySelectorAll(".dropdown-item")
-                        .forEach((f) => f.classList.remove("active"));
-                    openModalId = null;
+                function openModal(id) {
+                    const modal = byId(id);
+                    if (!modal) return;
+                    closeDropdown();
+                    if (floating()) {
+                        if (!modal.classList.contains("open")) {
+                            placeFloating(modal);
+                            modal.classList.add("open");
+                        }
+                        bringToFront(modal);
+                    } else {
+                        // Mobile: one bottom sheet at a time, dimmed backdrop.
+                        closeAllModals();
+                        modal.classList.add("open");
+                        backdrop.classList.add("open");
+                    }
+                    // Reconcile the color controls with current state on open, so
+                    // the sliders, preview, and saturation track never show values
+                    // left stale by a randomize or shared-link restore.
+                    if (id === "modal-color") syncColorControls();
+                    refreshDropdownActive();
                 }
 
-                backdrop.addEventListener("click", closeModal);
-                document
-                    .querySelectorAll("[data-close]")
-                    .forEach((b) => b.addEventListener("click", closeModal));
+                function closeModal(id) {
+                    const modal = byId(id);
+                    if (!modal || !modal.classList.contains("open")) return;
+                    modal.classList.remove("open");
+                    if (!document.querySelector(".modal.open"))
+                        backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+
+                function closeAllModals() {
+                    document
+                        .querySelectorAll(".modal.open")
+                        .forEach((m) => m.classList.remove("open"));
+                    backdrop.classList.remove("open");
+                    saveWindows();
+                    refreshDropdownActive();
+                }
+
+                document.body.classList.toggle("floating-windows", floating());
+
+                backdrop.addEventListener("click", closeAllModals);
+                document.querySelectorAll("[data-close]").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        const m = b.closest(".modal");
+                        if (m) closeModal(m.id);
+                    });
+                });
 
                 document.querySelectorAll("[data-modal]").forEach((f) => {
                     f.addEventListener("click", () => {
                         const id = "modal-" + f.dataset.modal;
-                        if (openModalId === id) closeModal();
+                        const m = byId(id);
+                        if (m && m.classList.contains("open")) closeModal(id);
                         else openModal(id);
                     });
+                });
+
+                // ---------- Drag modals by their header ----------
+                // Floating mode only: phones keep the bottom-sheet behavior.
+                // Grabbing the header (not the body) means sliders and scrolling
+                // are never hijacked.
+                document.querySelectorAll(".modal").forEach((modal) => {
+                    // Any interaction raises this panel above its siblings.
+                    modal.addEventListener("pointerdown", () => {
+                        if (floating()) bringToFront(modal);
+                    });
+
+                    const header = modal.querySelector(".modal-header");
+                    if (!header) return;
+                    let dragging = false;
+                    let startX = 0,
+                        startY = 0,
+                        baseLeft = 0,
+                        baseTop = 0;
+
+                    header.addEventListener("pointerdown", (e) => {
+                        if (!floating()) return;
+                        if (e.button !== 0) return;
+                        // Let the close button do its job.
+                        if (e.target.closest(".modal-close")) return;
+                        // Hand off from transform-centering to explicit pixels
+                        // so left/top updates don't fight the centering offset.
+                        const rect = modal.getBoundingClientRect();
+                        baseLeft = rect.left;
+                        baseTop = rect.top;
+                        modal.style.left = baseLeft + "px";
+                        modal.style.top = baseTop + "px";
+                        modal.style.right = "auto";
+                        modal.style.bottom = "auto";
+                        modal.style.transform = "none";
+                        modal.dataset.placed = "1";
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        dragging = true;
+                        modal.classList.add("dragging");
+                        header.setPointerCapture(e.pointerId);
+                    });
+
+                    header.addEventListener("pointermove", (e) => {
+                        if (!dragging) return;
+                        const rect = modal.getBoundingClientRect();
+                        const maxX = window.innerWidth - rect.width;
+                        const maxY = window.innerHeight - rect.height;
+                        let nx = baseLeft + (e.clientX - startX);
+                        let ny = baseTop + (e.clientY - startY);
+                        nx = Math.max(0, Math.min(nx, maxX));
+                        ny = Math.max(0, Math.min(ny, maxY));
+                        modal.style.left = nx + "px";
+                        modal.style.top = ny + "px";
+                    });
+
+                    function endDrag(e) {
+                        if (!dragging) return;
+                        dragging = false;
+                        modal.classList.remove("dragging");
+                        try {
+                            header.releasePointerCapture(e.pointerId);
+                        } catch (_) {}
+                        saveWindows();
+                    }
+                    header.addEventListener("pointerup", endDrag);
+                    header.addEventListener("pointercancel", endDrag);
                 });
 
                 // ---------- Top-right cogwheel dropdown ----------
@@ -910,7 +1073,9 @@
 
                 function openDropdown() {
                     if (dropdownOpen) return;
-                    closeModal();
+                    // On mobile the menu replaces the bottom sheet; floating
+                    // panels stay put so you can open more from the menu.
+                    if (!floating()) closeAllModals();
                     dropdownOpen = true;
                     menuDropdown.classList.add("open");
                     settingsTrigger.classList.add("open");
@@ -1573,7 +1738,7 @@
                     )
                         return;
                     if (e.key === "Escape") {
-                        closeModal();
+                        closeAllModals();
                         closeDropdown();
                     } else if (e.key === "h" || e.key === "H") toggleUI();
                     else if (e.key === " ") {

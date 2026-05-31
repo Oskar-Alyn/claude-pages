@@ -369,6 +369,27 @@ body.ui-hidden .modal {
         pointer-events: auto;
         transform: translate(-50%, -50%);
     }
+    /* Drag-by-header (pointer devices only; gated again in JS) */
+    .modal-header {
+        cursor: grab;
+    }
+    .modal.dragging {
+        transition: none;
+        cursor: grabbing;
+        background: rgba(20, 25, 35, 0.92);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        user-select: none;
+    }
+    .modal.dragging .modal-header {
+        cursor: grabbing;
+    }
+    /* Floating-window mode: keep chrome above the panels so the menu and
+       toolbar stay reachable while panels float over the canvas. */
+    body.floating-windows .settings-menu,
+    body.floating-windows .fab-toolbar {
+        z-index: 210;
+    }
 }
 
 /* Mobile: bottom sheet */
