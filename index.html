@@ -4,636 +4,972 @@
         <meta charset="UTF-8" />
         <meta
             name="viewport"
-            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#0a0d14" />
-        <title>Slime mold v2</title>
+        <meta name="theme-color" content="#05070b" />
+        <title>Simulations — a collection of interactive worlds</title>
         <meta
             name="description"
-            content="An interactive slime-mold simulation: thousands of critters leave glowing trails that ripple and grow. Tweak the colors, shape, and behavior, then share what you make."
+            content="Five tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Each is a self-contained world you can tweak, color, and share."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-        <!-- Social sharing (text only; no preview image yet) -->
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Slime mold v2" />
+        <meta property="og:title" content="Simulations" />
         <meta
             property="og:description"
-            content="An interactive slime-mold simulation: thousands of critters leave glowing trails that ripple and grow. Tweak the colors, shape, and behavior, then share what you make."
+            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
         />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="Slime mold v2" />
+        <meta name="twitter:title" content="Simulations" />
         <meta
             name="twitter:description"
-            content="An interactive slime-mold simulation: thousands of critters leave glowing trails that ripple and grow. Tweak the colors, shape, and behavior, then share what you make."
+            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
         />
 
-        <link rel="stylesheet" href="slime-mold.css" />
+        <style>
+            :root {
+                --accent: #66d9c2;
+                --ink: #f5f8fc;
+                --muted: rgba(245, 248, 252, 0.72);
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-snap-type: y proximity;
+                scroll-padding-top: 52px;
+                scroll-behavior: smooth;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                    scroll-snap-type: none;
+                }
+            }
+            body {
+                margin: 0;
+                background: #05070b;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.5;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(8, 10, 16, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 22px;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            @media (max-width: 800px) {
+                .nav .links {
+                    display: none;
+                }
+            }
+
+            /* ---------- Panels ---------- */
+            .hero,
+            .panel {
+                position: relative;
+                min-height: 100vh;
+                min-height: 100svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+                scroll-snap-align: start;
+            }
+            .bg {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+                pointer-events: none;
+            }
+            .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 80% 60% at center 48%,
+                        rgba(0, 0, 0, 0.5),
+                        rgba(0, 0, 0, 0.12) 55%,
+                        rgba(0, 0, 0, 0.55)
+                    ),
+                    linear-gradient(
+                        rgba(5, 7, 11, 0.35),
+                        rgba(5, 7, 11, 0) 22%,
+                        rgba(5, 7, 11, 0) 78%,
+                        rgba(5, 7, 11, 0.55)
+                    );
+            }
+            .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 780px;
+                padding: 96px 24px;
+                opacity: 0;
+                transform: translateY(30px);
+                transition:
+                    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+                    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+            }
+            .content.in {
+                opacity: 1;
+                transform: none;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .content {
+                    opacity: 1;
+                    transform: none;
+                    transition: none;
+                }
+            }
+
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .title {
+                font-size: clamp(42px, 8vw, 96px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.16em 0 0.32em;
+            }
+            .pitch {
+                font-size: clamp(16px, 2.1vw, 21px);
+                line-height: 1.5;
+                color: var(--muted);
+                max-width: 36ch;
+                margin: 0 auto 1.7em;
+            }
+            .cta-row {
+                display: flex;
+                gap: 14px;
+                justify-content: center;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #05231d;
+                padding: 12px 24px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(102, 217, 194, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #7ee6d2;
+                box-shadow: 0 12px 38px rgba(102, 217, 194, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+            .cta-ghost {
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 14px;
+                padding: 11px 8px;
+                transition: color 0.15s;
+            }
+            .cta-ghost:hover {
+                color: #fff;
+            }
+
+            /* ---------- Hero specifics ---------- */
+            .hero .title {
+                font-size: clamp(52px, 11vw, 132px);
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 24px);
+                color: var(--muted);
+                max-width: 30ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 26px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.55);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Footer ---------- */
+            footer {
+                position: relative;
+                z-index: 2;
+                padding: 70px 24px 60px;
+                text-align: center;
+                background: #05070b;
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            footer .f-title {
+                font-size: clamp(22px, 4vw, 34px);
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                margin: 0 0 18px;
+            }
+            footer .f-links {
+                display: flex;
+                gap: 8px 22px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 26px;
+            }
+            footer .f-links a {
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 14px;
+                transition: color 0.15s;
+            }
+            footer .f-links a:hover {
+                color: #fff;
+            }
+            footer .f-note {
+                color: rgba(245, 248, 252, 0.4);
+                font-size: 12.5px;
+            }
+        </style>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
-
-        <div class="settings-menu" id="settings-menu">
-            <button
-                class="fab"
-                id="settings-trigger"
-                title="Menu"
-                aria-label="Menu"
-                aria-haspopup="true"
-                aria-expanded="false"
+        <nav class="nav">
+            <a class="brand" href="#top"
+                ><span class="mark">✦</span> Simulations</a
             >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <circle cx="12" cy="12" r="3" />
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                    />
-                </svg>
-            </button>
-            <div class="menu-dropdown" id="menu-dropdown" role="menu">
-                <button
-                    class="dropdown-item"
-                    data-modal="color"
-                    role="menuitem"
-                    title="Color"
-                    aria-label="Color"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path
-                            d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z"
-                        />
-                        <circle cx="8" cy="11" r="1" fill="currentColor" />
-                        <circle cx="11" cy="7" r="1" fill="currentColor" />
-                        <circle cx="15" cy="7" r="1" fill="currentColor" />
-                        <circle cx="17" cy="11" r="1" fill="currentColor" />
-                    </svg>
-                </button>
-                <button
-                    class="dropdown-item"
-                    data-modal="pattern"
-                    role="menuitem"
-                    title="Shape"
-                    aria-label="Shape"
-                >
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="5" cy="5" r="1.6" />
-                        <circle cx="12" cy="5" r="1.6" />
-                        <circle cx="19" cy="5" r="1.6" />
-                        <circle cx="5" cy="12" r="1.6" />
-                        <circle cx="12" cy="12" r="1.6" />
-                        <circle cx="19" cy="12" r="1.6" />
-                        <circle cx="5" cy="19" r="1.6" />
-                        <circle cx="12" cy="19" r="1.6" />
-                        <circle cx="19" cy="19" r="1.6" />
-                    </svg>
-                </button>
-                <button
-                    class="dropdown-item"
-                    data-modal="params"
-                    role="menuitem"
-                    title="Parameters"
-                    aria-label="Parameters"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    >
-                        <line x1="4" y1="6" x2="20" y2="6" />
-                        <line x1="4" y1="12" x2="20" y2="12" />
-                        <line x1="4" y1="18" x2="20" y2="18" />
-                        <circle
-                            cx="9"
-                            cy="6"
-                            r="2.5"
-                            fill="rgba(20,25,35,0.95)"
-                        />
-                        <circle
-                            cx="16"
-                            cy="12"
-                            r="2.5"
-                            fill="rgba(20,25,35,0.95)"
-                        />
-                        <circle
-                            cx="7"
-                            cy="18"
-                            r="2.5"
-                            fill="rgba(20,25,35,0.95)"
-                        />
-                    </svg>
-                </button>
-                <button
-                    class="dropdown-item"
-                    data-modal="settings"
-                    role="menuitem"
-                    title="Settings"
-                    aria-label="Settings"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <rect x="3" y="5" width="18" height="6" rx="3" />
-                        <circle
-                            cx="8"
-                            cy="8"
-                            r="1.7"
-                            fill="currentColor"
-                            stroke="none"
-                        />
-                        <rect x="3" y="13" width="18" height="6" rx="3" />
-                        <circle
-                            cx="16"
-                            cy="16"
-                            r="1.7"
-                            fill="currentColor"
-                            stroke="none"
-                        />
-                    </svg>
-                </button>
+            <div class="links">
+                <a href="#slime">Slime Mold</a>
+                <a href="#boids">Boids</a>
+                <a href="#particle-life">Particle Life</a>
+                <a href="#flow">Flow Field</a>
+                <a href="#rd">Reaction–Diffusion</a>
             </div>
-        </div>
+        </nav>
 
-        <div id="rec-indicator" class="rec-indicator hidden">
-            <span class="rec-dot"></span>
-            <span id="rec-time">0:00</span>
-        </div>
-
-        <div id="hide-banner" class="hide-banner hidden">
-            Press <kbd>H</kbd> to bring back the controls
-        </div>
-
-        <div class="fab-toolbar" id="fab-toolbar">
-            <button
-                class="fab fab-record"
-                id="fab-record"
-                title="Record video"
-                aria-label="Record video"
-            >
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="6" />
-                </svg>
-            </button>
-            <button
-                class="fab"
-                id="fab-share"
-                title="Copy share link"
-                aria-label="Copy share link"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path
-                        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                    />
-                    <path
-                        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                    />
-                </svg>
-            </button>
-            <button
-                class="fab"
-                id="fab-hide"
-                title="Hide controls (H)"
-                aria-label="Hide controls"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path
-                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                    />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-            </button>
-            <button
-                class="fab"
-                id="fab-speed"
-                title="Simulation speed"
-                aria-label="Simulation speed"
-            >
-                <span class="speed-label" id="speed-label">1×</span>
-            </button>
-            <button
-                class="fab"
-                id="fab-reset"
-                title="Reset"
-                aria-label="Reset"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <polyline points="23 4 23 10 17 10" />
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg>
-            </button>
-            <button
-                class="fab"
-                id="fab-pause"
-                title="Pause / play"
-                aria-label="Pause"
-            >
-                <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="7" y="5" width="3.5" height="14" rx="1" />
-                    <rect x="13.5" y="5" width="3.5" height="14" rx="1" />
-                </svg>
-                <svg
-                    class="icon-play"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    style="display: none"
-                >
-                    <polygon points="7,4 19,12 7,20" />
-                </svg>
-            </button>
-            <button
-                class="fab fab-primary"
-                id="fab-randomize"
-                title="Randomize"
-                aria-label="Randomize"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linejoin="round"
-                >
-                    <rect x="3" y="3" width="18" height="18" rx="3" />
-                    <circle cx="8" cy="8" r="1" fill="currentColor" />
-                    <circle cx="16" cy="8" r="1" fill="currentColor" />
-                    <circle cx="12" cy="12" r="1" fill="currentColor" />
-                    <circle cx="8" cy="16" r="1" fill="currentColor" />
-                    <circle cx="16" cy="16" r="1" fill="currentColor" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="backdrop" id="backdrop"></div>
-
-        <!-- COLOR MODAL -->
-        <div class="modal" id="modal-color">
-            <div class="modal-body">
-                <div class="modal-header">
-                    <div class="modal-title">Color</div>
-                    <button class="modal-close" data-close aria-label="Close">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                        >
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="panel-intro">
-                    Set the colors a trail glows through as it builds. Tap a
-                    preset or mix your own.
-                </div>
-
-                <div class="section">
-                    <div class="section-label">Presets</div>
-                    <div class="chip-row" id="color-row"></div>
-                </div>
-
-                <div class="section">
-                    <div class="section-label">Custom</div>
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Base hue</span
-                            ><span class="ctrl-val" id="v-hue">130°</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-hue"
-                            min="0"
-                            max="360"
-                            step="1"
-                            value="130"
-                        />
-                    </div>
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Accent hue</span
-                            ><span class="ctrl-val" id="v-accent">60°</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-accent"
-                            min="0"
-                            max="360"
-                            step="1"
-                            value="60"
-                        />
-                    </div>
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Saturation</span
-                            ><span class="ctrl-val" id="v-sat">85%</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-sat"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value="85"
-                        />
-                    </div>
-                    <div class="palette-preview" id="palette-preview"></div>
-                    <div class="palette-legend">
-                        <span>Faint trail</span>
-                        <span>Bright trail</span>
-                    </div>
-                </div>
+        <header class="hero" id="top">
+            <canvas class="bg" id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content in">
+                <p class="eyebrow">Interactive · In your browser</p>
+                <h1 class="title">Simulations.</h1>
+                <p class="lede">
+                    Five tiny worlds, each built from a single rule repeated a
+                    thousand times. Scroll to meet them.
+                </p>
             </div>
-        </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
 
-        <!-- PATTERN MODAL -->
-        <div class="modal" id="modal-pattern">
-            <div class="modal-body">
-                <div class="modal-header">
-                    <div class="modal-title">Starting pattern</div>
-                    <button class="modal-close" data-close aria-label="Close">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                        >
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                        </svg>
-                    </button>
-                </div>
+        <main id="sections"></main>
 
-                <div class="panel-intro">
-                    Choose where the critters begin and which way they face.
-                    Changes restart the swarm right away.
-                </div>
-
-                <div class="section">
-                    <div class="section-label">Where they start</div>
-                    <div class="chip-row" id="pattern-row"></div>
-                </div>
-
-                <div class="section">
-                    <div class="section-label">Which way they face</div>
-                    <div class="chip-row" id="heading-row"></div>
-                </div>
-
-                <div
-                    class="section"
-                    id="heading-angle-section"
-                    style="display: none"
-                >
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Facing direction</span
-                            ><span class="ctrl-val" id="v-angle">0°</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-angle"
-                            min="0"
-                            max="359"
-                            step="1"
-                            value="0"
-                        />
-                    </div>
-                </div>
-
-                <div class="section" id="region-section">
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Cluster size</span
-                            ><span class="ctrl-val" id="v-region">0.50</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-region"
-                            min="0.1"
-                            max="1"
-                            step="0.01"
-                            value="0.5"
-                        />
-                    </div>
-                </div>
+        <footer>
+            <div class="f-title">Pick a world. Make it yours.</div>
+            <div class="f-links">
+                <a href="slime-mold.html">Slime Mold</a>
+                <a href="boids.html">Boids</a>
+                <a href="particle-life.html">Particle Life</a>
+                <a href="flow-field.html">Flow Field</a>
+                <a href="reaction-diffusion.html">Reaction–Diffusion</a>
             </div>
-        </div>
-
-        <!-- PARAMETERS MODAL -->
-        <div class="modal" id="modal-params">
-            <div class="modal-body">
-                <div class="modal-header">
-                    <div class="modal-title">Parameters</div>
-                    <button class="modal-close" data-close aria-label="Close">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                        >
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="panel-intro">
-                    Thousands of tiny critters wander the screen, each leaving a
-                    glowing trail and steering toward the glow it spots just
-                    ahead. Old trails slowly fade. These sliders shape how they
-                    explore and how their trails behave.
-                </div>
-
-                <div id="params-section"></div>
+            <div class="f-note">
+                Every world is its own self-contained page — tweak it, color it,
+                record it, share it.
             </div>
-        </div>
+        </footer>
 
-        <!-- SETTINGS MODAL -->
-        <div class="modal" id="modal-settings">
-            <div class="modal-body">
-                <div class="modal-header">
-                    <div class="modal-title">Settings</div>
-                    <button class="modal-close" data-close aria-label="Close">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                        >
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                        </svg>
-                    </button>
-                </div>
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+                const TAU = Math.PI * 2;
 
-                <div class="section">
-                    <div class="section-label">Performance</div>
+                // ---------- shared palette + noise helpers ----------
+                const PALS = {
+                    Inferno: ["#000000", "#1a0000", "#a00010", "#ff4020", "#ffec70"],
+                    Cyber: ["#000810", "#0a2030", "#0a8a98", "#5af0d8", "#fff088"],
+                    Twilight: ["#040208", "#280a40", "#8a2080", "#ff60c0", "#ffe098"],
+                    Frost: ["#000814", "#0a2e58", "#3a86d0", "#9ed4ff", "#f0faff"],
+                    Acid: ["#000000", "#082a14", "#1a8a3c", "#7af066", "#f5ffa8"],
+                    Iris: ["#000018", "#0c1448", "#4a3ac0", "#c060e0", "#ffd0e0"],
+                };
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildLUT(stops) {
+                    const lut = new Uint8ClampedArray(256 * 3);
+                    const seg = stops.length - 1;
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        lut[i * 3] = c0[0] + (c1[0] - c0[0]) * u;
+                        lut[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        lut[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                    }
+                    return lut;
+                }
+                function colorStrings(lut) {
+                    const a = new Array(256);
+                    for (let i = 0; i < 256; i++)
+                        a[i] =
+                            "rgb(" +
+                            lut[i * 3] +
+                            "," +
+                            lut[i * 3 + 1] +
+                            "," +
+                            lut[i * 3 + 2] +
+                            ")";
+                    return a;
+                }
+                function nhash(ix, iy) {
+                    let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263);
+                    h = Math.imul(h ^ (h >>> 13), 1274126177);
+                    h ^= h >>> 16;
+                    return (h >>> 0) / 4294967295;
+                }
+                function vnoise(x, y) {
+                    const x0 = Math.floor(x),
+                        y0 = Math.floor(y);
+                    const fxr = x - x0,
+                        fyr = y - y0;
+                    const fx = fxr * fxr * (3 - 2 * fxr);
+                    const fy = fyr * fyr * (3 - 2 * fyr);
+                    const v00 = nhash(x0, y0),
+                        v10 = nhash(x0 + 1, y0),
+                        v01 = nhash(x0, y0 + 1),
+                        v11 = nhash(x0 + 1, y0 + 1);
+                    const a = v00 + (v10 - v00) * fx;
+                    const b = v01 + (v11 - v01) * fx;
+                    return a + (b - a) * fy;
+                }
 
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Simulation Quality</span>
-                        </div>
-                        <div
-                            class="segmented"
-                            id="seg-quality"
-                            style="margin-top: 0"
-                        ></div>
-                    </div>
+                // Size a canvas backing store to its on-screen box (full-res).
+                function fitFull(canvas) {
+                    const r = canvas.getBoundingClientRect();
+                    const w = Math.max(2, Math.round(r.width * DPR));
+                    const h = Math.max(2, Math.round(r.height * DPR));
+                    if (canvas.width !== w || canvas.height !== h) {
+                        canvas.width = w;
+                        canvas.height = h;
+                    }
+                    return { w, h };
+                }
+                // Small grid backing, stretched by CSS — cheap for field sims.
+                function fitGrid(canvas, targetW) {
+                    const r = canvas.getBoundingClientRect();
+                    const gw = targetW;
+                    const gh = Math.max(
+                        50,
+                        Math.round((gw * r.height) / Math.max(1, r.width)),
+                    );
+                    canvas.width = gw;
+                    canvas.height = gh;
+                    return { gw, gh };
+                }
 
-                    <div class="ctrl">
-                        <div class="ctrl-head">
-                            <span class="ctrl-name">Max FPS</span
-                            ><span class="ctrl-val" id="v-fps">60</span>
-                        </div>
-                        <input
-                            type="range"
-                            id="s-fps"
-                            min="15"
-                            max="120"
-                            step="5"
-                            value="60"
-                        />
-                    </div>
+                // ============================================================
+                // PREVIEW ENGINES — each returns { start, stop, resize }
+                // ============================================================
 
-                    <div class="ctrl-hint" style="margin-top: 8px">
-                        Lower values run smoother on slower devices and save
-                        battery.
-                    </div>
-                </div>
+                // ---- Flow field (also the hero) ----
+                function createFlow(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const cstr = colorStrings(buildLUT(stops));
+                    const bg = hexToRgb(stops[0]);
+                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, age, raf = 0, t = 0;
+                    const ns = 0.009 / DPR;
+                    function respawn(i) {
+                        xs[i] = Math.random() * W;
+                        ys[i] = Math.random() * H;
+                        vx[i] = 0;
+                        vy[i] = 0;
+                        age[i] = Math.random() * 180;
+                    }
+                    function init() {
+                        const s = fitFull(canvas);
+                        W = s.w; H = s.h;
+                        n = Math.min(900, Math.round((W * H) / 2200));
+                        xs = new Float32Array(n); ys = new Float32Array(n);
+                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        age = new Float32Array(n);
+                        for (let i = 0; i < n; i++) respawn(i);
+                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillRect(0, 0, W, H);
+                    }
+                    function step() {
+                        t += 1;
+                        const ox = 1000 + Math.cos(t * 0.01) * 3;
+                        const oy = 1000 + Math.sin(t * 0.01) * 3;
+                        const sp = 1.5 * DPR;
+                        const ds = 2.2 * DPR;
+                        ctx.fillStyle =
+                            "rgba(" + bg[0] + "," + bg[1] + "," + bg[2] + ",0.09)";
+                        ctx.fillRect(0, 0, W, H);
+                        for (let i = 0; i < n; i++) {
+                            const a = vnoise(xs[i] * ns + ox, ys[i] * ns + oy) * TAU * 2;
+                            vx[i] += (Math.cos(a) * sp - vx[i]) * 0.18;
+                            vy[i] += (Math.sin(a) * sp - vy[i]) * 0.18;
+                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
+                            nx -= Math.floor(nx / W) * W;
+                            ny -= Math.floor(ny / H) * H;
+                            xs[i] = nx; ys[i] = ny;
+                            const ang = Math.atan2(vy[i], vx[i]);
+                            let idx = ((0.4 + 0.6 * ((ang + Math.PI) / TAU)) * 255) | 0;
+                            if (idx > 255) idx = 255;
+                            ctx.fillStyle = cstr[idx];
+                            ctx.fillRect(nx - 1, ny - 1, ds, ds);
+                            if (++age[i] > 220) respawn(i);
+                        }
+                    }
+                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) { for (let k = 0; k < 80; k++) step(); return; }
+                            if (!raf) frame();
+                        },
+                        stop() { cancelAnimationFrame(raf); raf = 0; },
+                        resize() { init(); },
+                    };
+                }
 
-                <div class="section">
-                    <div class="section-label">Randomize behavior</div>
-                    <div class="toggle-list">
-                        <label class="toggle">
-                            <input type="checkbox" id="t-rand-color" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Randomize color</span>
-                            <span class="toggle-hint"
-                                >Pick a new palette when randomizing.</span
-                            >
-                        </label>
-                        <label class="toggle">
-                            <input type="checkbox" id="t-reset-on-rand" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Reset on randomize</span>
-                            <span class="toggle-hint"
-                                >Re-seed particles each time you
-                                randomize.</span
-                            >
-                        </label>
-                        <label class="toggle">
-                            <input type="checkbox" id="t-rand-pattern" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Randomize pattern</span>
-                            <span class="toggle-hint"
-                                >Pick a new starting pattern when randomizing
-                                (auto-resets).</span
-                            >
-                        </label>
-                    </div>
-                </div>
+                // ---- Boids ----
+                function createBoids(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const cstr = colorStrings(buildLUT(stops));
+                    const bg = hexToRgb(stops[0]);
+                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, raf = 0;
+                    function init() {
+                        const s = fitFull(canvas);
+                        W = s.w; H = s.h;
+                        n = Math.min(170, Math.round((W * H) / 9000));
+                        xs = new Float32Array(n); ys = new Float32Array(n);
+                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        const sp = 2.2 * DPR;
+                        for (let i = 0; i < n; i++) {
+                            xs[i] = Math.random() * W;
+                            ys[i] = Math.random() * H;
+                            const a = Math.random() * TAU;
+                            vx[i] = Math.cos(a) * sp;
+                            vy[i] = Math.sin(a) * sp;
+                        }
+                    }
+                    function step() {
+                        const visSq = (46 * DPR) ** 2;
+                        const sepSq = (17 * DPR) ** 2;
+                        const max = 2.6 * DPR, min = max * 0.5;
+                        const edge = 0.6 * DPR, marg = 46 * DPR;
+                        for (let i = 0; i < n; i++) {
+                            let avx = 0, avy = 0, apx = 0, apy = 0, sx = 0, sy = 0, c = 0;
+                            for (let j = 0; j < n; j++) {
+                                if (i === j) continue;
+                                const dx = xs[j] - xs[i], dy = ys[j] - ys[i];
+                                const d2 = dx * dx + dy * dy;
+                                if (d2 > visSq) continue;
+                                c++; avx += vx[j]; avy += vy[j]; apx += xs[j]; apy += ys[j];
+                                if (d2 < sepSq) { sx -= dx; sy -= dy; }
+                            }
+                            let nvx = vx[i], nvy = vy[i];
+                            if (c > 0) {
+                                avx /= c; avy /= c; apx /= c; apy /= c;
+                                nvx += (avx - nvx) * 0.06 + (apx - xs[i]) * 0.0008;
+                                nvy += (avy - nvy) * 0.06 + (apy - ys[i]) * 0.0008;
+                            }
+                            nvx += sx * 0.05; nvy += sy * 0.05;
+                            if (xs[i] < marg) nvx += edge;
+                            else if (xs[i] > W - marg) nvx -= edge;
+                            if (ys[i] < marg) nvy += edge;
+                            else if (ys[i] > H - marg) nvy -= edge;
+                            const s = Math.hypot(nvx, nvy);
+                            if (s > max) { nvx = (nvx / s) * max; nvy = (nvy / s) * max; }
+                            else if (s < min && s > 0) { nvx = (nvx / s) * min; nvy = (nvy / s) * min; }
+                            vx[i] = nvx; vy[i] = nvy;
+                        }
+                        const max2 = 2.6 * DPR, min2 = max2 * 0.5, span = max2 - min2;
+                        for (let i = 0; i < n; i++) {
+                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
+                            if (nx < 0) nx = 0; else if (nx > W) nx = W;
+                            if (ny < 0) ny = 0; else if (ny > H) ny = H;
+                            xs[i] = nx; ys[i] = ny;
+                        }
+                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillRect(0, 0, W, H);
+                        const S = 5 * DPR;
+                        for (let i = 0; i < n; i++) {
+                            const sp = Math.hypot(vx[i], vy[i]) || 1;
+                            const ux = vx[i] / sp, uy = vy[i] / sp;
+                            let t = (sp - min2) / span;
+                            if (t < 0) t = 0; else if (t > 1) t = 1;
+                            let idx = ((0.45 + 0.55 * t) * 255) | 0;
+                            if (idx > 255) idx = 255;
+                            ctx.fillStyle = cstr[idx];
+                            const nx = xs[i] + ux * S, ny = ys[i] + uy * S;
+                            const bx = xs[i] - ux * S * 0.7, by = ys[i] - uy * S * 0.7;
+                            ctx.beginPath();
+                            ctx.moveTo(nx, ny);
+                            ctx.lineTo(bx - uy * S * 0.5, by + ux * S * 0.5);
+                            ctx.lineTo(bx + uy * S * 0.5, by - ux * S * 0.5);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) { for (let k = 0; k < 90; k++) step(); return; }
+                            if (!raf) frame();
+                        },
+                        stop() { cancelAnimationFrame(raf); raf = 0; },
+                        resize() { init(); },
+                    };
+                }
 
-                <div class="section">
-                    <div class="section-label">Sharing tools</div>
-                    <div class="toggle-list">
-                        <label class="toggle">
-                            <input type="checkbox" id="t-show-record" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Record button</span>
-                            <span class="toggle-hint"
-                                >Show the record-to-WebM button in the
-                                toolbar.</span
-                            >
-                        </label>
-                        <label class="toggle">
-                            <input type="checkbox" id="t-show-share" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Share link button</span>
-                            <span class="toggle-hint"
-                                >Show a button that copies a shareable
-                                link.</span
-                            >
-                        </label>
-                        <label class="toggle">
-                            <input type="checkbox" id="t-show-hideui" />
-                            <span class="toggle-track"
-                                ><span class="toggle-thumb"></span
-                            ></span>
-                            <span class="toggle-label">Hide-UI button</span>
-                            <span class="toggle-hint"
-                                >Show a button that hides the interface for
-                                clean recordings.</span
-                            >
-                        </label>
-                    </div>
-                </div>
+                // ---- Particle life ----
+                function createPL(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const lut = buildLUT(stops);
+                    const K = 4;
+                    const scol = [];
+                    for (let k = 0; k < K; k++) {
+                        const idx = ((0.4 + 0.6 * (k / (K - 1))) * 255) | 0;
+                        scol[k] = "rgb(" + lut[idx * 3] + "," + lut[idx * 3 + 1] + "," + lut[idx * 3 + 2] + ")";
+                    }
+                    const bg = hexToRgb(stops[0]);
+                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, ty, M, raf = 0;
+                    function init() {
+                        const s = fitFull(canvas);
+                        W = s.w; H = s.h;
+                        n = Math.min(340, Math.round((W * H) / 6500));
+                        xs = new Float32Array(n); ys = new Float32Array(n);
+                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        ty = new Int8Array(n);
+                        M = new Float32Array(K * K);
+                        for (let i = 0; i < K * K; i++) M[i] = Math.random() * 2 - 1;
+                        for (let i = 0; i < n; i++) {
+                            xs[i] = Math.random() * W; ys[i] = Math.random() * H;
+                            vx[i] = 0; vy[i] = 0; ty[i] = (Math.random() * K) | 0;
+                        }
+                    }
+                    function step() {
+                        const rMax = 62 * DPR, rMaxSq = rMax * rMax, beta = 0.3;
+                        const force = 0.5, velR = 0.88, cap = rMax;
+                        for (let i = 0; i < n; i++) {
+                            let fx = 0, fy = 0;
+                            const ti = ty[i] * K, x = xs[i], y = ys[i];
+                            for (let j = 0; j < n; j++) {
+                                if (i === j) continue;
+                                const dx = xs[j] - x, dy = ys[j] - y;
+                                const d2 = dx * dx + dy * dy;
+                                if (d2 > 0 && d2 < rMaxSq) {
+                                    const r = Math.sqrt(d2), rn = r / rMax;
+                                    let f;
+                                    if (rn < beta) f = rn / beta - 1;
+                                    else f = M[ti + ty[j]] * (1 - Math.abs(2 * rn - 1 - beta) / (1 - beta));
+                                    fx += (dx / r) * f; fy += (dy / r) * f;
+                                }
+                            }
+                            let nvx = vx[i] * velR + fx * force;
+                            let nvy = vy[i] * velR + fy * force;
+                            const s = Math.hypot(nvx, nvy);
+                            if (s > cap) { nvx = (nvx / s) * cap; nvy = (nvy / s) * cap; }
+                            vx[i] = nvx; vy[i] = nvy;
+                        }
+                        for (let i = 0; i < n; i++) {
+                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
+                            if (nx < 0) { nx = 0; vx[i] *= -0.5; } else if (nx > W) { nx = W; vx[i] *= -0.5; }
+                            if (ny < 0) { ny = 0; vy[i] *= -0.5; } else if (ny > H) { ny = H; vy[i] *= -0.5; }
+                            xs[i] = nx; ys[i] = ny;
+                        }
+                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillRect(0, 0, W, H);
+                        const D = 3 * DPR, Dh = D / 2;
+                        for (let i = 0; i < n; i++) {
+                            ctx.fillStyle = scol[ty[i]];
+                            ctx.fillRect(xs[i] - Dh, ys[i] - Dh, D, D);
+                        }
+                    }
+                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) { for (let k = 0; k < 120; k++) step(); return; }
+                            if (!raf) frame();
+                        },
+                        stop() { cancelAnimationFrame(raf); raf = 0; },
+                        resize() { init(); },
+                    };
+                }
 
-                <div class="section">
-                    <div class="section-label">Restore</div>
-                    <div class="modal-actions" style="margin-top: 6px">
-                        <button class="btn" id="btn-restore-defaults">
-                            Restore default settings
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+                // ---- Slime mold ----
+                function createSlime(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const lut = buildLUT(stops);
+                    let gw = 0, gh = 0, field, nf, img, data, na = 0, ax, ay, aa, raf = 0;
+                    function init() {
+                        const g = fitGrid(canvas, 200);
+                        gw = g.gw; gh = g.gh;
+                        field = new Float32Array(gw * gh);
+                        nf = new Float32Array(gw * gh);
+                        img = ctx.createImageData(gw, gh);
+                        data = img.data;
+                        na = Math.min(7000, Math.round(gw * gh * 0.28));
+                        ax = new Float32Array(na); ay = new Float32Array(na); aa = new Float32Array(na);
+                        const cx = gw / 2, cy = gh / 2, R = Math.min(gw, gh) * 0.42;
+                        for (let i = 0; i < na; i++) {
+                            const rr = Math.sqrt(Math.random()) * R, th = Math.random() * TAU;
+                            ax[i] = cx + Math.cos(th) * rr;
+                            ay[i] = cy + Math.sin(th) * rr;
+                            aa[i] = th + Math.PI / 2;
+                        }
+                    }
+                    function sense(x, y, a, sd) {
+                        let ix = (x + Math.cos(a) * sd) | 0;
+                        let iy = (y + Math.sin(a) * sd) | 0;
+                        ix -= Math.floor(ix / gw) * gw;
+                        iy -= Math.floor(iy / gh) * gh;
+                        return field[iy * gw + ix];
+                    }
+                    function step() {
+                        const sa = 0.38, ta = 0.6, sd = 9, sp = 1.0, dep = 5;
+                        for (let i = 0; i < na; i++) {
+                            const x = ax[i], y = ay[i], a = aa[i];
+                            const vc = sense(x, y, a, sd);
+                            const vl = sense(x, y, a - sa, sd);
+                            const vr = sense(x, y, a + sa, sd);
+                            let na2 = a;
+                            if (vc > vl && vc > vr) {} else if (vc < vl && vc < vr)
+                                na2 += (Math.random() < 0.5 ? -1 : 1) * ta;
+                            else if (vr > vl) na2 += ta;
+                            else if (vl > vr) na2 -= ta;
+                            let nx = x + Math.cos(na2) * sp, ny = y + Math.sin(na2) * sp;
+                            nx -= Math.floor(nx / gw) * gw;
+                            ny -= Math.floor(ny / gh) * gh;
+                            ax[i] = nx; ay[i] = ny; aa[i] = na2;
+                            field[(ny | 0) * gw + (nx | 0)] += dep;
+                        }
+                        const d = 0.18, dn = d / 8, dc = 1 - d, decay = 1 - 0.05;
+                        for (let y = 1; y < gh - 1; y++) {
+                            const r = y * gw;
+                            for (let x = 1; x < gw - 1; x++) {
+                                const i = r + x;
+                                const sum =
+                                    field[i - gw - 1] + field[i - gw] + field[i - gw + 1] +
+                                    field[i - 1] + field[i + 1] +
+                                    field[i + gw - 1] + field[i + gw] + field[i + gw + 1];
+                                nf[i] = (field[i] * dc + sum * dn) * decay;
+                            }
+                        }
+                        const t = field; field = nf; nf = t;
+                        for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
+                            let v = field[i] * 4;
+                            let idx = v >= 255 ? 255 : v < 0 ? 0 : v | 0;
+                            const q = idx * 3;
+                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
+                        }
+                        ctx.putImageData(img, 0, 0);
+                    }
+                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) { for (let k = 0; k < 120; k++) step(); return; }
+                            if (!raf) frame();
+                        },
+                        stop() { cancelAnimationFrame(raf); raf = 0; },
+                        resize() { init(); },
+                    };
+                }
 
-        <div class="toast" id="toast">Link copied</div>
-        <script src="slime-mold.js"></script>
+                // ---- Reaction–diffusion (Gray-Scott) ----
+                function createRD(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const lut = buildLUT(stops);
+                    let gw = 0, gh = 0, A, B, A2, B2, img, data, raf = 0;
+                    function splat(gx, gy, r) {
+                        for (let dy = -r; dy <= r; dy++)
+                            for (let dx = -r; dx <= r; dx++) {
+                                if (dx * dx + dy * dy > r * r) continue;
+                                let ix = gx + dx, iy = gy + dy;
+                                if (ix < 0 || ix >= gw || iy < 0 || iy >= gh) continue;
+                                const i = iy * gw + ix; B[i] = 1; A[i] = 0;
+                            }
+                    }
+                    function init() {
+                        const g = fitGrid(canvas, 156);
+                        gw = g.gw; gh = g.gh;
+                        const c = gw * gh;
+                        A = new Float32Array(c); B = new Float32Array(c);
+                        A2 = new Float32Array(c); B2 = new Float32Array(c);
+                        A.fill(1);
+                        img = ctx.createImageData(gw, gh); data = img.data;
+                        const seeds = 34;
+                        for (let k = 0; k < seeds; k++)
+                            splat((Math.random() * gw) | 0, (Math.random() * gh) | 0, 2);
+                    }
+                    function stepOne() {
+                        const feed = 0.0545, kill = 0.062, dA = 1.0, dB = 0.5;
+                        for (let y = 1; y < gh - 1; y++) {
+                            const r = y * gw;
+                            for (let x = 1; x < gw - 1; x++) {
+                                const i = r + x;
+                                const a = A[i], b = B[i];
+                                const lapA =
+                                    (A[i - 1] + A[i + 1] + A[i - gw] + A[i + gw]) * 0.2 +
+                                    (A[i - gw - 1] + A[i - gw + 1] + A[i + gw - 1] + A[i + gw + 1]) * 0.05 - a;
+                                const lapB =
+                                    (B[i - 1] + B[i + 1] + B[i - gw] + B[i + gw]) * 0.2 +
+                                    (B[i - gw - 1] + B[i - gw + 1] + B[i + gw - 1] + B[i + gw + 1]) * 0.05 - b;
+                                const abb = a * b * b;
+                                let na = a + (dA * lapA - abb + feed * (1 - a));
+                                let nb = b + (dB * lapB + abb - (kill + feed) * b);
+                                A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                                B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                            }
+                        }
+                        let t = A; A = A2; A2 = t;
+                        t = B; B = B2; B2 = t;
+                    }
+                    function step() {
+                        for (let s = 0; s < 6; s++) stepOne();
+                        for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
+                            let idx = (B[i] * 560) | 0;
+                            if (idx > 255) idx = 255;
+                            const q = idx * 3;
+                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
+                        }
+                        ctx.putImageData(img, 0, 0);
+                    }
+                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) { for (let k = 0; k < 60; k++) step(); return; }
+                            if (!raf) frame();
+                        },
+                        stop() { cancelAnimationFrame(raf); raf = 0; },
+                        resize() { init(); },
+                    };
+                }
+
+                // ============================================================
+                // BUILD SECTIONS
+                // ============================================================
+                const APPS = [
+                    {
+                        id: "slime",
+                        eyebrow: "Emergent transport networks",
+                        name: "Slime Mold",
+                        file: "slime-mold.html",
+                        pitch: "Thousands of virtual critters lay down glowing pheromone trails and steer toward the scent ahead — weaving branching, vascular networks that look uncannily alive.",
+                        pal: "Inferno",
+                        make: createSlime,
+                    },
+                    {
+                        id: "boids",
+                        eyebrow: "Flocking from three rules",
+                        name: "Boids",
+                        file: "boids.html",
+                        pitch: "Every agent watches only its neighbors. Separation, alignment, and cohesion are all it knows — yet together they conjure flocks that wheel and split like starlings at dusk.",
+                        pal: "Cyber",
+                        make: createBoids,
+                    },
+                    {
+                        id: "particle-life",
+                        eyebrow: "Life from a matrix of forces",
+                        name: "Particle Life",
+                        file: "particle-life.html",
+                        pitch: "A random table decides which colors attract and which repel. From those blind pulls, cells, chasers, and lifelike organisms assemble themselves out of nothing.",
+                        pal: "Twilight",
+                        make: createPL,
+                    },
+                    {
+                        id: "flow",
+                        eyebrow: "Particles on a hidden current",
+                        name: "Flow Field",
+                        file: "flow-field.html",
+                        pitch: "Thousands of particles ride a slowly churning field of noise, painting overlapping silken streams whose color traces the invisible flow they follow.",
+                        pal: "Frost",
+                        make: createFlow,
+                    },
+                    {
+                        id: "rd",
+                        eyebrow: "Turing patterns, alive",
+                        name: "Reaction–Diffusion",
+                        file: "reaction-diffusion.html",
+                        pitch: "Two chemicals diffuse and react on a wrapping grid, self-organizing into spots, stripes, and coral mazes — intricate order emerging from nothing but chemistry.",
+                        pal: "Acid",
+                        make: createRD,
+                    },
+                ];
+
+                const sectionsEl = document.getElementById("sections");
+                const previews = [];
+
+                APPS.forEach((app) => {
+                    const sec = document.createElement("section");
+                    sec.className = "panel";
+                    sec.id = app.id;
+                    sec.innerHTML = `
+                        <canvas class="bg"></canvas>
+                        <div class="scrim"></div>
+                        <div class="content">
+                            <p class="eyebrow">${app.eyebrow}</p>
+                            <h2 class="title">${app.name}</h2>
+                            <p class="pitch">${app.pitch}</p>
+                            <div class="cta-row">
+                                <a class="cta" href="${app.file}" target="_blank" rel="noopener">
+                                    Launch <span class="arrow">→</span>
+                                </a>
+                                <a class="cta-ghost" href="${app.file}" target="_blank" rel="noopener">Open in this tab</a>
+                            </div>
+                        </div>`;
+                    sectionsEl.appendChild(sec);
+                    const canvas = sec.querySelector("canvas");
+                    sec.__prev = app.make(canvas, PALS[app.pal]);
+                    previews.push(sec.__prev);
+                });
+
+                // Fix up the ghost link to actually open in the same tab.
+                document.querySelectorAll(".cta-ghost").forEach((a) =>
+                    a.removeAttribute("target"),
+                );
+
+                // Hero preview
+                const heroCanvas = document.getElementById("hero-canvas");
+                const heroPrev = createFlow(heroCanvas, PALS.Iris);
+
+                // ---------- Lazy start / stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const prev = e.target.__prev;
+                            const content = e.target.querySelector(".content");
+                            if (e.isIntersecting && e.intersectionRatio > 0.35) {
+                                if (prev) prev.start();
+                                if (content) content.classList.add("in");
+                            } else if (prev) {
+                                prev.stop();
+                            }
+                        });
+                    },
+                    { threshold: [0, 0.35, 0.7] },
+                );
+                document.querySelector(".hero").__prev = heroPrev;
+                io.observe(document.querySelector(".hero"));
+                document.querySelectorAll(".panel").forEach((s) => io.observe(s));
+
+                // Kick the hero off right away (it's on screen at load).
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        previews.forEach((p) => p.resize());
+                    }, 250);
+                });
+            })();
+        </script>
     </body>
 </html>
