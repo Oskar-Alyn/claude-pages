@@ -1298,9 +1298,25 @@
                         />
                     </div>
 
+                    <div class="ctrl">
+                        <div class="ctrl-head">
+                            <span class="ctrl-name">Click / touch pull</span
+                            ><span class="ctrl-val" id="v-pointer">4.0</span>
+                        </div>
+                        <input
+                            type="range"
+                            id="s-pointer"
+                            min="0"
+                            max="0.012"
+                            step="0.0005"
+                            value="0.004"
+                        />
+                    </div>
+
                     <div class="ctrl-hint" style="margin-top: 8px">
-                        Particle count also lives in Parameters; zoom magnifies
-                        the view into the wrapping world.
+                        Particle count also lives in Parameters. Zoom magnifies
+                        the view; click or touch the canvas to drag particles,
+                        with the pull strength set above (0 turns it off).
                     </div>
                 </div>
 
@@ -1453,6 +1469,7 @@
                         fps: 60,
                         simSpeed: 1,
                         zoom: 1,
+                        pointerForce: 0.004,
                         showRecord: false,
                         showShareLink: false,
                         showHideUI: false,
@@ -2102,7 +2119,7 @@
                     const velRetain = 1 - state.params.friction;
                     const reach = Math.max(rMax, 1);
                     const cap = rMax; // no particle moves more than a reach per step
-                    const pull = pointerActive ? 0.0006 : 0;
+                    const pull = pointerActive ? state.settings.pointerForce : 0;
                     const pullR2 = 200 * 200;
                     const halfW = W * 0.5,
                         halfH = H * 0.5;
@@ -2904,6 +2921,12 @@
                     const z = state.settings.zoom || 1;
                     zoomSlider.value = z;
                     zoomVal.textContent = z.toFixed(1) + "×";
+                    const pf =
+                        state.settings.pointerForce == null
+                            ? 0.004
+                            : state.settings.pointerForce;
+                    pointerSlider.value = pf;
+                    pointerVal.textContent = pointerLevel(pf);
                     settingsCountSlider.value = state.params.count;
                     settingsCountVal.textContent = state.params.count;
                     updateToolbarVisibility();
@@ -2933,6 +2956,18 @@
                     const z = parseFloat(zoomSlider.value) || 1;
                     state.settings.zoom = z;
                     zoomVal.textContent = z.toFixed(1) + "×";
+                    persistState();
+                });
+
+                const pointerSlider = document.getElementById("s-pointer");
+                const pointerVal = document.getElementById("v-pointer");
+                // The raw coefficient is tiny; show it scaled up as a friendly
+                // 0-12 strength level.
+                const pointerLevel = (v) => (v * 1000).toFixed(1);
+                pointerSlider.addEventListener("input", () => {
+                    const v = parseFloat(pointerSlider.value);
+                    state.settings.pointerForce = v;
+                    pointerVal.textContent = pointerLevel(v);
                     persistState();
                 });
 
