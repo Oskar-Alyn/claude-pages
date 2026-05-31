@@ -2035,6 +2035,9 @@
                 const gridNext = new Int32Array(MAX_PARTICLES);
                 let gCols = 0,
                     gRows = 0;
+                // Exact cell extents: gCols*gCellW === W (see buildGrid).
+                let gCellW = 1,
+                    gCellH = 1;
 
                 // Up to three unique neighbor-cell indices along one axis,
                 // wrapped toroidally. Dedups so tiny grids (1-2 cells wide)
@@ -2053,19 +2056,28 @@
                     return len;
                 }
 
-                function buildGrid(n, cell) {
-                    gCols = Math.max(1, Math.ceil(W / cell));
-                    gRows = Math.max(1, Math.ceil(H / cell));
+                // The cell count is floor(world / reach) so each cell is at
+                // least `reach` wide, then cellW = W/gCols makes the grid tile
+                // the world *exactly*. That exact tiling is what keeps the
+                // toroidal wrap in neighborCells lined up with the min-image
+                // period W: a fixed cell that doesn't divide W would leave a
+                // narrow edge column, and particles near the seam would then
+                // miss their cross-edge neighbors.
+                function buildGrid(n, reach) {
+                    gCols = Math.max(1, Math.floor(W / reach));
+                    gRows = Math.max(1, Math.floor(H / reach));
+                    gCellW = W / gCols;
+                    gCellH = H / gRows;
                     const cells = gCols * gRows;
                     if (!gridHead || gridHead.length < cells) {
                         gridHead = new Int32Array(cells);
                     }
                     gridHead.fill(-1, 0, cells);
                     for (let i = 0; i < n; i++) {
-                        let cx = (px[i] / cell) | 0;
+                        let cx = (px[i] / gCellW) | 0;
                         if (cx < 0) cx = 0;
                         else if (cx >= gCols) cx = gCols - 1;
-                        let cy = (py[i] / cell) | 0;
+                        let cy = (py[i] / gCellH) | 0;
                         if (cy < 0) cy = 0;
                         else if (cy >= gRows) cy = gRows - 1;
                         const c = cy * gCols + cx;
@@ -2088,14 +2100,14 @@
                     const beta = state.params.beta;
                     const fStr = state.params.force;
                     const velRetain = 1 - state.params.friction;
-                    const cell = Math.max(rMax, 1);
+                    const reach = Math.max(rMax, 1);
                     const cap = rMax; // no particle moves more than a reach per step
                     const pull = pointerActive ? 0.0006 : 0;
                     const pullR2 = 200 * 200;
                     const halfW = W * 0.5,
                         halfH = H * 0.5;
 
-                    buildGrid(n, cell);
+                    buildGrid(n, reach);
 
                     for (let i = 0; i < n; i++) {
                         const x = px[i],
@@ -2105,10 +2117,10 @@
                         let fx = 0,
                             fy = 0;
 
-                        let cgx = (x / cell) | 0;
+                        let cgx = (x / gCellW) | 0;
                         if (cgx < 0) cgx = 0;
                         else if (cgx >= gCols) cgx = gCols - 1;
-                        let cgy = (y / cell) | 0;
+                        let cgy = (y / gCellH) | 0;
                         if (cgy < 0) cgy = 0;
                         else if (cgy >= gRows) cgy = gRows - 1;
 
