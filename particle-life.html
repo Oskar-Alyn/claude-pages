@@ -1270,16 +1270,16 @@
 
                     <div class="ctrl">
                         <div class="ctrl-head">
-                            <span class="ctrl-name">Particle count</span
-                            ><span class="ctrl-val" id="v-count-set">1200</span>
+                            <span class="ctrl-name">Particle multiplier</span
+                            ><span class="ctrl-val" id="v-count-mult">1.00×</span>
                         </div>
                         <input
                             type="range"
-                            id="s-count-set"
-                            min="100"
-                            max="4000"
-                            step="10"
-                            value="1200"
+                            id="s-count-mult"
+                            min="0.25"
+                            max="2"
+                            step="0.05"
+                            value="1"
                         />
                     </div>
 
@@ -1314,9 +1314,10 @@
                     </div>
 
                     <div class="ctrl-hint" style="margin-top: 8px">
-                        Particle count also lives in Parameters. Zoom magnifies
-                        the view; click or touch the canvas to drag particles,
-                        with the pull strength set above (0 turns it off).
+                        The multiplier scales the Parameters particle count and
+                        survives randomizing. Zoom magnifies the view; click or
+                        touch the canvas to drag particles, with the pull
+                        strength set above (0 turns it off).
                     </div>
                 </div>
 
@@ -1469,6 +1470,7 @@
                         fps: 60,
                         simSpeed: 1,
                         zoom: 1,
+                        countMult: 1,
                         pointerForce: 0.004,
                         showRecord: false,
                         showShareLink: false,
@@ -1488,7 +1490,7 @@
                         key: "count",
                         group: "The swarm",
                         label: "Particle count",
-                        hint: "How many particles fill the screen.",
+                        hint: "Target for a reference-size screen; smaller screens scale down to keep the density.",
                         min: 100,
                         max: 4000,
                         step: 10,
@@ -1713,6 +1715,15 @@
                 );
 
                 const MAX_PARTICLES = 4000;
+                // Particle count is a *density* target defined for a
+                // reference-size screen; the live count scales with the actual
+                // viewport area so phones run proportionally fewer particles.
+                const REF_AREA = 1440 * 900;
+                const MIN_ACTIVE = 60;
+                // How many particles are actually simulated/rendered right now,
+                // derived from the base count, the viewport area, and the
+                // settings multiplier (see targetCount / reconcileCount).
+                let activeCount = 0;
 
                 const randomRanges = {
                     count: [600, 2500],
@@ -1923,7 +1934,7 @@
                 // PARTICLE SEEDING
                 // ============================================================
                 function seedParticles() {
-                    const n = state.params.count;
+                    const n = activeCount;
                     const cx = W / 2,
                         cy = H / 2;
                     const maxR =
@@ -2035,7 +2046,31 @@
                     ptype[i] = (Math.random() * state.params.types) | 0;
                 }
 
+                // Live particle target: base density count, scaled by how big
+                // the viewport is versus the reference screen, times the
+                // settings multiplier — then clamped to the buffer size.
+                function targetCount() {
+                    const areaScale = (W * H) / REF_AREA;
+                    const mult = state.settings.countMult || 1;
+                    let n = Math.round(state.params.count * areaScale * mult);
+                    if (n > MAX_PARTICLES) n = MAX_PARTICLES;
+                    if (n < MIN_ACTIVE) n = MIN_ACTIVE;
+                    return n;
+                }
+
+                // Bring activeCount in line with the target, spawning any newly
+                // needed particles. Shrinking just lowers the count; the extra
+                // particles keep their state and rejoin if the target grows.
+                function reconcileCount() {
+                    const t = targetCount();
+                    if (t > activeCount) {
+                        for (let i = activeCount; i < t; i++) spawnParticle(i);
+                    }
+                    activeCount = t;
+                }
+
                 function resetAll() {
+                    activeCount = targetCount();
                     seedParticles();
                     hardClear();
                 }
@@ -2110,7 +2145,7 @@
                 // below beta, then a triangular attract/repel weighted by the
                 // species pair's matrix entry, fading to zero at the reach.
                 function simulate() {
-                    const n = state.params.count;
+                    const n = activeCount;
                     const K = state.params.types;
                     const rMax = state.params.rMax;
                     const rMaxSq = rMax * rMax;
@@ -2249,7 +2284,7 @@
                 const DOT = 2.8;
                 const DOT_HALF = DOT / 2;
                 function render() {
-                    const n = state.params.count;
+                    const n = activeCount;
                     // Clear the full canvas in device space.
                     hardClear();
                     // Zoom magnifies the view around the screen center; dots are
@@ -2304,7 +2339,11 @@
                 let resizeTimer = null;
                 function onResize() {
                     if (resizeTimer) clearTimeout(resizeTimer);
-                    resizeTimer = setTimeout(() => resizeCanvas(true), 150);
+                    resizeTimer = setTimeout(() => {
+                        resizeCanvas(true);
+                        // Viewport area changed, so the density target did too.
+                        reconcileCount();
+                    }, 150);
                 }
                 window.addEventListener("resize", onResize);
                 window.addEventListener("orientationchange", onResize);
@@ -2650,25 +2689,11 @@
                     slidersDef.forEach((def) => paramSliders[def.key].sync());
                 }
 
-                // Particle count lives in two places (Parameters and Settings).
-                // Both routes funnel through here so the two sliders, the spawn
-                // of any new particles, and state never drift apart.
+                // The Parameters "Particle count" slider sets the base density
+                // target; the live particle pool is then reconciled to it.
                 function applyCount(v) {
-                    v = Math.round(v);
-                    if (v > MAX_PARTICLES) v = MAX_PARTICLES;
-                    if (v > state.params.count) {
-                        for (let i = state.params.count; i < v; i++)
-                            spawnParticle(i);
-                    }
-                    state.params.count = v;
-                    syncCountUI();
-                }
-                function syncCountUI() {
-                    if (paramSliders.count) paramSliders.count.sync();
-                    if (settingsCountSlider) {
-                        settingsCountSlider.value = state.params.count;
-                        settingsCountVal.textContent = state.params.count;
-                    }
+                    state.params.count = Math.round(v);
+                    reconcileCount();
                 }
 
                 const fabPause = document.getElementById("fab-pause");
@@ -2927,8 +2952,9 @@
                             : state.settings.pointerForce;
                     pointerSlider.value = pf;
                     pointerVal.textContent = pointerLevel(pf);
-                    settingsCountSlider.value = state.params.count;
-                    settingsCountVal.textContent = state.params.count;
+                    const cm = state.settings.countMult || 1;
+                    countMultSlider.value = cm;
+                    countMultVal.textContent = cm.toFixed(2) + "×";
                     updateToolbarVisibility();
                 }
 
@@ -2942,11 +2968,13 @@
                     persistState();
                 });
 
-                const settingsCountSlider =
-                    document.getElementById("s-count-set");
-                const settingsCountVal = document.getElementById("v-count-set");
-                settingsCountSlider.addEventListener("input", () => {
-                    applyCount(parseFloat(settingsCountSlider.value));
+                const countMultSlider = document.getElementById("s-count-mult");
+                const countMultVal = document.getElementById("v-count-mult");
+                countMultSlider.addEventListener("input", () => {
+                    const m = parseFloat(countMultSlider.value) || 1;
+                    state.settings.countMult = m;
+                    countMultVal.textContent = m.toFixed(2) + "×";
+                    reconcileCount();
                     persistState();
                 });
 
@@ -3039,10 +3067,6 @@
                         v = Math.round(v / def.step) * def.step;
                         if (v < def.min) v = def.min;
                         if (v > def.max) v = def.max;
-                        if (def.key === "count" && v > state.params.count) {
-                            for (let i = state.params.count; i < v; i++)
-                                spawnParticle(i);
-                        }
                         state.params[def.key] = v;
                     });
 
@@ -3050,6 +3074,9 @@
                     // Also reassigns species so the fresh count takes effect.
                     setTypes(state.params.types);
                     applyParamsToSliders();
+                    // Match the live pool to the new base count (the multiplier
+                    // setting is untouched, so it carries over).
+                    reconcileCount();
 
                     if (state.settings.randomizeColor) {
                         state.palette.mode = "preset";
@@ -3295,6 +3322,7 @@
 
                 resizeCanvas(false);
                 refreshPalette();
+                activeCount = targetCount();
                 seedParticles();
 
                 applyParamsToSliders();
