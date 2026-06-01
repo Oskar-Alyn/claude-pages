@@ -1,48 +1,71 @@
-# Slime mold v2
+# Simulations
 
-An interactive Physarum (slime-mold) agent simulation, deployed through GitHub Pages.
+A small collection of interactive, browser-based simulations, deployed through
+GitHub Pages. Each one is a self-contained page that runs a single rule a few
+thousand times until something lifelike emerges — and each can be recolored,
+reshaped, tuned, recorded, and shared via a link.
 
-Thousands of agents each read a pheromone "trail" field just ahead of them, steer
-toward the strongest reading, move, and deposit onto the field; the field then
-diffuses + decays each step. Rendered by mapping field intensity through a palette
-lookup table into a canvas `ImageData` buffer.
+`index.html` is an Apple-style landing page that pitches each sim in a
+full-viewport section with a live, dialed-down preview of that algorithm running
+behind it.
+
+## The sims
+
+| Page | What it is |
+|------|------------|
+| `slime-mold.html` | Physarum agents leave a diffusing pheromone trail and steer up its gradient, weaving transport networks. (The original; multi-file.) |
+| `boids.html` | Reynolds flocking — separation, alignment, cohesion. |
+| `particle-life.html` | Colored species attract/repel by a random matrix; cells and creatures self-assemble. |
+| `flow-field.html` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
+| `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
+| `gravity.html` | Softened N-body gravity; masses collapse into spinning galaxies. |
+| `strange-attractors.html` | Iterate a two-line map (Clifford / De Jong / Svensson / Fractal Dream) into a density field of fractal lace. |
+| `excitable.html` | Greenberg–Hastings excitable medium; cells fire, recover, and wind into spiral waves. |
+| `turmites.html` | Langton's-ant / turmite agents build highways from a per-color turn rule. |
 
 ## Running it
 
-Zero dependencies, no build step. Open `index.html` in a browser.
+Zero dependencies, no build step. Open `index.html` (or any sim page) in a
+browser. Everything is self-contained: every sim except slime mold inlines its
+own CSS and JS into a single `.html` file. Slime mold is split into
+`slime-mold.html` + `slime-mold.css` + `slime-mold.js`.
 
-The page is split into three files:
+## How a sim is built (the shared shell)
 
-- `index.html` — markup and `<head>` meta
-- `slime-mold.css` — styles
-- `slime-mold.js` — simulation, rendering, and UI
+Every sim reuses the same chrome and conventions, so they're built by copying the
+nearest existing file and swapping only the simulation core:
+
+- **Chrome.** A full-viewport `<canvas>`; a top-right cogwheel opening a dropdown
+  of four glass modals (Color / Shape / Parameters / Settings); a bottom-right FAB
+  toolbar (record-to-WebM, share-link, hide-UI, speed ×1–8, reset, pause,
+  randomize). Modals are draggable floating windows on desktop and bottom sheets on
+  mobile. Press **H** to hide all UI for clean recordings.
+- **State.** One `state` object holds `params` / `pattern` / `palette` /
+  `settings`. It is persisted to localStorage and base64-JSON-encoded into the URL
+  hash for share links. `defaultState` backs "Restore defaults". A returning
+  visitor's saved state overrides the code defaults.
+- **Enumerations.** Each set of options (palettes, shapes, …) lives in one ordered
+  `registry()` of `{ id, label, ...metadata }` descriptors. The sim branches on
+  `.id`; the UI renders `.label` (the only field copy edits touch);
+  `registry.byId()` resolves a stored id with a safe fallback.
+- **Color.** A 5-stop palette is expanded into a 256-entry lookup table; presets
+  plus custom hue / accent / saturation sliders. Grid sims map field values through
+  the LUT into a canvas `ImageData`; particle sims color dots/triangles by a derived
+  quantity (speed, heading, species, phase).
+- **Particle sims** (boids, particle-life, flow-field, gravity) share density
+  scaling (the count is a per-reference-screen target × a Settings multiplier, so
+  small screens run proportionally fewer), a toroidal world, and center-anchored
+  zoom. **Grid sims** (reaction-diffusion, strange-attractors, excitable, turmites)
+  render a small offscreen grid scaled up via `drawImage`, and Settings offers
+  Resolution + a brush instead of count/density.
 
 ## Notes for contributors
 
-- Verify changes in a real browser: the modals are built by JS at runtime, so
-  static preview/thumbnail tools that don't execute scripts will show them empty.
-
-- One `state` object holds params/pattern/palette/settings. It is always persisted
-  to localStorage and is encoded (base64 JSON) into the URL hash for share links.
-  `defaultState` is a snapshot used by "Restore defaults". Note: a returning
-  visitor's saved state overrides the defaults in the code.
-
-- User-facing copy is deliberately non-technical (a "critters leave glowing trails"
-  mental model) — avoid the words agent / sensor / pheromone / diffusion in anything
-  the user reads.
-
-- Each enumerable option (patterns, headings, quality, palettes) lives in one
-  ordered `registry()` of descriptor objects `{ id, label, ...metadata }`. The `id`
-  is the single stable key: the sim branches on it and state serializes it. The
-  `label` is the friendly chip text and the only field copy edits touch (e.g.
-  heading "Tangential" → "Spinning", "TwoBlobs" → "Two Blobs"). Option-specific
-  metadata rides on the same object (pattern `clustered`/`blobCount`, heading
-  `usesAngle`, quality `target`, palette `stops`). The UI renders from `.label`, the
-  sim switches on `.id`, and `registry.byId(id)` resolves a stored id to its
-  descriptor with a safe fallback to the default. To rename what the user sees, edit
-  only `.label`.
-
-- UI layout: a top-right cogwheel opens a dropdown of the four modals (Color / Shape
-  / Parameters / Settings); action buttons (record, share, hide-UI, speed, reset,
-  pause, randomize) are the bottom-right FAB toolbar. Press **H** to hide all UI for
-  clean recordings.
+- **Verify in a real browser.** The modals are built by JS at runtime, so static
+  preview tools that don't execute scripts show them empty.
+- **Keep user-facing copy non-technical** — favor the playful "critters / ants /
+  masses" mental model over agent / sensor / pheromone / kernel in anything the user
+  reads.
+- The biggest wart is duplication: the `<style>` block and chrome markup are copied
+  near-verbatim across the single-file sims. A shared `shell.css` / shell builder is
+  the obvious next refactor.
