@@ -1290,7 +1290,7 @@
                     <div class="ctrl-hint" style="margin-top: 8px">
                         Lower values run smoother on slower devices and save
                         battery. Use the speed button to fast-forward the
-                        reaction.
+                        waves.
                     </div>
                 </div>
 
@@ -1930,7 +1930,7 @@
                 window.addEventListener("orientationchange", onResize);
 
                 // ============================================================
-                // INTERACTION (mouse / touch) — paint reagent
+                // INTERACTION (mouse / touch) — tap sets off a wave
                 // ============================================================
                 let pointerActive = false;
                 let pointerGX = 0,
@@ -2611,7 +2611,7 @@
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `reaction-diffusion-${Date.now()}.webm`;
+                        a.download = `spiral-waves-${Date.now()}.webm`;
                         a.click();
                         setTimeout(() => URL.revokeObjectURL(url), 1000);
                     };

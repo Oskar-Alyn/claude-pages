@@ -1289,7 +1289,7 @@
                     <div class="ctrl-hint" style="margin-top: 8px">
                         Lower values run smoother on slower devices and save
                         battery. Use the speed button to fast-forward the
-                        reaction.
+                        ants.
                     </div>
                 </div>
 
@@ -1313,7 +1313,8 @@
                             ></span>
                             <span class="toggle-label">Reset on randomize</span>
                             <span class="toggle-hint"
-                                >Re-seed the medium each time you randomize.</span
+                                >Clear the grid and replace the ants each time
+                                you randomize.</span
                             >
                         </label>
                         <label class="toggle">
@@ -1907,7 +1908,7 @@
                 window.addEventListener("orientationchange", onResize);
 
                 // ============================================================
-                // INTERACTION (mouse / touch) — paint reagent
+                // INTERACTION (mouse / touch) — click drops ants
                 // ============================================================
                 let pointerActive = false;
                 let pointerGX = 0,
@@ -2596,7 +2597,7 @@
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `reaction-diffusion-${Date.now()}.webm`;
+                        a.download = `turmites-${Date.now()}.webm`;
                         a.click();
                         setTimeout(() => URL.revokeObjectURL(url), 1000);
                     };

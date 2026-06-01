@@ -680,21 +680,6 @@
                 text-transform: uppercase;
                 font-weight: 600;
             }
-            /* One dot per species, in its actual particle color */
-            .type-swatches {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin-top: 8px;
-            }
-            .type-swatches .dot {
-                width: 18px;
-                height: 18px;
-                border-radius: 50%;
-                border: 1px solid rgba(255, 255, 255, 0.18);
-                box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
-            }
-
             /* Toggles */
             .toggle-list {
                 display: flex;
@@ -1341,7 +1326,7 @@
 
                     <div class="ctrl-hint" style="margin-top: 8px">
                         Lower values run smoother on slower devices and save
-                        battery. For huge swarms, drop the particle count in
+                        battery. For huge clouds, drop the mass count in
                         Parameters.
                     </div>
                 </div>
@@ -1844,9 +1829,6 @@
                     return PALETTES.byId(state.palette.name).stops;
                 }
 
-                // Give each species its own color by sampling evenly along the
-                // palette ramp, biased toward the brighter half so no species
-                // disappears into the dark background.
                 function refreshPalette() {
                     const stops = currentPaletteStops();
                     paletteLUT = buildPaletteLUT(stops);
@@ -2175,7 +2157,7 @@
                 window.addEventListener("orientationchange", onResize);
 
                 // ============================================================
-                // INTERACTION (mouse / touch) — pointer attracts the swarm
+                // INTERACTION (mouse / touch) — pointer attracts the masses
                 // ============================================================
                 let pointerActive = false;
                 let pointerX = 0,
@@ -2956,7 +2938,7 @@
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `particle-life-${Date.now()}.webm`;
+                        a.download = `gravity-${Date.now()}.webm`;
                         a.click();
                         setTimeout(() => URL.revokeObjectURL(url), 1000);
                     };
@@ -3126,7 +3108,7 @@
                 // MAIN LOOP
                 // ============================================================
                 // The FPS slider only caps how often we *render* (saves battery
-                // on high-refresh displays). The swarm advances on its own fixed
+                // on high-refresh displays). The cloud advances on its own fixed
                 // timestep — SIM_FPS steps/sec at 1× speed, scaled by the speed
                 // multiplier — so motion stays constant regardless of render
                 // rate. Each rendered frame runs as many sim steps as the real
