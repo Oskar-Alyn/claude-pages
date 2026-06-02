@@ -317,6 +317,7 @@ body {
 body.ui-hidden .fab-toolbar,
 body.ui-hidden .settings-menu,
 body.ui-hidden .backdrop,
+body.ui-hidden .rec-indicator,
 body.ui-hidden .modal {
     display: none !important;
 }

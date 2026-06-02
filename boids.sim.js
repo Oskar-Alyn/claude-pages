@@ -14,6 +14,17 @@
 
     const { registry, randItem, hexToRgb, hslHex, hexToHsl } = SimShell;
 
+    // Pointer-attraction radius (px); squared once to compare against squared
+    // distances without a sqrt per boid.
+    const POINTER_PULL_RADIUS = 180;
+    const POINTER_PULL_R2 = POINTER_PULL_RADIUS * POINTER_PULL_RADIUS;
+
+    // Arrowhead glyph dimensions (px): tip ahead of the boid, base behind it,
+    // and half the base width to either side.
+    const ARROW_TIP = 5.5;
+    const ARROW_BASE = 4;
+    const ARROW_HALF_WIDTH = 3;
+
     // ------------------------------------------------------------------
     // STATE (JSON-serializable — the shell persists/serializes this verbatim)
     // ------------------------------------------------------------------
@@ -529,7 +540,6 @@
         const cell = Math.max(vision, sepDist, 1);
         const margin = Math.max(40, Math.min(W, H) * 0.08);
         const pull = pointerActive ? 0.0009 : 0;
-        const pullR2 = 180 * 180;
 
         buildGrid(n, cell);
 
@@ -608,7 +618,7 @@
             if (pull > 0) {
                 const ddx = pointerX - x;
                 const ddy = pointerY - y;
-                if (ddx * ddx + ddy * ddy < pullR2) {
+                if (ddx * ddx + ddy * ddy < POINTER_PULL_R2) {
                     nvx += ddx * pull;
                     nvy += ddy * pull;
                 }
@@ -694,14 +704,14 @@
             ctx.fillStyle = colorStr[idx];
 
             // A little arrowhead pointing along the velocity.
-            const nx = x + ux * 5.5;
-            const ny = y + uy * 5.5;
-            const bx = x - ux * 4;
-            const by = y - uy * 4;
+            const nx = x + ux * ARROW_TIP;
+            const ny = y + uy * ARROW_TIP;
+            const bx = x - ux * ARROW_BASE;
+            const by = y - uy * ARROW_BASE;
             ctx.beginPath();
             ctx.moveTo(nx, ny);
-            ctx.lineTo(bx - uy * 3, by + ux * 3);
-            ctx.lineTo(bx + uy * 3, by - ux * 3);
+            ctx.lineTo(bx - uy * ARROW_HALF_WIDTH, by + ux * ARROW_HALF_WIDTH);
+            ctx.lineTo(bx + uy * ARROW_HALF_WIDTH, by - ux * ARROW_HALF_WIDTH);
             ctx.closePath();
             ctx.fill();
         }

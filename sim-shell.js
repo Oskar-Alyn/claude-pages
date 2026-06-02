@@ -125,16 +125,8 @@
  *
  * The `ctx` the shell hands sim.init(ctx):
  *
- *   (getPalette / requestReset / persist below are provided for sims that need
- *   them; the current sims mostly use canvas / getCanvasSize. They are NOT dead
- *   code — keep them.)
- *
  *   ctx.canvas          The <canvas id="canvas"> element.
  *   ctx.getCanvasSize() -> { W, H, dpr } current logical size + device ratio.
- *   ctx.getPalette()    -> current resolved stops array (same as last
- *                          refreshPalette argument).
- *   ctx.requestReset()  Ask the shell to re-seed (equivalent to sim.reset()).
- *   ctx.persist()       Debounced save of sim.state to localStorage.
  *   ctx.isPlaying()     -> the shell's current play state (the same `playing`
  *                          the rAF loop uses). For sims that need play state for
  *                          RENDERING or INTERACTION — e.g. RD paints the brush
@@ -1526,9 +1518,6 @@ const SimShell = (() => {
         const ctx = {
             canvas,
             getCanvasSize: () => ({ W, H, dpr }),
-            getPalette: () => currentStops(),
-            requestReset,
-            persist: persistState,
             isPlaying: () => playing,
         };
 
