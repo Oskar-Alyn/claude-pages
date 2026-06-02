@@ -42,8 +42,14 @@
  *                          calls getter functions on colorCfg. See "color modal"
  *                          notes below.
  *     .modals.shape      { title, intro?, chipLabel?, chips (registry),
- *                          getName(), onSelect(id), regionSlider? {label,min,
- *                          max,step,fmt,get,set,visibleFor(id)} }
+ *                          getName(), onSelect(id), onRandomize?(), regionSlider?
+ *                          {label,min,max,step,fmt,get,set,visibleFor(id)} }
+ *                          Optional SECOND control axis (a sim may need a second
+ *                          chip row + a slider gated by it — e.g. boids' heading
+ *                          direction): secondaryChips? {label, chips (registry),
+ *                          getName(), onSelect(id)} and secondarySlider? {label,
+ *                          min,max,step,fmt,get,set,visibleFor(secondaryId)}.
+ *                          Sims that omit these (e.g. gravity) are unaffected.
  *     .modals.params     { title, intro?, controls:[ {type:'slider', key, group,
  *                          label, hint, min, max, step, fmt, get(), set(v),
  *                          onApply?(v)} ] }
@@ -794,21 +800,42 @@ const SimShell = (() => {
         }
 
         // -- SHAPE (PATTERN) MODAL --
+        // The shape modal always has a primary chip row ("Starting shape") plus
+        // an optional `regionSlider` gated by the active shape. Some sims need a
+        // SECOND control axis (boids: "Which way they head" — a heading chip row
+        // plus a heading-angle slider gated by the active heading). Those are
+        // expressed via the optional `secondaryChips` + `secondarySlider` config
+        // below; sims without them (e.g. gravity) are unaffected.
         const shapeCfg = modalsCfg.shape;
         let patternRowCtl = null,
             regionSection = null,
-            regionSliderCtl = null;
+            regionSliderCtl = null,
+            secondaryRowCtl = null,
+            secondarySection = null,
+            secondarySliderCtl = null;
         function updateRegionVisibility() {
-            if (!regionSection || !shapeCfg.regionSlider) return;
-            regionSection.style.display = shapeCfg.regionSlider.visibleFor(
-                shapeCfg.getName(),
+            if (regionSection && shapeCfg.regionSlider) {
+                regionSection.style.display = shapeCfg.regionSlider.visibleFor(
+                    shapeCfg.getName(),
+                )
+                    ? ""
+                    : "none";
+            }
+        }
+        function updateSecondaryVisibility() {
+            if (!secondarySection || !shapeCfg.secondarySlider || !shapeCfg.secondaryChips) return;
+            secondarySection.style.display = shapeCfg.secondarySlider.visibleFor(
+                shapeCfg.secondaryChips.getName(),
             )
                 ? ""
                 : "none";
         }
         function syncPatternControls() {
             if (patternRowCtl) patternRowCtl.sync();
+            if (secondaryRowCtl) secondaryRowCtl.sync();
             updateRegionVisibility();
+            updateSecondaryVisibility();
+            if (secondarySliderCtl) secondarySliderCtl.sync();
             if (regionSliderCtl) regionSliderCtl.sync();
         }
         function buildShapeModal() {
@@ -833,6 +860,50 @@ const SimShell = (() => {
             });
             sec.appendChild(patternRowCtl.row);
             body.appendChild(sec);
+
+            // Optional secondary chip row + its gated slider (boids' heading).
+            if (shapeCfg.secondaryChips) {
+                const sc = shapeCfg.secondaryChips;
+                const secSec = sectionEl(sc.label);
+                secondaryRowCtl = chipRow({
+                    chips: sc.chips.items.map((p) => ({
+                        id: p.id,
+                        label: p.label,
+                    })),
+                    isActive: (id) => id === sc.getName(),
+                    onSelect: (id) => {
+                        sc.onSelect(id);
+                        secondaryRowCtl.sync();
+                        updateSecondaryVisibility();
+                        requestReset();
+                        persistState();
+                    },
+                });
+                secSec.appendChild(secondaryRowCtl.row);
+                body.appendChild(secSec);
+
+                if (shapeCfg.secondarySlider) {
+                    const ss = shapeCfg.secondarySlider;
+                    secondarySection = sectionEl(null);
+                    secondarySliderCtl = slider(
+                        {
+                            label: ss.label,
+                            min: ss.min,
+                            max: ss.max,
+                            step: ss.step,
+                            fmt: ss.fmt,
+                            get: ss.get,
+                            onApply: (v) => {
+                                ss.set(v);
+                                requestReset();
+                            },
+                        },
+                        persistState,
+                    );
+                    secondarySection.appendChild(secondarySliderCtl.wrap);
+                    body.appendChild(secondarySection);
+                }
+            }
 
             if (shapeCfg.regionSlider) {
                 const rs = shapeCfg.regionSlider;
