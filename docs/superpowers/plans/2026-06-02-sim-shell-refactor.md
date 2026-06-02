@@ -92,10 +92,31 @@ This is the load-bearing task. It invents the shell↔sim contract that all six 
 
 - [ ] **Step 1: Split gravity's inline JS into shell-owned vs sim-owned**
 
-Read gravity's inline `<script>` (starts line 1428). Classify every function/handler into two buckets:
+Gravity's inline `<script>` starts at line 1428. It is one IIFE that intermixes chrome and
+sim code, all sharing a single `state` object and calling each other directly — there is no
+existing boundary, so the contract is being *invented* here. Below is the actual function
+inventory (line offsets relative to the `<script>` start), pre-classified. Use it as the
+cut list.
 
-- **Shell-owned (sim-agnostic):** menu open/close, modal open/close + header-drag, FAB toolbar (record/share/hide/speed/pause/reset wiring), recording, share-link, hide-UI, settings modal (FPS slider + toolbar-visibility toggles), the rAF loop + speed/pause control, canvas resize plumbing.
-- **Sim-owned:** `PALETTES`/`PATTERNS`/headings registries, palette LUT + `refreshPalette`, `seed*`/`reset*`/`randomize`, `simulate`, `render`, the gravity `state` params, and the shape/params modal *contents*.
+**Shell-owned → move to `sim-shell.js`:**
+- Modals/windows: `openModal`, `closeModal`, `closeAllModals`, `bringToFront`, `placeFloating`, `saveWindows`, `refreshDropdownActive`, `endDrag` (header-drag), `openDropdown`, `closeDropdown`.
+- Control primitives: `makeSlider`, `groupContainer` — these literally become the shell's slider/section primitives.
+- Toolbar/chrome: `updatePauseButton`, `updateSpeedLabel`, `updateToolbarVisibility`, `syncSettings`, `toggleUI`.
+- Recording: `pickWebmMime`, `startRecording`, `stopRecording`.
+- Persistence/share: `deepMerge`, `persistState`, `loadPersistedState`, `buildShareURL`, `loadFromHash`, `showToast`.
+- Loop/resize: `loop` (rAF), `onResize`, and the generic half of `resizeCanvas`.
+- Shared helpers used by the color modal: `registry`, `hexToRgb`, `hslHex`, `hexToHsl`.
+
+**Sim-owned → move to `gravity.sim.js`:**
+- Seeding/reset: `seedParticles`, `spawnParticle`, `targetCount`, `reconcileCount`, `resetAll`.
+- Sim loop body: `simulate`, `render`, `hardClear`.
+- Params plumbing: `applyParamsToSliders`, `applyCount`.
+- Palette stops (sim data feeding the shared color modal): `buildPaletteLUT`, `generateCustomPalette`, `currentPaletteStops`, `refreshPalette`.
+
+**Three boundary cases that define the contract — get these right:**
+1. **Color modal is ~90% generic.** `markActiveColor`, `updatePalettePreview`, `updateSatSliderBg`, `onCustomColorChange`, `syncColorControls` are all chrome and move to the shell's standard color modal. The sim only supplies palette **stops** and receives a `refreshPalette(stops)` callback — it does NOT own the hue/accent/sat UI.
+2. **Persistence + share encode `sim.state`.** `persistState`/`buildShareURL` serialize the sim's params to localStorage and the URL hash; `loadPersistedState`/`loadFromHash` restore them. So the contract is: **the shell reads and writes `sim.state` directly**, and `sim.state` MUST stay JSON-serializable. `deepMerge` is how partial restores are applied.
+3. **`reconcileCount` is gravity-specific** (a particle-count slider that adds/removes bodies live). It stays sim-owned, but it's the example of a param whose slider needs a custom apply hook, not just a value write — the params-control config needs an optional `onApply` per control to support this. Bake that into the primitive in Step 2.
 
 - [ ] **Step 2: Create `sim-shell.js`**
 
@@ -106,7 +127,7 @@ Read gravity's inline `<script>` (starts line 1428). Classify every function/han
 const SimShell = (() => {
   // control primitives the modals are built from
   function chipRow({ chips, value, onSelect }) { /* ... */ }
-  function slider({ key, label, min, max, step, value, onInput }) { /* ... */ }
+  function slider({ key, label, min, max, step, value, onInput, onApply }) { /* onApply: optional custom hook (e.g. gravity's reconcileCount) instead of a plain state write */ }
   function toggle({ key, label, value, onChange }) { /* ... */ }
   function section({ title, description, children }) { /* ... */ }
 
@@ -137,7 +158,7 @@ SimShell.registerSim({
     modals: {
       color:  { palette: PALETTES, customStops: currentPaletteStops },
       shape:  { title: "Starting shape", chips: PATTERNS, sections: [/* heading row, region slider, ... */] },
-      params: { title: "Parameters", controls: [ /* {type:"slider", key, label, min, max, step}, ... */ ] },
+      params: { title: "Parameters", controls: [ /* {type:"slider", key, label, min, max, step, onApply?}, ... */ ] },
     },
   },
   init(ctx) { /* grab ctx.canvas, store ctx.getPalette / ctx.requestReset; seed */ },
