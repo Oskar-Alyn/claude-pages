@@ -7,28 +7,28 @@
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <meta name="theme-color" content="#05070b" />
-        <title>Simulations — a collection of interactive worlds</title>
+        <title>Tiny Worlds — a collection of interactive simulations</title>
         <meta
             name="description"
-            content="Five tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Each is a self-contained world you can tweak, color, and share."
+            content="Seven tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, reaction-diffusion, gravity, and strange attractors. Each is a self-contained world you can tweak, color, and share."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Simulations" />
+        <meta property="og:title" content="Tiny Worlds" />
         <meta
             property="og:description"
-            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
+            content="Seven tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, reaction-diffusion, gravity, and strange attractors."
         />
         <meta property="og:image" content="og/index.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="og/index.png" />
-        <meta name="twitter:title" content="Simulations" />
+        <meta name="twitter:title" content="Tiny Worlds" />
         <meta
             name="twitter:description"
-            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
+            content="Seven tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, reaction-diffusion, gravity, and strange attractors."
         />
 
         <style>
@@ -319,7 +319,7 @@
     <body>
         <nav class="nav">
             <a class="brand" href="#top"
-                ><span class="mark">✦</span> Simulations</a
+                ><span class="mark">✦</span> Tiny Worlds</a
             >
             <div class="links">
                 <a href="#slime">Slime Mold</a>
@@ -336,11 +336,11 @@
             <canvas class="bg" id="hero-canvas"></canvas>
             <div class="scrim"></div>
             <div class="content in">
-                <p class="eyebrow">Interactive · In your browser</p>
-                <h1 class="title">Simulations.</h1>
+                <p class="eyebrow">Watch · Tap · Reroll</p>
+                <h1 class="title">Tiny Worlds</h1>
                 <p class="lede">
-                    Five simple rules. Five worlds that won't sit still. Scroll
-                    down and poke them.
+                    Each built from a few simple rules. Scroll down and poke
+                    them.
                 </p>
             </div>
             <svg
@@ -361,7 +361,7 @@
         <main id="sections"></main>
 
         <footer>
-            <div class="f-title">Pick a world. Make it yours.</div>
+            <div class="f-title">Pick a world and start poking.</div>
             <div class="f-links">
                 <a href="slime-mold.html">Slime Mold</a>
                 <a href="boids.html">Boids</a>
@@ -372,8 +372,8 @@
                 <a href="strange-attractors.html">Strange Attractors</a>
             </div>
             <div class="f-note">
-                Each one's a page of its own. Tweak it, color it, record it,
-                share it.
+                Each one opens on its own page. Tap it, reroll it, and see where
+                it goes.
             </div>
         </footer>
 
@@ -973,64 +973,64 @@
                 const APPS = [
                     {
                         id: "slime",
-                        eyebrow: "Emergent networks",
+                        eyebrow: "Each one follows a scent",
                         name: "Slime Mold",
                         file: "slime-mold.html",
-                        pitch: "No blueprint, no leader — just thousands of critters chasing a scent. Watch them grow a glowing road map all on their own, then tweak it however you like.",
+                        pitch: "Follow the strongest scent, leave a trail behind. Watch the map grow, then reroll for a new one.",
                         pal: "Inferno",
                         make: createSlime,
                     },
                     {
                         id: "boids",
-                        eyebrow: "Flocking, from three rules",
+                        eyebrow: "Three rules per bird",
                         name: "Boids",
                         file: "boids.html",
-                        pitch: "Three rules per bird — that's the whole program. The flock is what happens next. Nudge a slider and watch it swirl, split, or fall apart.",
+                        pitch: "Stick together, match speed, don't crowd. Nudge the flock and see what happens.",
                         pal: "Cyber",
                         make: createBoids,
                     },
                     {
                         id: "particle-life",
-                        eyebrow: "Life from attraction",
+                        eyebrow: "Colors attract and repel",
                         name: "Particle Life",
                         file: "particle-life.html",
-                        pitch: "A random table decides which colors love and loathe which. From those blind pulls, cells and creatures assemble themselves. Roll new rules and see what's born.",
+                        pitch: "Some colors pull together, others shove apart. Roll new rules and see what assembles.",
                         pal: "Twilight",
                         make: createPL,
                     },
                     {
                         id: "flow",
-                        eyebrow: "Particles on a hidden current",
+                        eyebrow: "A hidden current",
                         name: "Flow Field",
                         file: "flow-field.html",
-                        pitch: "An invisible current runs under the screen. Thousands of particles ride it, painting silken streams of color — steer it, speed it up, and let it drift.",
+                        pitch: "Thousands of particles ride an invisible current across the screen. Drag through it and watch the streams bend.",
                         pal: "Frost",
                         make: createFlow,
                     },
                     {
                         id: "rd",
-                        eyebrow: "Turing patterns, alive",
+                        eyebrow: "Two chemicals, one grid",
                         name: "Reaction–Diffusion",
                         file: "reaction-diffusion.html",
-                        pitch: "Two chemicals, one grid, a constant tug-of-war. Out of it grow spots, stripes, and coral mazes. Paint in a little reagent and watch the pattern heal.",
+                        pitch: "One chemical feeds, the other kills, and they spread until patterns form. Paint some in and watch it grow.",
                         pal: "Acid",
                         make: createRD,
                     },
                     {
                         id: "gravity",
-                        eyebrow: "Order out of dust",
+                        eyebrow: "Every speck pulls the rest",
                         name: "Gravity",
                         file: "gravity.html",
-                        pitch: "Scatter a few thousand specks of mass and let gravity do the rest — they clump, swirl, and settle into spinning galaxies with long glowing tails. Crank the count or fling them with a drag, and watch order collapse out of the dust.",
+                        pitch: "Every speck of mass tugs on every other. Drag them together and watch galaxies form.",
                         pal: "Inferno",
                         make: createGravity,
                     },
                     {
                         id: "attractors",
-                        eyebrow: "Fractals from two equations",
+                        eyebrow: "Two equations, a million steps",
                         name: "Strange Attractors",
                         file: "strange-attractors.html",
-                        pitch: "Two tiny equations, run a million times over, trace a fractal you couldn't draw by hand if you tried. Hit randomize for a brand-new one every time, then dial the colors until it sings.",
+                        pitch: "Run two equations a million times and a fractal appears. Reroll for a new one each time.",
                         pal: "Iris",
                         make: createAttractor,
                     },
