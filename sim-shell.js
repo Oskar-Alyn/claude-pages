@@ -111,6 +111,14 @@
  *                          refreshPalette argument).
  *   ctx.requestReset()  Ask the shell to re-seed (equivalent to sim.reset()).
  *   ctx.persist()       Debounced save of sim.state to localStorage.
+ *   ctx.isPlaying()     -> the shell's current play state (the same `playing`
+ *                          the rAF loop uses). For sims that need play state for
+ *                          RENDERING or INTERACTION — e.g. RD paints the brush
+ *                          once per frame while PAUSED (render() can't tell that
+ *                          from a playing-but-zero-step frame otherwise). Sims
+ *                          must NOT use this to gate their own stepping: the
+ *                          shell already calls step() only while playing. Purely
+ *                          additive — sims that ignore it are unaffected.
  *
  * Fixed state.settings keys the SHELL reads/writes (every sim must carry these,
  * JSON-serializable, so the shared toolbar/settings/loop work):
@@ -1443,6 +1451,7 @@ const SimShell = (() => {
             getPalette: () => currentStops(),
             requestReset,
             persist: persistState,
+            isPlaying: () => playing,
         };
 
         // ============================================================
