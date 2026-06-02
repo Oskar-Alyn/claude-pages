@@ -20,7 +20,11 @@
             property="og:description"
             content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
         />
-        <meta name="twitter:card" content="summary" />
+        <meta property="og:image" content="og/index.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/index.png" />
         <meta name="twitter:title" content="Simulations" />
         <meta
             name="twitter:description"
@@ -325,8 +329,6 @@
                 <a href="#rd">Reaction–Diffusion</a>
                 <a href="#gravity">Gravity</a>
                 <a href="#attractors">Attractors</a>
-                <a href="#spiral">Spiral Waves</a>
-                <a href="#turmites">Turmites</a>
             </div>
         </nav>
 
@@ -368,8 +370,6 @@
                 <a href="reaction-diffusion.html">Reaction–Diffusion</a>
                 <a href="gravity.html">Gravity</a>
                 <a href="strange-attractors.html">Strange Attractors</a>
-                <a href="excitable.html">Spiral Waves</a>
-                <a href="turmites.html">Turmites</a>
             </div>
             <div class="f-note">
                 Each one's a page of its own. Tweak it, color it, record it,
@@ -967,98 +967,6 @@
                     };
                 }
 
-                // ---- Excitable medium (spiral waves) ----
-                function createExcitable(canvas, stops) {
-                    const ctx = canvas.getContext("2d");
-                    const lut = buildLUT(stops);
-                    let gw = 0, gh = 0, cur, nxt, img, data, raf = 0;
-                    const K = 10;
-                    function init() {
-                        const g = fitGrid(canvas, 200); gw = g.gw; gh = g.gh;
-                        cur = new Uint8Array(gw * gh); nxt = new Uint8Array(gw * gh);
-                        for (let i = 0; i < gw * gh; i++) cur[i] = (Math.random() * K) | 0;
-                        img = ctx.createImageData(gw, gh); data = img.data;
-                    }
-                    function step() {
-                        for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
-                            const i = y * gw + x, s = cur[i];
-                            if (s !== 0) { nxt[i] = (s + 1) % K; continue; }
-                            let cnt = 0;
-                            for (let dy = -1; dy <= 1; dy++) {
-                                let yy = y + dy; if (yy < 0) yy += gh; else if (yy >= gh) yy -= gh;
-                                const row = yy * gw;
-                                for (let dx = -1; dx <= 1; dx++) {
-                                    if (dx === 0 && dy === 0) continue;
-                                    let xx = x + dx; if (xx < 0) xx += gw; else if (xx >= gw) xx -= gw;
-                                    if (cur[row + xx] === 1) cnt++;
-                                }
-                            }
-                            nxt[i] = cnt >= 1 ? 1 : 0;
-                        }
-                        const tmp = cur; cur = nxt; nxt = tmp;
-                        const denom = K - 1;
-                        for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
-                            const s = cur[i];
-                            let idx = s === 0 ? 0 : (255 * (1 - (s - 1) / denom)) | 0;
-                            if (idx < 0) idx = 0; else if (idx > 255) idx = 255;
-                            const q = idx * 3;
-                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
-                        }
-                        ctx.putImageData(img, 0, 0);
-                    }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
-                    return {
-                        start() { if (!gw) init(); if (REDUCED) { for (let k = 0; k < 80; k++) step(); return; } if (!raf) frame(); },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
-                    };
-                }
-
-                // ---- Turmites (Langton's ants) ----
-                function createTurmite(canvas, stops) {
-                    const ctx = canvas.getContext("2d");
-                    const lut = buildLUT(stops);
-                    let gw = 0, gh = 0, grid, img, data, raf = 0, rule, ants;
-                    const K = 4;
-                    function init() {
-                        const g = fitGrid(canvas, 200); gw = g.gw; gh = g.gh;
-                        grid = new Uint8Array(gw * gh);
-                        img = ctx.createImageData(gw, gh); data = img.data;
-                        rule = [1, -1];
-                        for (let i = 2; i < K; i++) rule.push(Math.random() < 0.5 ? 1 : -1);
-                        ants = [];
-                        for (let k = 0; k < 5; k++)
-                            ants.push({ x: (Math.random() * gw) | 0, y: (Math.random() * gh) | 0, d: (Math.random() * 4) | 0 });
-                    }
-                    function step() {
-                        for (let s = 0; s < 2600; s++) {
-                            const an = ants[s % ants.length];
-                            const i = an.y * gw + an.x, v = grid[i];
-                            an.d = (an.d + (rule[v] === -1 ? 3 : 1)) & 3;
-                            grid[i] = (v + 1) % K;
-                            if (an.d === 0) an.x = an.x + 1 >= gw ? 0 : an.x + 1;
-                            else if (an.d === 1) an.y = an.y + 1 >= gh ? 0 : an.y + 1;
-                            else if (an.d === 2) an.x = an.x - 1 < 0 ? gw - 1 : an.x - 1;
-                            else an.y = an.y - 1 < 0 ? gh - 1 : an.y - 1;
-                        }
-                        const denom = K - 1;
-                        for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
-                            let idx = ((grid[i] / denom) * 255) | 0; if (idx > 255) idx = 255;
-                            const q = idx * 3;
-                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
-                        }
-                        ctx.putImageData(img, 0, 0);
-                        ctx.fillStyle = "rgba(255,255,255,0.95)";
-                        for (const an of ants) ctx.fillRect(an.x, an.y, 1, 1);
-                    }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
-                    return {
-                        start() { if (!gw) init(); if (REDUCED) { for (let k = 0; k < 140; k++) step(); return; } if (!raf) frame(); },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
-                    };
-                }
-
                 // ============================================================
                 // BUILD SECTIONS
                 // ============================================================
@@ -1125,24 +1033,6 @@
                         pitch: "Two tiny equations, run a million times over, trace a fractal you couldn't draw by hand if you tried. Hit randomize for a brand-new one every time, then dial the colors until it sings.",
                         pal: "Iris",
                         make: createAttractor,
-                    },
-                    {
-                        id: "spiral",
-                        eyebrow: "A heartbeat you can see",
-                        name: "Spiral Waves",
-                        file: "excitable.html",
-                        pitch: "Each cell fires, rests, and recovers — and from that one rhythm, endless spiral waves wind across the screen. Tap to set off a fresh wave and watch the spirals fight for space.",
-                        pal: "Cyber",
-                        make: createExcitable,
-                    },
-                    {
-                        id: "turmites",
-                        eyebrow: "Highways out of noise",
-                        name: "Turmites",
-                        file: "turmites.html",
-                        pitch: "Give a handful of mindless ants a single turn rule and turn them loose on a blank grid. For a while it's pure noise — then, out of nowhere, they snap into building orderly highways.",
-                        pal: "Twilight",
-                        make: createTurmite,
                     },
                 ];
 

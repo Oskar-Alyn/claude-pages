@@ -1,0 +1,12 @@
+{
+  "name": "claude-pages",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Single-file interactive simulations.",
+  "scripts": {
+    "og": "node scripts/capture-og.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.40.0"
+  }
+}

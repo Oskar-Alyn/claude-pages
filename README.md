@@ -20,8 +20,6 @@ behind it.
 | `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
 | `gravity.html` | Softened N-body gravity; masses collapse into spinning galaxies. |
 | `strange-attractors.html` | Iterate a two-line map (Clifford / De Jong / Svensson / Fractal Dream) into a density field of fractal lace. |
-| `excitable.html` | Greenberg–Hastings excitable medium; cells fire, recover, and wind into spiral waves. |
-| `turmites.html` | Langton's-ant / turmite agents build highways from a per-color turn rule. |
 
 ## Running it
 
@@ -29,6 +27,28 @@ Zero dependencies, no build step. Open `index.html` (or any sim page) in a
 browser. Everything is self-contained: every sim except slime mold inlines its
 own CSS and JS into a single `.html` file. Slime mold is split into
 `slime-mold.html` + `slime-mold.css` + `slime-mold.js`.
+
+## Social preview images
+
+Each page links an Open Graph / Twitter preview image from `og/`, generated
+automatically — no manual screenshots. The script runs each sim in your
+installed Chrome, hides the on-screen controls, lets it develop, then snapshots
+the canvas at 1200×630. The landing page uses a montage of all the thumbnails.
+
+```sh
+npm install                              # one-time: installs playwright-core (driver only)
+node scripts/capture-og.mjs              # regenerate every preview + montage
+node scripts/capture-og.mjs flow-field   # regenerate just one (by file stem)
+```
+
+`playwright-core` drives your existing Google Chrome, so there's no large
+browser download. Per-sim dwell times (how long a sim runs before the snapshot)
+live in the `SIMS` map in the script; bump a value if a slow-forming sim looks
+underdeveloped.
+
+The `og:image` paths are relative, which every modern scraper (Twitter/X,
+Slack, Discord, LinkedIn) resolves against the page URL. Facebook prefers
+absolute URLs — once the site has a fixed domain, prefix the paths with it.
 
 ## How a sim is built (the shared shell)
 
@@ -55,7 +75,7 @@ nearest existing file and swapping only the simulation core:
 - **Particle sims** (boids, particle-life, flow-field, gravity) share density
   scaling (the count is a per-reference-screen target × a Settings multiplier, so
   small screens run proportionally fewer), a toroidal world, and center-anchored
-  zoom. **Grid sims** (reaction-diffusion, strange-attractors, excitable, turmites)
+  zoom. **Grid sims** (reaction-diffusion, strange-attractors)
   render a small offscreen grid scaled up via `drawImage`, and Settings offers
   Resolution + a brush instead of count/density.
 
