@@ -62,7 +62,10 @@
  *                          label, hint, min, max, step, fmt, get(), set(v),
  *                          onApply?(v)} ] }
  *     .modals.settings   { sections:[ {label, controls:[...], hint?} ] } where a
- *                          control is {type:'slider'|'toggle', ...} like params.
+ *                          control is {type:'slider'|'toggle', ...} like params,
+ *                          or {type:'segmented', label, options:[{id,label}],
+ *                          get(), set(id), onChange?()} for a row of mutually-
+ *                          exclusive named buttons (e.g. a quality picker).
  *                          The shell auto-appends the standard "Randomize
  *                          behavior", "Sharing tools" and "Restore" sections,
  *                          so a sim only lists its own (Simulation/Performance)
@@ -1060,6 +1063,52 @@ const SimShell = (() => {
         ];
 
         function buildSettingsControl(def) {
+            // Optional segmented chip control (a row of mutually-exclusive
+            // buttons bound to a registry) for discrete, non-numeric settings —
+            // e.g. slime-mold's simulation-quality picker, which can't be a
+            // slider because each level maps to a named grid-resolution target.
+            // Purely additive: sims that only use slider/toggle are unaffected.
+            if (def.type === "segmented") {
+                const wrap = document.createElement("div");
+                wrap.className = "ctrl";
+                wrap.innerHTML = `
+                    <div class="ctrl-head"><span class="ctrl-name">${def.label}</span></div>
+                    <div class="segmented" style="margin-top: 0"></div>
+                `;
+                const seg = wrap.querySelector(".segmented");
+                const buttons = [];
+                def.options.forEach((opt) => {
+                    const btn = document.createElement("button");
+                    btn.textContent = opt.label;
+                    btn.dataset.id = opt.id;
+                    btn.addEventListener("click", () => {
+                        def.set(opt.id);
+                        if (def.onChange) def.onChange();
+                        buttons.forEach((b) =>
+                            b.classList.toggle(
+                                "active",
+                                b.dataset.id === def.get(),
+                            ),
+                        );
+                        persistState();
+                    });
+                    seg.appendChild(btn);
+                    buttons.push(btn);
+                });
+                const ctl = {
+                    sync() {
+                        buttons.forEach((b) =>
+                            b.classList.toggle(
+                                "active",
+                                b.dataset.id === def.get(),
+                            ),
+                        );
+                    },
+                };
+                ctl.sync();
+                settingSliders.push(ctl);
+                return wrap;
+            }
             if (def.type === "toggle") {
                 const ctl = toggle(
                     {
