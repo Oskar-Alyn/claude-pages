@@ -44,11 +44,9 @@
             resetOnRandomize: true,
             randomizeColor: true,
             randomizePattern: true,
+            quality: "high",
             fps: 60,
             simSpeed: 1,
-            zoom: 1,
-            resolution: 4,
-            brush: 0.9,
             showRecord: false,
             showShareLink: false,
             showHideUI: false,
@@ -194,7 +192,15 @@
     // ------------------------------------------------------------------
     // CANVAS & GRID (module-locals — NOT in state)
     // ------------------------------------------------------------------
-    let canvas, ctx, getSize, isPlaying;
+    let canvas, ctx, getSize, isPlaying, qualityScalar = () => 1;
+
+    // Quality baseline: the grid-cell target at the default level (high = 1.0);
+    // allocateGrid multiplies it by ctx.qualityScalar() and derives the grid
+    // from the viewport aspect (the shell owns the level enum + scalar ladder).
+    const GRID_BASELINE = 80000;
+    // Brush strength is fixed at the old slider's max (the per-sim slider was
+    // removed).
+    const BRUSH_STRENGTH = 1.0;
     const offscreen =
         typeof document !== "undefined"
             ? document.createElement("canvas")
@@ -257,9 +263,12 @@
     // GRID ALLOCATION & SEEDING
     // ------------------------------------------------------------------
     function allocateGrid() {
-        const scale = state.settings.resolution || 4;
-        Wg = Math.max(80, Math.round(W / scale));
-        Hg = Math.max(60, Math.round(H / scale));
+        // Size the grid to the Quality cell-count target at the current
+        // viewport aspect (same approach as slime-mold).
+        const aspect = W / H;
+        const target = GRID_BASELINE * qualityScalar();
+        Hg = Math.max(60, Math.round(Math.sqrt(target / aspect)));
+        Wg = Math.max(80, Math.round(Hg * aspect));
         const cells = Wg * Hg;
         A = new Float32Array(cells);
         B = new Float32Array(cells);
@@ -393,12 +402,12 @@
         ctx.fillRect(0, 0, W, H);
     }
 
-    // Reset only re-seeds the existing grid (same resolution).
+    // Reset only re-seeds the existing grid (same grid size).
     function resetAll() {
         seedField();
         clearCanvas();
     }
-    // Rebuild reallocates for a new size/resolution, then seeds.
+    // Rebuild reallocates for a new viewport size / quality, then seeds.
     function rebuildGrid() {
         allocateGrid();
         seedField();
@@ -492,7 +501,7 @@
     }
 
     function paintBrush() {
-        const br = state.settings.brush;
+        const br = BRUSH_STRENGTH;
         if (br <= 0) return;
         const r = Math.max(2, Math.round(Math.min(Wg, Hg) * 0.02));
         const r2 = r * r;
@@ -521,11 +530,8 @@
         const rect = canvas.getBoundingClientRect();
         const sx = ((e.clientX - rect.left) / rect.width) * W;
         const sy = ((e.clientY - rect.top) / rect.height) * H;
-        const zoom = state.settings.zoom || 1;
-        const wx = W * 0.5 + (sx - W * 0.5) / zoom;
-        const wy = H * 0.5 + (sy - H * 0.5) / zoom;
-        pointerGX = Math.floor((wx / W) * Wg);
-        pointerGY = Math.floor((wy / H) * Hg);
+        pointerGX = Math.floor((sx / W) * Wg);
+        pointerGY = Math.floor((sy / H) * Hg);
     }
 
     // ------------------------------------------------------------------
@@ -604,80 +610,6 @@
                         },
                     })),
                 },
-                settings: {
-                    sections: [
-                        {
-                            label: "Simulation",
-                            controls: [
-                                {
-                                    type: "slider",
-                                    label: "Resolution",
-                                    min: 2,
-                                    max: 8,
-                                    step: 1,
-                                    fmt: (v) => (v | 0) + " px",
-                                    get: () => state.settings.resolution || 4,
-                                    // Changing resolution reallocates + re-seeds
-                                    // the grid (restart), like the original.
-                                    onApply: (v) => {
-                                        state.settings.resolution =
-                                            parseInt(v, 10) || 4;
-                                        rebuildGrid();
-                                    },
-                                },
-                                {
-                                    type: "slider",
-                                    label: "Zoom",
-                                    min: 1,
-                                    max: 5,
-                                    step: 0.1,
-                                    fmt: (v) => v.toFixed(1) + "×",
-                                    get: () => state.settings.zoom || 1,
-                                    set: (v) => {
-                                        state.settings.zoom = v || 1;
-                                    },
-                                },
-                                {
-                                    type: "slider",
-                                    label: "Brush strength",
-                                    min: 0,
-                                    max: 1,
-                                    step: 0.05,
-                                    fmt: (v) => v.toFixed(2),
-                                    get: () =>
-                                        state.settings.brush == null
-                                            ? 0.9
-                                            : state.settings.brush,
-                                    set: (v) => {
-                                        state.settings.brush = v;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "Smaller resolution is finer but heavier — raise it if the sim stutters (changing it restarts). Zoom magnifies the view; click or touch the canvas to paint fresh reagent with the brush.",
-                        },
-                        {
-                            label: "Performance",
-                            controls: [
-                                {
-                                    type: "slider",
-                                    label: "Max FPS",
-                                    min: 15,
-                                    max: 120,
-                                    step: 5,
-                                    fmt: (v) => String(v | 0),
-                                    get: () => state.settings.fps || 60,
-                                    onApply: (v) => {
-                                        state.settings.fps =
-                                            parseInt(v, 10) || 60;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "Lower values run smoother on slower devices and save battery. Use the speed button to fast-forward the reaction.",
-                        },
-                    ],
-                },
             },
         },
 
@@ -686,6 +618,7 @@
             ctx = canvas.getContext("2d");
             getSize = ctx2.getCanvasSize;
             isPlaying = ctx2.isPlaying;
+            qualityScalar = ctx2.qualityScalar;
 
             const s = getSize();
             W = s.W;
@@ -723,9 +656,15 @@
 
         refreshPalette,
 
-        // Restoring defaults can change the resolution, which sizes the grid.
+        // Quality sizes the grid, so a level change reallocates + re-seeds it
+        // (a restart), like the old resolution change did.
+        onQualityChange() {
+            rebuildGrid();
+        },
+
+        // Restoring defaults can change the quality, which sizes the grid.
         // The shell resets state to defaults, calls this hook, then later calls
-        // reset(). So reallocate the grid for the restored resolution here; the
+        // reset(). So reallocate the grid for the restored quality here; the
         // downstream reset() → resetAll() does the single seed + clear, exactly
         // reproducing the original restore's rebuildGrid() (allocate+seed+clear).
         onRestoreDefaults() {
@@ -767,13 +706,6 @@
             ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
             ctx.fillRect(0, 0, W, H);
 
-            const zoom = state.settings.zoom || 1;
-            if (zoom !== 1) {
-                const z = dpr * zoom;
-                const tx = dpr * (W * 0.5) * (1 - zoom);
-                const ty = dpr * (H * 0.5) * (1 - zoom);
-                ctx.setTransform(z, 0, 0, z, tx, ty);
-            }
             ctx.imageSmoothingEnabled = true;
             ctx.drawImage(offscreen, 0, 0, W, H);
         },

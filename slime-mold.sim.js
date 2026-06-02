@@ -238,16 +238,10 @@
         "Tangential",
     );
 
-    const QUALITIES = registry(
-        [
-            { id: "low", label: "Low", target: 60000 },
-            { id: "med", label: "Medium", target: 130000 },
-            { id: "high", label: "High", target: 220000 },
-            { id: "veryHigh", label: "Very high", target: 400000 },
-            { id: "ultra", label: "Ultra", target: 800000 },
-        ],
-        "high",
-    );
+    // Quality baseline: the grid-cell target at the default level (high = 1.0).
+    // computeGridSize multiplies this by ctx.qualityScalar() — the shell owns
+    // the level enum + scalar ladder.
+    const GRID_BASELINE = 220000;
     const MAX_PARTICLES = 40000;
 
     const randomRanges = {
@@ -264,7 +258,7 @@
     // ------------------------------------------------------------------
     // CANVAS & FIELD (module-locals — NOT in state)
     // ------------------------------------------------------------------
-    let canvas, ctx, getSize;
+    let canvas, ctx, getSize, qualityScalar;
     // Offscreen grid-sized canvas: the pheromone field is rendered into this at
     // grid resolution, then drawn (scaled, smoothed) onto the shell's viewport-
     // sized main canvas — same approach as the reaction-diffusion sim. The
@@ -297,7 +291,7 @@
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const aspect = vw / vh;
-        const target = QUALITIES.byId(state.settings.quality).target;
+        const target = GRID_BASELINE * qualityScalar();
         const Hg = Math.max(60, Math.round(Math.sqrt(target / aspect)));
         const Wg = Math.max(60, Math.round(Hg * aspect));
         return { W: Wg, H: Hg };
@@ -820,51 +814,6 @@
                                 : undefined,
                     })),
                 },
-                settings: {
-                    sections: [
-                        {
-                            label: "Performance",
-                            controls: [
-                                {
-                                    type: "segmented",
-                                    label: "Simulation Quality",
-                                    options: QUALITIES.items.map((q) => ({
-                                        id: q.id,
-                                        label: q.label,
-                                    })),
-                                    get: () => state.settings.quality,
-                                    set: (id) => {
-                                        state.settings.quality = id;
-                                    },
-                                    // Changing quality resizes the field grid
-                                    // (realloc), rescaling particle positions —
-                                    // exactly the original's seg-quality click.
-                                    onChange: () => {
-                                        const { W: nw, H: nh } =
-                                            computeGridSize();
-                                        if (nw !== W || nh !== H)
-                                            allocateField(nw, nh);
-                                    },
-                                },
-                                {
-                                    type: "slider",
-                                    label: "Max FPS",
-                                    min: 15,
-                                    max: 120,
-                                    step: 5,
-                                    fmt: (v) => String(v | 0),
-                                    get: () => state.settings.fps || 60,
-                                    onApply: (v) => {
-                                        state.settings.fps =
-                                            parseInt(v, 10) || 60;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "Lower values run smoother on slower devices and save battery.",
-                        },
-                    ],
-                },
             },
         },
 
@@ -872,6 +821,7 @@
             canvas = ctx2.canvas;
             ctx = canvas.getContext("2d");
             getSize = ctx2.getCanvasSize;
+            qualityScalar = ctx2.qualityScalar;
 
             const s = getSize();
             Wv = s.W;
@@ -913,6 +863,14 @@
         },
 
         refreshPalette,
+
+        // Quality drives the grid-cell target, so a level change reallocates
+        // the field (rescaling particle positions) — what the old in-modal
+        // segmented onChange did.
+        onQualityChange() {
+            const { W: nw, H: nh } = computeGridSize();
+            if (nw !== W || nh !== H) allocateField(nw, nh);
+        },
 
         // Restoring defaults can change the quality, which sizes the grid. The
         // shell resets state to defaults, calls this hook, then later calls

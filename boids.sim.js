@@ -54,6 +54,7 @@
             resetOnRandomize: true,
             randomizeColor: true,
             randomizePattern: true,
+            quality: "high",
             fps: 60,
             simSpeed: 1,
             showRecord: false,
@@ -265,6 +266,8 @@
         H = 0,
         dpr = 1;
     let getSize = () => ({ W: 0, H: 0, dpr: 1 });
+    let qualityScalar = () => 1;
+    let activeCount = 0;
 
     // Boids: position + velocity in parallel typed arrays.
     const px = new Float32Array(MAX_BOIDS);
@@ -362,7 +365,8 @@
     }
 
     function seedBoids() {
-        const n = state.params.count;
+        const n = targetCount();
+        activeCount = n;
         const cx = W / 2,
             cy = H / 2;
         const maxR = Math.min(W, H) * 0.45 * state.pattern.regionSize;
@@ -470,6 +474,22 @@
         vy[i] = Math.sin(a) * sp;
     }
 
+    // Live boid count: the crowd-size param scaled by the Quality scalar,
+    // clamped to the buffer. Quality scales the count budget; the param stays
+    // the user's base knob (randomize varies it within the scaled range).
+    function targetCount() {
+        let n = Math.round(state.params.count * qualityScalar());
+        if (n > MAX_BOIDS) n = MAX_BOIDS;
+        if (n < 1) n = 1;
+        return n;
+    }
+    // Match the live flock to the target, spawning newly needed boids.
+    function reconcileCount() {
+        const t = targetCount();
+        for (let i = activeCount; i < t; i++) spawnBoid(i);
+        activeCount = t;
+    }
+
     function resetAll() {
         seedBoids();
         hardClear();
@@ -526,7 +546,7 @@
     // SIMULATION
     // ------------------------------------------------------------------
     function simulate() {
-        const n = state.params.count;
+        const n = activeCount;
         const vision = state.params.vision;
         const sepDist = state.params.sepDist;
         const visionSq = vision * vision;
@@ -669,7 +689,7 @@
     }
 
     function render() {
-        const n = state.params.count;
+        const n = activeCount;
         const maxSpeed = state.params.speed;
         const minSpeed = maxSpeed * 0.5;
         const span = maxSpeed - minSpeed || 1;
@@ -816,47 +836,16 @@
                         set: (v) => {
                             state.params[def.key] = v;
                         },
-                        // Growing the crowd spawns the newly needed boids so
-                        // they appear immediately (boundary case 3).
+                        // Changing the crowd size reconciles the live flock
+                        // (spawning newly needed boids) — boundary case 3.
                         onApply:
                             def.key === "count"
                                 ? (v) => {
-                                      if (v > state.params.count) {
-                                          for (
-                                              let i = state.params.count;
-                                              i < v;
-                                              i++
-                                          )
-                                              spawnBoid(i);
-                                      }
                                       state.params.count = v;
+                                      reconcileCount();
                                   }
                                 : undefined,
                     })),
-                },
-                settings: {
-                    sections: [
-                        {
-                            label: "Performance",
-                            controls: [
-                                {
-                                    type: "slider",
-                                    label: "Max FPS",
-                                    min: 15,
-                                    max: 120,
-                                    step: 5,
-                                    fmt: (v) => String(v | 0),
-                                    get: () => state.settings.fps || 60,
-                                    onApply: (v) => {
-                                        state.settings.fps =
-                                            parseInt(v, 10) || 60;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "Lower values run smoother on slower devices and save battery. For big flocks, drop the crowd size in Parameters.",
-                        },
-                    ],
                 },
             },
         },
@@ -865,6 +854,7 @@
             canvas = ctx2.canvas;
             ctx = canvas.getContext("2d");
             getSize = ctx2.getCanvasSize;
+            qualityScalar = ctx2.qualityScalar;
 
             // Crowd size is hard-capped by the boid buffers.
             if (state.params.count > MAX_BOIDS)
@@ -912,6 +902,12 @@
 
         refreshPalette,
 
+        // Quality scales the count budget, so a level change reconciles the
+        // live flock to the new target.
+        onQualityChange() {
+            reconcileCount();
+        },
+
         reset() {
             resetAll();
         },
@@ -923,11 +919,10 @@
                 v = Math.round(v / def.step) * def.step;
                 if (v < def.min) v = def.min;
                 if (v > def.max) v = def.max;
-                if (def.key === "count" && v > state.params.count) {
-                    for (let i = state.params.count; i < v; i++) spawnBoid(i);
-                }
                 state.params[def.key] = v;
             });
+            // Match the live flock to the new base count (Quality scalar applies).
+            reconcileCount();
         },
 
         step() {

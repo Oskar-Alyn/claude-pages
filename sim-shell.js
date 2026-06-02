@@ -76,16 +76,19 @@
  *                          slider-only — the params builder ignores `def.type`
  *                          and always builds a slider. (Only SETTINGS controls
  *                          support slider/toggle/segmented.)
- *     .modals.settings   { sections:[ {label, controls:[...], hint?} ] } where a
- *                          control is {type:'slider'|'toggle', ...} like params,
- *                          or {type:'segmented', label, options:[{id,label}],
- *                          get(), set(id), onChange?()} for a row of mutually-
- *                          exclusive named buttons (e.g. a quality picker).
- *                          The shell auto-appends the standard "Randomize
- *                          behavior", "Sharing tools" and "Restore" sections,
- *                          so a sim only lists its own (Simulation/Performance)
- *                          sections. The randomize/sharing toggles bind to fixed
- *                          state.settings keys (see below).
+ *     .modals.settings   OPTIONAL and, in practice, unused — every current sim
+ *                          declares ZERO custom Settings sections. The shell
+ *                          renders the standard "Performance" (Quality picker +
+ *                          Max FPS), "Randomize behavior", "Sharing tools" and
+ *                          "Restore" sections unconditionally. A sim MAY still
+ *                          pass { sections:[ {label, controls:[...], hint?} ] }
+ *                          to inject extra sections (rendered after Performance);
+ *                          a control is {type:'slider'|'toggle', ...} like
+ *                          params, or {type:'segmented', label, options:
+ *                          [{id,label}], get(), set(id), onChange?()} for a row
+ *                          of mutually-exclusive named buttons. The randomize/
+ *                          sharing toggles bind to fixed state.settings keys
+ *                          (see below).
  *
  *   sim.init(ctx)        REQUIRED. Called once after chrome is built and the
  *                        canvas is sized. Do canvas/buffer setup + initial seed
@@ -114,6 +117,11 @@
  *                        set this (currently particle-life, reaction-diffusion,
  *                        strange-attractors and slime-mold do). Sims that omit
  *                        the hook are completely unaffected.
+ *   sim.onQualityChange()  OPTIONAL, additive. Fired when the Quality level
+ *                        changes (and never on first boot). The sim re-derives
+ *                        its dominant cost from ctx.qualityScalar() — count sims
+ *                        reconcile their live count, grid sims reallocate their
+ *                        grid. Sims that omit it are unaffected.
  *   sim.refreshPalette(stops)  REQUIRED. Rebuild color LUTs from an array of hex
  *                        stop strings. The shell owns the hue/accent/sat UI and
  *                        passes the resolved stops; the sim never touches that UI.
@@ -135,11 +143,26 @@
  *                          must NOT use this to gate their own stepping: the
  *                          shell already calls step() only while playing. Purely
  *                          additive — sims that ignore it are unaffected.
+ *   ctx.qualityScalar() -> the active Quality level's normalized scalar (the
+ *                          ladder runs low .35 / med .6 / high 1 / veryHigh 1.6
+ *                          / ultra 2.5). Each sim declares ONE baseline for its
+ *                          dominant cost and multiplies it by this: count sims
+ *                          scale their count budget (and the randomize() range),
+ *                          grid sims scale their grid-resolution target. `high`
+ *                          is 1.0, so the baseline equals the old default level.
  *
  * Fixed state.settings keys the SHELL reads/writes (every sim must carry these,
  * JSON-serializable, so the shared toolbar/settings/loop work):
- *   fps, simSpeed, resetOnRandomize, randomizeColor, randomizePattern,
+ *   quality, fps, simSpeed, resetOnRandomize, randomizeColor, randomizePattern,
  *   showRecord, showShareLink, showHideUI
+ * These nine are the GLOBAL (per-device) block: the shell owns them, persists
+ * them to one shared localStorage key (`claude-sims-global`) identical across
+ * every sim, and EXCLUDES them from the per-sim key and the share-link hash.
+ * On first boot the shared key is seeded from whatever global values the sim's
+ * own state carries (so existing FPS/toggles migrate). The per-sim key and the
+ * share hash carry visual config only: state.params, state.pattern (shape),
+ * state.palette. Opening a desktop share link on a phone keeps the phone's own
+ * Quality/FPS/toggles.
  *
  * Required state.palette shape (the color modal reads AND writes these directly;
  * every sim must carry them, JSON-serializable):
@@ -159,8 +182,10 @@
  * and calls sim.refreshPalette(stops) whenever the resolved stops change.
  *
  * Persistence + share (boundary case 2): the shell serializes sim.state to
- * localStorage (debounced) and to the URL hash (base64) on demand. deepMerge
- * applies partial restores so adding state fields stays backward-compatible.
+ * localStorage (debounced) and to the URL hash (base64) on demand, splitting
+ * the global block out to its shared key (see the GLOBAL block notes above).
+ * deepMerge applies partial restores so adding state fields stays backward-
+ * compatible (and stale dropped keys in old state are simply ignored).
  *
  * Per-control onApply (boundary case 3): a params/settings slider may carry an
  * onApply(v) hook. When present the shell calls it on input INSTEAD of a plain
@@ -251,6 +276,43 @@ const SimShell = (() => {
             }
         }
     }
+
+    // --------------------------------------------------------------------
+    // GLOBAL (per-device) SETTINGS + QUALITY
+    // --------------------------------------------------------------------
+    // These state.settings keys are device-wide, identical across every sim,
+    // and live in one shared localStorage key (not the per-sim key, not the
+    // share-link hash). See the persistence notes in the contract docs.
+    const GLOBAL_KEY = "claude-sims-global";
+    const GLOBAL_SETTING_KEYS = [
+        "quality",
+        "fps",
+        "simSpeed",
+        "resetOnRandomize",
+        "randomizeColor",
+        "randomizePattern",
+        "showRecord",
+        "showShareLink",
+        "showHideUI",
+    ];
+    // The 5-level Quality enum + the canonical normalized scalar ladder. Each
+    // sim declares its own baseline for its dominant cost and multiplies it by
+    // ctx.qualityScalar() (= the active level's scalar). `high` is 1.0 so a
+    // sim's baseline equals its old default at the default level.
+    const QUALITY_LEVELS = [
+        { id: "low", label: "Low" },
+        { id: "med", label: "Medium" },
+        { id: "high", label: "High" },
+        { id: "veryHigh", label: "Very high" },
+        { id: "ultra", label: "Ultra" },
+    ];
+    const QUALITY_LADDER = {
+        low: 0.35,
+        med: 0.6,
+        high: 1,
+        veryHigh: 1.6,
+        ultra: 2.5,
+    };
 
     // --------------------------------------------------------------------
     // CHROME DOM — built once at registration. Markup matches the previous
@@ -527,23 +589,67 @@ const SimShell = (() => {
         // ============================================================
         // PERSISTENCE + SHARE
         // ============================================================
+        // The global block is the device-wide subset of state.settings; it
+        // persists to the one shared GLOBAL_KEY, never the per-sim LS_KEY and
+        // never the share-link hash.
+        function pickGlobal() {
+            const g = {};
+            for (const k of GLOBAL_SETTING_KEYS) {
+                if (k in state.settings) g[k] = state.settings[k];
+            }
+            return g;
+        }
+        // A deep-ish clone of state with the global settings keys stripped —
+        // used for the per-sim write and the share hash so neither carries the
+        // device-wide block.
+        function stateWithoutGlobal() {
+            const localSettings = {};
+            for (const k of Object.keys(state.settings || {})) {
+                if (!GLOBAL_SETTING_KEYS.includes(k))
+                    localSettings[k] = state.settings[k];
+            }
+            return { ...state, settings: localSettings };
+        }
+
         let persistTimer = null;
         function persistState() {
             if (persistTimer) clearTimeout(persistTimer);
             persistTimer = setTimeout(() => {
                 try {
-                    localStorage.setItem(LS_KEY, JSON.stringify(state));
+                    localStorage.setItem(
+                        LS_KEY,
+                        JSON.stringify(stateWithoutGlobal()),
+                    );
+                    localStorage.setItem(
+                        GLOBAL_KEY,
+                        JSON.stringify(pickGlobal()),
+                    );
                 } catch (e) {}
             }, 200);
         }
         function loadPersistedState() {
+            // Per-sim block first (params/palette/shape; for un-migrated users
+            // it may still carry the old global values + dead keys, which the
+            // deepMerge tolerates and the global load then overrides).
             try {
                 const raw = localStorage.getItem(LS_KEY);
                 if (raw) deepMerge(state, JSON.parse(raw));
             } catch (e) {}
+            // Global block. If the shared key is absent, seed it once from
+            // whatever global values are present now (defaults + any migrated
+            // per-sim values), so existing users keep their FPS/toggles.
+            try {
+                const graw = localStorage.getItem(GLOBAL_KEY);
+                if (graw) deepMerge(state.settings, JSON.parse(graw));
+                else
+                    localStorage.setItem(
+                        GLOBAL_KEY,
+                        JSON.stringify(pickGlobal()),
+                    );
+            } catch (e) {}
         }
         function buildShareURL() {
-            const json = JSON.stringify(state);
+            const json = JSON.stringify(stateWithoutGlobal());
             const encoded = btoa(unescape(encodeURIComponent(json)));
             return location.origin + location.pathname + "#" + encoded;
         }
@@ -551,8 +657,14 @@ const SimShell = (() => {
             const h = location.hash.slice(1);
             if (!h) return false;
             try {
-                const json = decodeURIComponent(escape(atob(h)));
-                deepMerge(state, JSON.parse(json));
+                const incoming = JSON.parse(decodeURIComponent(escape(atob(h))));
+                // Share links carry visual config only — never let a link
+                // override this device's global block.
+                if (incoming && incoming.settings) {
+                    for (const k of GLOBAL_SETTING_KEYS)
+                        delete incoming.settings[k];
+                }
+                deepMerge(state, incoming);
                 return true;
             } catch (e) {
                 return false;
@@ -1194,9 +1306,57 @@ const SimShell = (() => {
             return sec;
         }
 
+        // Shell-provided standard Performance section: Quality picker + Max FPS.
+        // Promoted out of the sims — they no longer declare it (or any custom
+        // Settings section). Quality changes dispatch sim.onQualityChange?().
+        function makePerformanceSection() {
+            const sec = sectionEl("Performance");
+            sec.appendChild(
+                buildSettingsControl({
+                    type: "segmented",
+                    label: "Quality",
+                    options: QUALITY_LEVELS.map((q) => ({
+                        id: q.id,
+                        label: q.label,
+                    })),
+                    get: () => state.settings.quality || "high",
+                    set: (id) => {
+                        state.settings.quality = id;
+                    },
+                    onChange: () => {
+                        if (typeof sim.onQualityChange === "function")
+                            sim.onQualityChange();
+                    },
+                }),
+            );
+            sec.appendChild(
+                buildSettingsControl({
+                    type: "slider",
+                    label: "Max FPS",
+                    min: 15,
+                    max: 120,
+                    step: 5,
+                    fmt: (v) => String(v | 0),
+                    get: () => state.settings.fps || 60,
+                    onApply: (v) => {
+                        state.settings.fps = parseInt(v, 10) || 60;
+                    },
+                }),
+            );
+            sec.appendChild(
+                hintEl(
+                    "Quality scales how hard this sim works — set it once per device. Lower Max FPS runs smoother on slower devices and saves battery.",
+                    true,
+                ),
+            );
+            return sec;
+        }
+
         function buildSettingsModal() {
             const body = byId("body-settings");
             body.appendChild(modalHeader("Settings"));
+
+            body.appendChild(makePerformanceSection());
 
             (settingsCfg.sections || []).forEach((s) => {
                 const sec = sectionEl(s.label);
@@ -1519,6 +1679,12 @@ const SimShell = (() => {
             canvas,
             getCanvasSize: () => ({ W, H, dpr }),
             isPlaying: () => playing,
+            // Active Quality scalar — the sim multiplies its own baseline by
+            // this for its dominant cost (count budget / grid target).
+            qualityScalar: () =>
+                QUALITY_LADDER[state.settings.quality] != null
+                    ? QUALITY_LADDER[state.settings.quality]
+                    : 1,
         };
 
         // ============================================================

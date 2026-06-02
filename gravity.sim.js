@@ -36,11 +36,9 @@
             resetOnRandomize: true,
             randomizeColor: true,
             randomizePattern: true,
+            quality: "high",
             fps: 60,
             simSpeed: 1,
-            zoom: 1,
-            countMult: 1,
-            pointerForce: 0.004,
             showRecord: false,
             showShareLink: false,
             showHideUI: false,
@@ -213,6 +211,11 @@
         H = 0,
         dpr = 1;
     let getSize = () => ({ W: 0, H: 0, dpr: 1 });
+    let qualityScalar = () => 1;
+
+    // Interaction strength is fixed at the old slider's max (the per-sim
+    // "Click / touch pull" setting was removed).
+    const POINTER_PULL = 0.012;
 
     const px = new Float32Array(MAX_PARTICLES);
     const py = new Float32Array(MAX_PARTICLES);
@@ -386,8 +389,7 @@
     // reference screen, times the settings multiplier — clamped to the buffer.
     function targetCount() {
         const areaScale = (W * H) / REF_AREA;
-        const mult = state.settings.countMult || 1;
-        let n = Math.round(state.params.count * areaScale * mult);
+        let n = Math.round(state.params.count * areaScale * qualityScalar());
         if (n > MAX_PARTICLES) n = MAX_PARTICLES;
         if (n < MIN_ACTIVE) n = MIN_ACTIVE;
         return n;
@@ -417,11 +419,8 @@
         pointerY = 0;
     function pointerToCanvas(e) {
         const rect = canvas.getBoundingClientRect();
-        const sx = ((e.clientX - rect.left) / rect.width) * W;
-        const sy = ((e.clientY - rect.top) / rect.height) * H;
-        const zoom = state.settings.zoom || 1;
-        pointerX = W * 0.5 + (sx - W * 0.5) / zoom;
-        pointerY = H * 0.5 + (sy - H * 0.5) / zoom;
+        pointerX = ((e.clientX - rect.left) / rect.width) * W;
+        pointerY = ((e.clientY - rect.top) / rect.height) * H;
     }
 
     // ------------------------------------------------------------------
@@ -435,7 +434,7 @@
         const halfW = W * 0.5,
             halfH = H * 0.5;
         const cap = Math.min(W, H) * 0.25;
-        const pull = pointerActive ? state.settings.pointerForce : 0;
+        const pull = pointerActive ? POINTER_PULL : 0;
         const pullR2 = 200 * 200;
 
         for (let i = 0; i < n; i++) {
@@ -512,13 +511,6 @@
         ctx.fillStyle =
             "rgba(" + bgR + "," + bgG + "," + bgB + "," + trailAlpha + ")";
         ctx.fillRect(0, 0, W, H);
-        const zoom = state.settings.zoom || 1;
-        if (zoom !== 1) {
-            const z = dpr * zoom;
-            const tx = dpr * (W * 0.5) * (1 - zoom);
-            const ty = dpr * (H * 0.5) * (1 - zoom);
-            ctx.setTransform(z, 0, 0, z, tx, ty);
-        }
         for (let i = 0; i < n; i++) {
             const sp = Math.hypot(pvx[i], pvy[i]);
             let t = sp / 5;
@@ -613,77 +605,6 @@
                                 : undefined,
                     })),
                 },
-                settings: {
-                    sections: [
-                        {
-                            label: "Simulation",
-                            controls: [
-                                {
-                                    type: "slider",
-                                    label: "Particle multiplier",
-                                    min: 0.25,
-                                    max: 2,
-                                    step: 0.05,
-                                    fmt: (v) => v.toFixed(2) + "×",
-                                    get: () => state.settings.countMult || 1,
-                                    onApply: (v) => {
-                                        state.settings.countMult = v || 1;
-                                        reconcileCount();
-                                    },
-                                },
-                                {
-                                    type: "slider",
-                                    label: "Zoom",
-                                    min: 1,
-                                    max: 5,
-                                    step: 0.1,
-                                    fmt: (v) => v.toFixed(1) + "×",
-                                    get: () => state.settings.zoom || 1,
-                                    set: (v) => {
-                                        state.settings.zoom = v || 1;
-                                    },
-                                },
-                                {
-                                    type: "slider",
-                                    label: "Click / touch pull",
-                                    min: 0,
-                                    max: 0.012,
-                                    step: 0.0005,
-                                    fmt: (v) => (v * 1000).toFixed(1),
-                                    get: () =>
-                                        state.settings.pointerForce == null
-                                            ? 0.004
-                                            : state.settings.pointerForce,
-                                    set: (v) => {
-                                        state.settings.pointerForce = v;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "The multiplier scales the Parameters particle count and survives randomizing. Zoom magnifies the view; click or touch the canvas to drag particles, with the pull strength set above (0 turns it off).",
-                        },
-                        {
-                            label: "Performance",
-                            controls: [
-                                {
-                                    type: "slider",
-                                    label: "Max FPS",
-                                    min: 15,
-                                    max: 120,
-                                    step: 5,
-                                    fmt: (v) => String(v | 0),
-                                    get: () => state.settings.fps || 60,
-                                    onApply: (v) => {
-                                        state.settings.fps =
-                                            parseInt(v, 10) || 60;
-                                    },
-                                },
-                            ],
-                            hint:
-                                "Lower values run smoother on slower devices and save battery. For huge clouds, drop the mass count in Parameters.",
-                        },
-                    ],
-                },
             },
         },
 
@@ -691,6 +612,7 @@
             canvas = ctx2.canvas;
             ctx = canvas.getContext("2d");
             getSize = ctx2.getCanvasSize;
+            qualityScalar = ctx2.qualityScalar;
 
             // Gravity-specific clamp after restore.
             if (state.params.count > MAX_PARTICLES)
@@ -741,6 +663,12 @@
 
         refreshPalette,
 
+        // Quality scales the count budget, so a level change reconciles the
+        // live pool to the new target.
+        onQualityChange() {
+            reconcileCount();
+        },
+
         reset() {
             resetAll();
         },
@@ -754,7 +682,7 @@
                 if (v > def.max) v = def.max;
                 state.params[def.key] = v;
             });
-            // Match the live pool to the new base count (multiplier carries over).
+            // Match the live pool to the new base count (Quality scalar applies).
             reconcileCount();
         },
 
