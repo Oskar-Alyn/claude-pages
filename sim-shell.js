@@ -33,22 +33,34 @@
  *                        settings". If omitted, the shell snapshots sim.state
  *                        at registration time.
  *
- *   sim.config           REQUIRED. Declarative description of the modals:
- *     .keys              OPTIONAL { ls, win } — localStorage keys. Defaults to
- *                        derive from sim.id. Gravity passes its legacy keys.
- *     .modals.color      { intro?, paletteRegistry, presetToCustom(stops),
- *                          generateCustomStops(custom) } — the shell tracks
- *                          mode/name/custom in state.palette directly and never
- *                          calls getter functions on colorCfg. See "color modal"
- *                          notes below. Two OPTIONAL, additive, backward-
+ *   sim.config           REQUIRED. Declarative description of the modals.
+ *                        `modals.color` and `modals.params` are REQUIRED (the
+ *                        shell builds both unconditionally at boot and would
+ *                        throw if either is absent); `modals.shape` and
+ *                        `modals.settings` are OPTIONAL (their builders run only
+ *                        when present).
+ *     .keys              OPTIONAL { ls, win } — localStorage keys. When absent
+ *                        they default to `${sim.id}-state` / `${sim.id}-windows`
+ *                        so each sim gets an isolated namespace. All 7 current
+ *                        sims pass explicit keys (e.g. gravity passes its legacy
+ *                        plife-* keys; gravity+particle-life intentionally share
+ *                        plife-state, reaction-diffusion+strange-attractors share
+ *                        rd-state).
+ *     .modals.color      REQUIRED. { intro?, paletteRegistry, presetToCustom
+ *                          (stops), generateCustomStops(custom) } — the shell
+ *                          tracks mode/name/custom in state.palette directly and
+ *                          never calls getter functions on colorCfg. See "color
+ *                          modal" notes below. Two OPTIONAL, additive, backward-
  *                          compatible fields: `legendHTML` overrides the default
  *                          Slow/Fast legend markup, and `extra` { render(host),
  *                          sync() } injects sim-specific content into the Custom
  *                          section (host) — render() is called once when the
  *                          modal is built, sync() after every palette change and
- *                          on initial sync. particle-life uses these to render
- *                          its #type-swatches row. Sims that set neither (gravity/
- *                          boids/flow-field) are completely unaffected.
+ *                          on initial sync. Both are optional; any sim may set
+ *                          them (legendHTML is used by particle-life, reaction-
+ *                          diffusion, strange-attractors and slime-mold; extra is
+ *                          used by particle-life to render its #type-swatches
+ *                          row). Sims that set neither are completely unaffected.
  *     .modals.shape      { title, intro?, chipLabel?, chips (registry),
  *                          getName(), onSelect(id), onRandomize?(), regionSlider?
  *                          {label,min,max,step,fmt,get,set,visibleFor(id)} }
@@ -58,9 +70,12 @@
  *                          getName(), onSelect(id)} and secondarySlider? {label,
  *                          min,max,step,fmt,get,set,visibleFor(secondaryId)}.
  *                          Sims that omit these (e.g. gravity) are unaffected.
- *     .modals.params     { title, intro?, controls:[ {type:'slider', key, group,
- *                          label, hint, min, max, step, fmt, get(), set(v),
- *                          onApply?(v)} ] }
+ *     .modals.params     REQUIRED. { title, intro?, controls:[ {type:'slider',
+ *                          key, group, label, hint, min, max, step, fmt, get(),
+ *                          set(v), onApply?(v)} ] }. NOTE: params controls are
+ *                          slider-only — the params builder ignores `def.type`
+ *                          and always builds a slider. (Only SETTINGS controls
+ *                          support slider/toggle/segmented.)
  *     .modals.settings   { sections:[ {label, controls:[...], hint?} ] } where a
  *                          control is {type:'slider'|'toggle', ...} like params,
  *                          or {type:'segmented', label, options:[{id,label}],
@@ -95,8 +110,10 @@
  *                        assignments). Do NOT rebuild per-species colors or
  *                        repaint swatches here — the downstream applyPalette()
  *                        → refreshPalette() → colorCfg.extra.sync() sequence
- *                        handles all color/swatch work. Sims that omit this hook
- *                        (gravity, boids, flow-field) are completely unaffected.
+ *                        handles all color/swatch work. Optional; any sim may
+ *                        set this (currently particle-life, reaction-diffusion,
+ *                        strange-attractors and slime-mold do). Sims that omit
+ *                        the hook are completely unaffected.
  *   sim.refreshPalette(stops)  REQUIRED. Rebuild color LUTs from an array of hex
  *                        stop strings. The shell owns the hue/accent/sat UI and
  *                        passes the resolved stops; the sim never touches that UI.
@@ -107,6 +124,10 @@
  *                        — the sim reads the size in init() and seeds there.
  *
  * The `ctx` the shell hands sim.init(ctx):
+ *
+ *   (getPalette / requestReset / persist below are provided for sims that need
+ *   them; the current sims mostly use canvas / getCanvasSize. They are NOT dead
+ *   code — keep them.)
  *
  *   ctx.canvas          The <canvas id="canvas"> element.
  *   ctx.getCanvasSize() -> { W, H, dpr } current logical size + device ratio.
@@ -127,6 +148,14 @@
  * JSON-serializable, so the shared toolbar/settings/loop work):
  *   fps, simSpeed, resetOnRandomize, randomizeColor, randomizePattern,
  *   showRecord, showShareLink, showHideUI
+ *
+ * Required state.palette shape (the color modal reads AND writes these directly;
+ * every sim must carry them, JSON-serializable):
+ *   mode               'preset' | 'custom'
+ *   name               preset id (a paletteRegistry id; used when mode==='preset')
+ *   custom.hue         base hue (0-360)
+ *   custom.accentHue   accent hue (0-360)
+ *   custom.saturation  saturation (0-100; used when mode==='custom')
  *
  * ----------------------------------------------------------------------------
  * Color modal (boundary case 1): ~90% generic and owned by the shell. The sim
@@ -492,8 +521,8 @@ const SimShell = (() => {
         const simId =
             sim.id ||
             (document.title || "sim").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const LS_KEY = (cfg.keys && cfg.keys.ls) || "plife-state";
-        const WIN_KEY = (cfg.keys && cfg.keys.win) || "plife-windows";
+        const LS_KEY = (cfg.keys && cfg.keys.ls) || `${simId}-state`;
+        const WIN_KEY = (cfg.keys && cfg.keys.win) || `${simId}-windows`;
         const defaultState =
             sim.defaultState || JSON.parse(JSON.stringify(state));
 
