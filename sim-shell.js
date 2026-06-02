@@ -40,7 +40,15 @@
  *                          generateCustomStops(custom) } — the shell tracks
  *                          mode/name/custom in state.palette directly and never
  *                          calls getter functions on colorCfg. See "color modal"
- *                          notes below.
+ *                          notes below. Two OPTIONAL, additive, backward-
+ *                          compatible fields: `legendHTML` overrides the default
+ *                          Slow/Fast legend markup, and `extra` { render(host),
+ *                          sync() } injects sim-specific content into the Custom
+ *                          section (host) — render() is called once when the
+ *                          modal is built, sync() after every palette change and
+ *                          on initial sync. particle-life uses these to render
+ *                          its #type-swatches row. Sims that set neither (gravity/
+ *                          boids/flow-field) are completely unaffected.
  *     .modals.shape      { title, intro?, chipLabel?, chips (registry),
  *                          getName(), onSelect(id), onRandomize?(), regionSlider?
  *                          {label,min,max,step,fmt,get,set,visibleFor(id)} }
@@ -76,6 +84,16 @@
  *                        pattern — the shell handles those via settings toggles,
  *                        calling sim.refreshPalette / sim.reset as needed).
  *                        Return value ignored.
+ *   sim.onRestoreDefaults()  OPTIONAL. Called by the shell during "Restore
+ *                        default settings", AFTER state is reset to defaults and
+ *                        BEFORE syncColorControls / applyPalette / reset. Use it
+ *                        to rebuild NON-COLOR derived state that depends on
+ *                        state.params (e.g. interaction matrices, species
+ *                        assignments). Do NOT rebuild per-species colors or
+ *                        repaint swatches here — the downstream applyPalette()
+ *                        → refreshPalette() → colorCfg.extra.sync() sequence
+ *                        handles all color/swatch work. Sims that omit this hook
+ *                        (gravity, boids, flow-field) are completely unaffected.
  *   sim.refreshPalette(stops)  REQUIRED. Rebuild color LUTs from an array of hex
  *                        stop strings. The shell owns the hue/accent/sat UI and
  *                        passes the resolved stops; the sim never touches that UI.
@@ -684,6 +702,10 @@ const SimShell = (() => {
         function applyPalette() {
             sim.refreshPalette(currentStops());
             updatePalettePreview();
+            // Optional sim-specific extra content in the color modal (e.g.
+            // particle-life's per-species swatches) re-syncs on every palette
+            // change. Sims that set no color.extra are unaffected.
+            if (colorCfg.extra && colorCfg.extra.sync) colorCfg.extra.sync();
         }
         function updatePalettePreview() {
             if (!palettePreview) return;
@@ -724,6 +746,7 @@ const SimShell = (() => {
             updateSatSliderBg();
             markActiveColor();
             updatePalettePreview();
+            if (colorCfg.extra && colorCfg.extra.sync) colorCfg.extra.sync();
         }
 
         function buildColorModal() {
@@ -783,8 +806,18 @@ const SimShell = (() => {
                 elFromHTML(`<div class="palette-preview" id="palette-preview"></div>`),
             );
             customSec.appendChild(
-                elFromHTML(`<div class="palette-legend"><span>Slow</span><span>Fast</span></div>`),
+                elFromHTML(
+                    colorCfg.legendHTML ||
+                        `<div class="palette-legend"><span>Slow</span><span>Fast</span></div>`,
+                ),
             );
+            // Optional sim-specific extra content rendered into the color modal
+            // body (e.g. particle-life's per-species swatch row). Appended into
+            // the Custom section so it sits with the palette preview/legend, and
+            // re-synced after every palette change (see applyPalette /
+            // syncColorControls). Sims that omit color.extra are unaffected.
+            if (colorCfg.extra && colorCfg.extra.render)
+                colorCfg.extra.render(customSec);
             body.appendChild(customSec);
 
             hueSlider = byId("s-hue");
@@ -1220,6 +1253,14 @@ const SimShell = (() => {
                     "",
                     location.pathname + location.search,
                 );
+            // Optional, additive hook: let a sim rebuild NON-COLOR derived
+            // state — e.g. interaction matrices, species assignments — now that
+            // `state` holds its defaults again. Fires BEFORE syncColorControls
+            // and applyPalette, so per-species colors and swatch repaints must
+            // NOT be done here; the downstream applyPalette() → refreshPalette()
+            // → colorCfg.extra.sync() sequence handles all color/swatch work.
+            if (typeof sim.onRestoreDefaults === "function")
+                sim.onRestoreDefaults();
             applyParamsToSliders();
             syncColorControls();
             syncPatternControls();
