@@ -49,7 +49,6 @@ const SIMS = {
                           // across a full-frame region grows edge-to-edge veins.
                           state: { params: { count: 18000 },
                                    pattern: { name: 'Scatter', regionSize: 1 } } },
-  'strange-attractors': { dwell: 5000,  mode: 'best', tries: 6 },
 };
 
 // Overlays to strip so the preview is pure simulation, not UI chrome.

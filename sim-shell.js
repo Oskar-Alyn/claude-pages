@@ -41,11 +41,10 @@
  *                        when present).
  *     .keys              OPTIONAL { ls, win } — localStorage keys. When absent
  *                        they default to `${sim.id}-state` / `${sim.id}-windows`
- *                        so each sim gets an isolated namespace. All 7 current
+ *                        so each sim gets an isolated namespace. All 6 current
  *                        sims pass explicit keys (e.g. gravity passes its legacy
  *                        plife-* keys; gravity+particle-life intentionally share
- *                        plife-state, reaction-diffusion+strange-attractors share
- *                        rd-state).
+ *                        plife-state).
  *     .modals.color      REQUIRED. { intro?, paletteRegistry, presetToCustom
  *                          (stops), generateCustomStops(custom) } — the shell
  *                          tracks mode/name/custom in state.palette directly and
@@ -58,7 +57,7 @@
  *                          modal is built, sync() after every palette change and
  *                          on initial sync. Both are optional; any sim may set
  *                          them (legendHTML is used by particle-life, reaction-
- *                          diffusion, strange-attractors and slime-mold; extra is
+ *                          diffusion and slime-mold; extra is
  *                          used by particle-life to render its #type-swatches
  *                          row). Sims that set neither are completely unaffected.
  *     .modals.shape      { title, intro?, chipLabel?, chips (registry),
@@ -114,8 +113,8 @@
  *                        repaint swatches here — the downstream applyPalette()
  *                        → refreshPalette() → colorCfg.extra.sync() sequence
  *                        handles all color/swatch work. Optional; any sim may
- *                        set this (currently particle-life, reaction-diffusion,
- *                        strange-attractors and slime-mold do). Sims that omit
+ *                        set this (currently particle-life, reaction-diffusion
+ *                        and slime-mold do). Sims that omit
  *                        the hook are completely unaffected.
  *   sim.onQualityChange()  OPTIONAL, additive. Fired when the Quality level
  *                        changes (and never on first boot). The sim re-derives

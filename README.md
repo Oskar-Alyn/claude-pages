@@ -19,7 +19,6 @@ behind it.
 | `flow-field.html` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
 | `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
 | `gravity.html` | Softened N-body gravity; masses collapse into spinning galaxies. |
-| `strange-attractors.html` | Iterate a two-line map (Clifford / De Jong / Svensson / Fractal Dream) into a density field of fractal lace. |
 
 ## Running it
 
@@ -92,7 +91,7 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
 - **Particle sims** (boids, particle-life, flow-field, gravity) share density
   scaling (the count is a per-reference-screen target × a Settings multiplier, so
   small screens run proportionally fewer), a toroidal world, and center-anchored
-  zoom. **Grid sims** (reaction-diffusion, strange-attractors)
+  zoom. **Grid sims** (reaction-diffusion)
   render a small offscreen grid scaled up via `drawImage`, and Settings offers
   Resolution + a brush instead of count/density.
 
@@ -108,7 +107,7 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
 - **Keep user-facing copy non-technical** — favor the playful "critters / ants /
   masses" mental model over agent / sensor / pheromone / kernel in anything the user
   reads.
-- **Known quirk:** two pairs of sims share a localStorage key on the same origin
-  (`gravity`/`particle-life` → `plife-state`; `reaction-diffusion`/`strange-attractors`
-  → `rd-state`), preserved from before the shell extraction. New sims that omit
-  `config.keys` get an id-derived namespace automatically.
+- **Known quirk:** one pair of sims shares a localStorage key on the same origin
+  (`gravity`/`particle-life` → `plife-state`), preserved from before the shell
+  extraction. New sims that omit `config.keys` get an id-derived namespace
+  automatically.

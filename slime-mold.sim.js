@@ -8,7 +8,7 @@
  * so the swarm self-organizes into branching, vein-like networks. It is a
  * HYBRID of the particle sims (typed-array agents with a heading) and the grid
  * sims (a Float32 field rendered through an offscreen ImageData) — so it mirrors
- * boids' heading control and RD/strange-attractors' grid realloc-on-resize. All
+ * boids' heading control and reaction-diffusion's grid realloc-on-resize. All
  * chrome (modals, toolbar, persistence, share, recording, the rAF loop) lives in
  * sim-shell.js; this file owns only the simulation + its palette/seed data.
  *
