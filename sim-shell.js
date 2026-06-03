@@ -579,6 +579,12 @@ const SimShell = (() => {
         const defaultState =
             sim.defaultState || JSON.parse(JSON.stringify(state));
 
+        // ---- feed mode (all behavior below is gated on FEED; a page with no
+        // ?feed=1 is byte-for-byte identical to before) -----------------
+        const _q = new URLSearchParams(location.search);
+        const FEED = _q.has("feed");
+        const BOOT_PAUSED = _q.has("paused");
+
         // ---- inject chrome DOM --------------------------------------
         document.body.insertAdjacentHTML("beforeend", CHROME_HTML);
 
@@ -1351,11 +1357,72 @@ const SimShell = (() => {
             return sec;
         }
 
+        // ---- feed: Taste Influence slider + Reset-taste button --------
+        // Persists to the shared claude-feed-settings key the host reads each
+        // draw; Reset clears claude-feed-taste and tells the host to drop its
+        // in-memory copy. Only built when FEED.
+        const FEED_SETTINGS_KEY = "claude-feed-settings";
+        const FEED_TASTE_KEY = "claude-feed-taste";
+        function readFeedInfluence() {
+            try {
+                const s = JSON.parse(localStorage.getItem(FEED_SETTINGS_KEY));
+                if (s && typeof s.influence === "number") return s.influence;
+            } catch (e) {}
+            return 0.5; // matches host TUNING.DEFAULT_INFLUENCE
+        }
+        function writeFeedInfluence(v) {
+            try {
+                localStorage.setItem(
+                    FEED_SETTINGS_KEY,
+                    JSON.stringify({ influence: v }),
+                );
+            } catch (e) {}
+        }
+        function makeFeedSection() {
+            const sec = sectionEl("Feed");
+            const ctl = slider(
+                {
+                    label: "Taste influence",
+                    min: 0,
+                    max: 1,
+                    step: 0.05,
+                    fmt: (v) => Math.round(v * 100) + "%",
+                    get: readFeedInfluence,
+                    set: writeFeedInfluence,
+                },
+                () => {}, // slider() persists via set(); no per-sim persist needed
+            );
+            sec.appendChild(ctl.wrap);
+            sec.appendChild(
+                hintEl(
+                    "How strongly the feed follows what you watch. 0% is pure random; 100% leans fully on your taste.",
+                    true,
+                ),
+            );
+            const actions = document.createElement("div");
+            actions.className = "modal-actions";
+            actions.style.marginTop = "6px";
+            const reset = document.createElement("button");
+            reset.className = "btn";
+            reset.textContent = "Reset taste profile";
+            reset.addEventListener("click", () => {
+                try {
+                    localStorage.removeItem(FEED_TASTE_KEY);
+                } catch (e) {}
+                parent.postMessage({ type: "resetTaste" }, "*");
+                showToast("Taste profile reset");
+            });
+            actions.appendChild(reset);
+            sec.appendChild(actions);
+            return sec;
+        }
+
         function buildSettingsModal() {
             const body = byId("body-settings");
             body.appendChild(modalHeader("Settings"));
 
             body.appendChild(makePerformanceSection());
+            if (FEED) body.appendChild(makeFeedSection());
 
             (settingsCfg.sections || []).forEach((s) => {
                 const sec = sectionEl(s.label);
@@ -1443,12 +1510,36 @@ const SimShell = (() => {
             );
         }
 
+        // ---- feed: Back FAB (styled identically; reuses .fab) ---------
+        if (FEED) {
+            const back = document.createElement("button");
+            back.className = "fab";
+            back.id = "fab-back";
+            back.title = "Back";
+            back.setAttribute("aria-label", "Back");
+            back.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>`;
+            byId("fab-toolbar").insertBefore(back, byId("fab-randomize"));
+            back.addEventListener("click", () => {
+                parent.postMessage({ type: "back" }, "*");
+            });
+        }
+
         // ---- randomize -----------------------------------------------
         const fabRandomize = byId("fab-randomize");
         fabRandomize.addEventListener("click", () => {
             fabRandomize.classList.remove("spin");
             void fabRandomize.offsetWidth;
             fabRandomize.classList.add("spin");
+
+            // Feed mode: randomize forwards intent to the host, which owns the
+            // draw. The local randomize path below is skipped entirely.
+            if (FEED) {
+                parent.postMessage({ type: "next" }, "*");
+                return;
+            }
 
             sim.randomize();
             applyParamsToSliders();
@@ -1474,6 +1565,64 @@ const SimShell = (() => {
 
             persistState();
         });
+
+        // ---- feed: apply a recipe in place (no reload) ----------------
+        // Mirrors restoreDefaults() minus the localStorage clear: merge the
+        // recipe into state, let the sim rebuild non-color derived state
+        // (e.g. particle-life's matrix), then resync controls + reseed.
+        function applyRecipe(recipe) {
+            if (!recipe) return;
+            if (recipe.settings) {
+                for (const k of GLOBAL_SETTING_KEYS) delete recipe.settings[k];
+            }
+            deepMerge(state, recipe);
+            if (typeof sim.onRestoreDefaults === "function")
+                sim.onRestoreDefaults();
+            applyParamsToSliders();
+            syncColorControls();
+            syncPatternControls();
+            applyPalette();
+            requestReset();
+        }
+
+        // ---- feed: manifest the host harvests from this sim's own config --
+        function buildFeedManifest() {
+            const p = {};
+            (paramsCfg.controls || []).forEach((c) => {
+                p[c.key] = { min: c.min, max: c.max, step: c.step };
+            });
+            return {
+                params: p,
+                palettes: (colorCfg.paletteRegistry.items || []).map(
+                    (x) => x.id,
+                ),
+                patterns:
+                    shapeCfg && shapeCfg.chips
+                        ? shapeCfg.chips.items.map((x) => x.id)
+                        : [],
+            };
+        }
+
+        // ---- feed: host -> sim messages -------------------------------
+        if (FEED) {
+            window.addEventListener("message", (e) => {
+                const d = e.data;
+                if (!d || typeof d !== "object") return;
+                if (d.type === "apply") {
+                    applyRecipe(d.recipe);
+                } else if (d.type === "play") {
+                    if (!playing) {
+                        playing = true;
+                        updatePauseButton();
+                    }
+                } else if (d.type === "pause") {
+                    if (playing) {
+                        playing = false;
+                        updatePauseButton();
+                    }
+                }
+            });
+        }
 
         // ---- restore defaults ----------------------------------------
         function restoreDefaults() {
@@ -1780,6 +1929,7 @@ const SimShell = (() => {
         syncColorControls();
         syncPatternControls();
         syncSettings();
+        if (FEED && BOOT_PAUSED) playing = false;
         updatePauseButton();
         updateSpeedLabel();
 
@@ -1794,6 +1944,7 @@ const SimShell = (() => {
         let lastFrame = 0;
         let lastSim = 0;
         let simAccumulator = 0;
+        let feedReadySent = false;
         function loop(now) {
             requestAnimationFrame(loop);
             if (now - lastFrame < frameInterval) return;
@@ -1815,6 +1966,19 @@ const SimShell = (() => {
             lastSim = now;
 
             sim.render();
+
+            if (FEED && !feedReadySent) {
+                feedReadySent = true;
+                parent.postMessage(
+                    {
+                        type: "ready",
+                        sim: simId,
+                        manifest: buildFeedManifest(),
+                        recipe: stateWithoutGlobal(),
+                    },
+                    "*",
+                );
+            }
         }
         requestAnimationFrame(loop);
     }
