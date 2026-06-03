@@ -694,14 +694,15 @@
     // SHELL CONTRACT
     // ------------------------------------------------------------------
     SimShell.registerSim({
-        id: "slime",
+        id: "slime-mold",
         state,
         defaultState,
-        // Preserve slime-mold's legacy storage keys so existing saved state
-        // (and shared links) keep loading. The recording filename uses `id`,
-        // and the original wrote `slime-<ts>.webm`, so id must be "slime".
+        // id matches the page's filename stem, like every other sim — so the
+        // shell's default storage keys (`slime-mold-state` / `slime-mold-windows`)
+        // and recording filename (`slime-mold-<ts>.webm`) all follow the same
+        // convention. The feed keys sims by this stem too.
         config: {
-            keys: { ls: "slime-v2-state", win: "slime-v2-windows" },
+            keys: { ls: "slime-mold-state", win: "slime-mold-windows" },
             modals: {
                 color: {
                     intro:

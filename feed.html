@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#0a0d14" />
+        <title>Discovery Feed</title>
+        <meta
+            name="description"
+            content="A personal discovery feed over the sims."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                background: #0a0d14;
+                overflow: hidden;
+            }
+            #feed-stage {
+                position: fixed;
+                inset: 0;
+            }
+            .feed-frame {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                border: 0;
+                opacity: 0; /* warm/loading frames are invisible... */
+                pointer-events: none; /* ...and non-interactive */
+                z-index: 0;
+            }
+            .feed-frame.show {
+                opacity: 1; /* the one visible item */
+                pointer-events: auto;
+                z-index: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="feed-stage"></div>
+        <script src="feed.js"></script>
+    </body>
+</html>
