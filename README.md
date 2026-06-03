@@ -95,6 +95,23 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
   render a small offscreen grid scaled up via `drawImage`, and Settings offers
   Resolution + a brush instead of count/density.
 
+## Discovery Feed (`feed.html`)
+
+`feed.html` is an invisible, chrome-less host (`feed.js`) that turns the sims into
+a personal "scroll for fun" feed. It renders the current item in a full-screen
+`<iframe src="<sim>.html?feed=1#<recipe>">` and keeps the next draw warm in a
+second paused, off-screen iframe (cap: 2 live iframes) so cross-sim draws are a
+flash-free hard cut; same-sim draws apply the recipe in place via `postMessage`.
+The recipe is the existing share-hash payload (`base64(stateWithoutGlobal())`) —
+no new format. Randomize and a new Back FAB forward intent to the host. Taste is
+learned passively from dwell / fast-skip (per sim + per param-bucket, in
+`localStorage`); a single "Taste influence" slider in Settings linearly blends the
+learned draw toward uniform random. All of this lives behind a `?feed=1` flag in
+`sim-shell.js`; a sim opened without the flag is unchanged. Per-sim param ranges
+are harvested at runtime from each sim's own `modals.params` (reported in its
+`ready` message), so they never drift. Tuning constants live in `TUNING` at the
+top of `feed.js`.
+
 ## Notes for contributors
 
 - **Verify in a real browser.** The chrome and modals are built by JS at runtime,
