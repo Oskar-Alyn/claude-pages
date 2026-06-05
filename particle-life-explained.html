@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#060309" />
+        <title>How Particle Life Works — Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of the Particle Life simulation. One table of who attracts whom, and cells, chasers, and lifelike shapes settle out of it. Roll a new world and watch."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Particle Life Works" />
+        <meta
+            property="og:description"
+            content="One table of who attracts whom, and lifelike shapes settle out of it. A visual walkthrough of Particle Life."
+        />
+        <meta property="og:image" content="og/particle-life.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/particle-life.png" />
+        <meta name="twitter:title" content="How Particle Life Works" />
+        <meta
+            name="twitter:description"
+            content="One table decides who attracts whom. Lifelike shapes do the rest."
+        />
+
+        <style>
+            :root {
+                --accent: #ff63c4;
+                --accent-deep: #9a2a86;
+                --ink: #f7f3fa;
+                --muted: rgba(247, 243, 250, 0.72);
+                --faint: rgba(247, 243, 250, 0.45);
+                --line: rgba(255, 255, 255, 0.09);
+                --card: rgba(255, 255, 255, 0.035);
+                --pull: #56e0a0;
+                --push: #ff6a86;
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-behavior: smooth;
+                scroll-padding-top: 64px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+            body {
+                margin: 0;
+                background: #060309;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(9, 6, 14, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid var(--line);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 18px;
+                align-items: center;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            .nav .links .launch {
+                color: var(--accent);
+            }
+            @media (max-width: 560px) {
+                .nav .links .home {
+                    display: none;
+                }
+            }
+
+            /* ---------- Hero ---------- */
+            .hero {
+                position: relative;
+                min-height: 92vh;
+                min-height: 92svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            .hero canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+            }
+            .hero .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 75% 60% at center 46%,
+                        rgba(0, 0, 0, 0.45),
+                        rgba(0, 0, 0, 0.1) 55%,
+                        rgba(6, 3, 9, 0.7)
+                    ),
+                    linear-gradient(
+                        rgba(6, 3, 9, 0.3),
+                        rgba(6, 3, 9, 0) 30%,
+                        rgba(6, 3, 9, 0) 70%,
+                        rgba(6, 3, 9, 0.95)
+                    );
+            }
+            .hero .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 760px;
+                padding: 90px 24px;
+            }
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .hero .title {
+                font-size: clamp(44px, 9vw, 104px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.18em 0 0.34em;
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 23px);
+                color: var(--muted);
+                max-width: 32ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.5);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Article ---------- */
+            .article {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 8px 22px 40px;
+            }
+            section {
+                padding: 46px 0 8px;
+                scroll-margin-top: 64px;
+            }
+            .step {
+                font-size: 12.5px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent-deep);
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: clamp(27px, 5vw, 38px);
+                line-height: 1.1;
+                letter-spacing: -0.025em;
+                font-weight: 700;
+                margin: 0 0 0.5em;
+            }
+            p {
+                color: var(--muted);
+                font-size: clamp(16px, 2vw, 18px);
+                margin: 0 0 1.1em;
+            }
+            p .hi {
+                color: rgba(247, 243, 250, 0.92);
+                font-weight: 600;
+            }
+            .pull-word {
+                color: var(--pull);
+                font-weight: 600;
+            }
+            .push-word {
+                color: var(--push);
+                font-weight: 600;
+            }
+
+            /* ---------- Demo cards ---------- */
+            .demo {
+                margin: 22px 0 8px;
+                padding: 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+            }
+            .demo-pair {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            @media (max-width: 540px) {
+                .demo-pair {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .cell {
+                position: relative;
+            }
+            .cell canvas {
+                display: block;
+                width: 100%;
+                height: 196px;
+                border-radius: 12px;
+                background: #040208;
+                cursor: default;
+            }
+            .caption {
+                margin: 10px 2px 2px;
+                font-size: 13.5px;
+                color: var(--muted);
+            }
+            .tag {
+                font-weight: 600;
+                color: var(--ink);
+            }
+
+            /* ---------- Attraction table ---------- */
+            .matrix-wrap {
+                margin: 22px 0 8px;
+                padding: 20px 16px 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .mtx {
+                display: inline-grid;
+                gap: 5px;
+            }
+            .mcell {
+                width: clamp(34px, 9.5vw, 52px);
+                height: clamp(34px, 9.5vw, 52px);
+                border-radius: 8px;
+                display: grid;
+                place-items: center;
+                font-size: clamp(10px, 2.4vw, 13px);
+                font-variant-numeric: tabular-nums;
+                color: rgba(255, 255, 255, 0.92);
+                font-weight: 600;
+            }
+            .mhead {
+                width: clamp(34px, 9.5vw, 52px);
+                height: clamp(34px, 9.5vw, 52px);
+                display: grid;
+                place-items: center;
+            }
+            .mhead .swatch {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+            }
+            .mcorner {
+                display: grid;
+                place-items: center;
+                color: var(--faint);
+                font-size: 11px;
+            }
+            .mlegend {
+                display: flex;
+                gap: 18px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 16px;
+                font-size: 13px;
+                color: var(--muted);
+            }
+            .mlegend span {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+            }
+            .mlegend i {
+                width: 13px;
+                height: 13px;
+                border-radius: 4px;
+                display: inline-block;
+            }
+            .mnote {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 14px 0 0;
+                max-width: 42ch;
+            }
+            .mnote.mtop {
+                margin: 0 0 18px;
+            }
+
+            /* ---------- Compact tables under demos ---------- */
+            .mtx-center {
+                display: flex;
+                justify-content: center;
+                margin-top: 14px;
+            }
+            .mtx.mini {
+                gap: 3px;
+            }
+            .mtx.mini .mcell,
+            .mtx.mini .mhead {
+                width: clamp(16px, 4.6vw, 22px);
+                height: clamp(16px, 4.6vw, 22px);
+            }
+            .mtx.mini .mhead .swatch {
+                width: 11px;
+                height: 11px;
+            }
+            .mcell.changed {
+                box-shadow: 0 0 0 2px var(--ink);
+            }
+
+            .hint {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 12px 0 0;
+            }
+
+            /* ---------- Outro / CTA ---------- */
+            .outro {
+                text-align: center;
+                padding-top: 30px;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #2a0622;
+                padding: 13px 26px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(255, 99, 196, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #ff86d2;
+                box-shadow: 0 12px 38px rgba(255, 99, 196, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><span class="mark">✦</span> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="particle-life.html">Open the sim →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <p class="eyebrow">How it works · Particle Life</p>
+                <h1 class="title">Life from one&nbsp;table</h1>
+                <p class="lede">
+                    Each dot
+                    <span class="pull-word">pulls some colors closer</span>, and
+                    <span class="push-word">pushes others away</span>.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>Each dot is one particle</h2>
+                <p>
+                    Think of the colors as teams, only a few of them, and every
+                    particle on a team plays the same way.
+                </p>
+                <p>
+                    A particle can't see the whole picture; it only reacts to
+                    the neighbors right around it, and follows one rule.
+                </p>
+            </section>
+
+            <!-- THE RULE -->
+            <section id="rule">
+                <p class="step">The one rule</p>
+                <h2>Every color has a feeling about every other</h2>
+                <p>
+                    Pick any two colors. A single number says how the first
+                    affects the second:
+                    <span class="pull-word">pull closer</span>, or
+                    <span class="push-word">push away</span>, and how strongly.
+                    Collect a number for every pair and you have a table. That
+                    table is the whole rulebook.
+                </p>
+                <div class="matrix-wrap">
+                    <p class="mnote mtop">
+                        For example, the actual table running the swarm up top.
+                    </p>
+                    <div class="mtx" id="matrix"></div>
+                    <div class="mlegend">
+                        <span
+                            ><i style="background: var(--pull)"></i> pulls
+                            closer</span
+                        >
+                        <span
+                            ><i style="background: var(--push)"></i> pushes
+                            away</span
+                        >
+                    </div>
+                    <p class="mnote">
+                        Read it as: the row's color feels this way about the
+                        column's color.
+                    </p>
+                </div>
+                <p>
+                    Every number in the table works the same way. The simplest
+                    case is one color with a single number.
+                </p>
+                <div class="demo" data-demo="rule">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="push-word">Push apart</span>, they
+                                spread out
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="pull-word">Pull together</span>, they
+                                clump
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CROWD -->
+            <section id="crowd">
+                <p class="step">What falls out · 1</p>
+                <h2>It only comes alive in a crowd</h2>
+                <p>
+                    A rule needs something to act on. Set a handful of particles
+                    loose and almost nothing happens.
+                    Pour in a crowd and the same table starts growing cells,
+                    clusters, and moving shapes. The life isn't in the rule.
+                    It's in the numbers.
+                </p>
+                <div class="demo" data-demo="crowd">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="tag">A handful</span>, nothing
+                                takes shape
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="tag">A crowd</span>, structure
+                                appears
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ONE-SIDED -->
+            <section id="chase">
+                <p class="step">What falls out · 2</p>
+                <h2>The feeling can be one-sided</h2>
+                <p>
+                    The pull doesn't have to run both ways. Pink can chase gold
+                    while gold flees pink. Neither one
+                    ever wins, so they keep moving, and you get roving packs and
+                    chains.
+                </p>
+                <div class="demo" data-demo="chase">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="tag">Both attract</span>, they
+                                settle into a blob
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="tag">One chases the other</span>,
+                                they never stop
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SENSITIVITY -->
+            <section id="sensitive">
+                <p class="step">What falls out · 3</p>
+                <h2>Change one number, change the world</h2>
+                <p>
+                    One changed number is all it takes. Below are two worlds
+                    whose tables are identical except for the highlighted cell.
+                    That single value is the difference between a quiet drift and
+                    tight, restless clumps.
+                </p>
+                <div class="demo" data-demo="sensitivity">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="mtx-center">
+                                <div class="mtx mini" data-mtx="lo"></div>
+                            </div>
+                            <div class="caption">
+                                <span class="push-word"
+                                    >One cell set to push</span
+                                >, they keep apart
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="mtx-center">
+                                <div class="mtx mini" data-mtx="hi"></div>
+                            </div>
+                            <div class="caption">
+                                <span class="pull-word"
+                                    >That one cell flipped to pull</span
+                                >, they bind together
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OUTRO -->
+            <section id="together">
+                <p class="step">Put it together</p>
+                <h2>Nobody designed these creatures</h2>
+                <p>
+                    None of the cells and chasers you just saw are drawn
+                    anywhere. They fall out of the table on their own.
+                </p>
+                <p>
+                    See for yourself. The grid below is the table in play.
+                    <span class="hi">Flip any cell</span> between
+                    <span class="pull-word">pull</span> and
+                    <span class="push-word">push</span>, or
+                    <span class="hi">tap the swarm</span> to roll a whole new
+                    table, and watch the shapes rearrange.
+                </p>
+                <div class="demo" data-demo="reroll">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="mtx-center">
+                        <div class="mtx" id="reroll-matrix"></div>
+                    </div>
+                    <div class="mlegend">
+                        <span
+                            ><i style="background: var(--pull)"></i> pulls
+                            closer</span
+                        >
+                        <span
+                            ><i style="background: var(--push)"></i> pushes
+                            away</span
+                        >
+                    </div>
+                    <p class="hint">
+                        Tap any cell to flip it, or tap the swarm for a fresh
+                        table.
+                    </p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go roll your own world</h2>
+                <p>
+                    The full sim opens all of it up: more species, different
+                    starting shapes, your own colors, and a link that hands
+                    someone the exact world you made. The rest is yours.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="particle-life.html"
+                        >Open the Particle Life sim
+                        <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+                // Particle Life palette (matches the "Twilight" look from the
+                // sim/landing card).
+                const STOPS = [
+                    "#040208",
+                    "#280a40",
+                    "#8a2080",
+                    "#ff60c0",
+                    "#ffe098",
+                ];
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildColors(stops) {
+                    const seg = stops.length - 1;
+                    const out = new Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        const r = (c0[0] + (c1[0] - c0[0]) * u) | 0;
+                        const g = (c0[1] + (c1[1] - c0[1]) * u) | 0;
+                        const b = (c0[2] + (c1[2] - c0[2]) * u) | 0;
+                        out[i] = "rgb(" + r + "," + g + "," + b + ")";
+                    }
+                    return out;
+                }
+                const COLORS = buildColors(STOPS);
+                const BG = hexToRgb(STOPS[0]);
+                const BG_STR = "rgb(" + BG[0] + "," + BG[1] + "," + BG[2] + ")";
+
+                // One color per species, sampled along the palette ramp biased
+                // to the brighter half so no species hides in the background
+                // (mirrors the sim's buildTypeColors).
+                function speciesColors(K) {
+                    const out = new Array(K);
+                    for (let k = 0; k < K; k++) {
+                        const t = K === 1 ? 0.8 : 0.4 + 0.6 * (k / (K - 1));
+                        let idx = (t * 255) | 0;
+                        if (idx > 255) idx = 255;
+                        out[k] = COLORS[idx];
+                    }
+                    return out;
+                }
+
+                // Render an attraction table into `grid`: row/column color
+                // swatches around K*K cells tinted green (pull) to red (push).
+                // `nums` adds the numeric value to each cell; `highlight` rings
+                // one flat cell index (or pass -1 for none); `onFlip`, if given,
+                // makes each cell clickable and is called with its flat index.
+                function buildMatrixGrid(
+                    grid,
+                    K,
+                    cols,
+                    vals,
+                    nums,
+                    highlight,
+                    onFlip,
+                ) {
+                    grid.innerHTML = "";
+                    grid.style.gridTemplateColumns =
+                        "auto repeat(" + K + ", auto)";
+                    const swatch = (c) => {
+                        const h = document.createElement("div");
+                        h.className = "mhead";
+                        const s = document.createElement("span");
+                        s.className = "swatch";
+                        s.style.background = c;
+                        h.appendChild(s);
+                        return h;
+                    };
+                    const corner = document.createElement("div");
+                    corner.className = "mcorner";
+                    grid.appendChild(corner);
+                    for (let c = 0; c < K; c++)
+                        grid.appendChild(swatch(cols[c]));
+                    for (let r = 0; r < K; r++) {
+                        grid.appendChild(swatch(cols[r]));
+                        for (let c = 0; c < K; c++) {
+                            const v = vals[r * K + c];
+                            const cell = document.createElement("div");
+                            cell.className = "mcell";
+                            if (highlight === r * K + c)
+                                cell.classList.add("changed");
+                            const a = 0.18 + 0.62 * Math.abs(v);
+                            cell.style.background =
+                                v >= 0
+                                    ? "rgba(86,224,160," + a.toFixed(2) + ")"
+                                    : "rgba(255,106,134," + a.toFixed(2) + ")";
+                            if (nums)
+                                cell.textContent =
+                                    (v > 0 ? "+" : "") + v.toFixed(1);
+                            if (onFlip) {
+                                const idx = r * K + c;
+                                cell.style.cursor = "pointer";
+                                cell.addEventListener("pointerdown", (e) => {
+                                    e.preventDefault();
+                                    onFlip(idx);
+                                });
+                            }
+                            grid.appendChild(cell);
+                        }
+                    }
+                }
+
+                function randMatrix(K) {
+                    const m = new Array(K * K);
+                    for (let i = 0; i < K * K; i++)
+                        m[i] = Math.random() * 2 - 1;
+                    return m;
+                }
+
+                // ============================================================
+                // Parameterized particle-life engine.
+                // p = { count, types, rMax, beta, force, friction, matrix }
+                //   matrix: optional flat types*types array in [-1,1];
+                //           matrix[a*K+b] = how species a feels about b.
+                //           Omit for a random table.
+                // p is read live each frame. Same neighbor math as
+                // particle-life.sim.js, but a plain O(n^2) scan since these demo
+                // swarms are small.
+                // ============================================================
+                function makePL(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    const K = p.types;
+                    const scol = speciesColors(K);
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        ty,
+                        M,
+                        raf = 0;
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        W = Math.max(2, Math.round(r.width * DPR));
+                        H = Math.max(2, Math.round(r.height * DPR));
+                        canvas.width = W;
+                        canvas.height = H;
+                    }
+                    function rollMatrix() {
+                        M = new Float32Array(K * K);
+                        for (let i = 0; i < K * K; i++)
+                            M[i] = Math.random() * 2 - 1;
+                    }
+                    function seed() {
+                        n =
+                            p.count === "auto"
+                                ? Math.min(360, Math.round((W * H) / 6500))
+                                : p.count;
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
+                        ty = new Int8Array(n);
+                        if (p.matrix) M = Float32Array.from(p.matrix);
+                        else if (!M) rollMatrix();
+                        for (let i = 0; i < n; i++) {
+                            xs[i] = Math.random() * W;
+                            ys[i] = Math.random() * H;
+                            vx[i] = 0;
+                            vy[i] = 0;
+                            ty[i] = (Math.random() * K) | 0;
+                        }
+                    }
+                    function init() {
+                        fit();
+                        seed();
+                    }
+
+                    function step() {
+                        const rMax = p.rMax * DPR;
+                        const rMaxSq = rMax * rMax;
+                        const beta = p.beta;
+                        const force = p.force;
+                        const velR = 1 - p.friction;
+                        const cap = rMax;
+                        const hw = W / 2,
+                            hh = H / 2;
+                        for (let i = 0; i < n; i++) {
+                            let fx = 0,
+                                fy = 0;
+                            const ti = ty[i] * K,
+                                x = xs[i],
+                                y = ys[i];
+                            for (let j = 0; j < n; j++) {
+                                if (i === j) continue;
+                                // Minimum-image offset on the torus.
+                                let dx = xs[j] - x,
+                                    dy = ys[j] - y;
+                                if (dx > hw) dx -= W;
+                                else if (dx < -hw) dx += W;
+                                if (dy > hh) dy -= H;
+                                else if (dy < -hh) dy += H;
+                                const d2 = dx * dx + dy * dy;
+                                if (d2 > 0 && d2 < rMaxSq) {
+                                    const r = Math.sqrt(d2),
+                                        rn = r / rMax;
+                                    let f;
+                                    if (rn < beta) {
+                                        // Universal close-range shove.
+                                        f = rn / beta - 1;
+                                    } else {
+                                        // Triangular attract/repel from the
+                                        // table, peaking midway, zero at edges.
+                                        f =
+                                            M[ti + ty[j]] *
+                                            (1 -
+                                                Math.abs(2 * rn - 1 - beta) /
+                                                    (1 - beta));
+                                    }
+                                    fx += (dx / r) * f;
+                                    fy += (dy / r) * f;
+                                }
+                            }
+                            let nvx = vx[i] * velR + fx * force;
+                            let nvy = vy[i] * velR + fy * force;
+                            const s = Math.hypot(nvx, nvy);
+                            if (s > cap) {
+                                nvx = (nvx / s) * cap;
+                                nvy = (nvy / s) * cap;
+                            }
+                            vx[i] = nvx;
+                            vy[i] = nvy;
+                        }
+                        // Move + wrap around the edges (toroidal world).
+                        for (let i = 0; i < n; i++) {
+                            let nx = xs[i] + vx[i],
+                                ny = ys[i] + vy[i];
+                            nx -= Math.floor(nx / W) * W;
+                            ny -= Math.floor(ny / H) * H;
+                            xs[i] = nx;
+                            ys[i] = ny;
+                        }
+                    }
+
+                    function render() {
+                        ctx.fillStyle = BG_STR;
+                        ctx.fillRect(0, 0, W, H);
+                        const D = 3 * DPR,
+                            Dh = D / 2;
+                        for (let i = 0; i < n; i++) {
+                            ctx.fillStyle = scol[ty[i]];
+                            ctx.fillRect(xs[i] - Dh, ys[i] - Dh, D, D);
+                        }
+                    }
+
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 140; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        // Swap in a new table and freeze momentum, so the same
+                        // dots reorganize under new rules.
+                        setMatrix(arr) {
+                            M = Float32Array.from(arr);
+                            if (vx) vx.fill(0);
+                            if (vy) vy.fill(0);
+                        },
+                    };
+                }
+
+                // ============================================================
+                // Per-demo presets. matrix[a*K+b] = how species a feels about
+                // b, in [-1,1]. rMax/beta/force/friction match the sim defaults
+                // unless overridden.
+                // ============================================================
+                const BASE = {
+                    rMax: 62,
+                    beta: 0.3,
+                    force: 0.5,
+                    friction: 0.12,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                // Crowd demo shares one table across both sides, so only the
+                // particle count differs. matrix[a*4+b] = how color a feels
+                // about color b.
+                // prettier-ignore
+                const STRUCT_M = [
+                     0.8, -0.3,  0.8,  0.7,
+                    -0.5, -0.1,  0.5,  0.3,
+                     0.6,  0.7,  0.0, -0.6,
+                    -0.6,  0.6,  0.7, -1.0,
+                ];
+
+                const PRESETS = {
+                    rule: {
+                        // One color, one number: push apart vs pull together.
+                        lo: mk({ types: 1, count: 40, matrix: [-0.2] }),
+                        hi: mk({ types: 1, count: 150, matrix: [0.85] }),
+                    },
+                    chase: {
+                        // Mutual attraction settles; one-sided attraction chases.
+                        lo: mk({
+                            types: 2,
+                            count: 150,
+                            matrix: [0.4, 0.9, 0.9, 0.4],
+                        }),
+                        hi: mk({
+                            types: 2,
+                            count: 150,
+                            matrix: [-0.2, 1.0, -1.0, -0.2],
+                        }),
+                    },
+                    crowd: {
+                        // Same table; only the particle count differs.
+                        lo: mk({ types: 4, count: 12, matrix: STRUCT_M }),
+                        hi: mk({ types: 4, count: 150, matrix: STRUCT_M }),
+                    },
+                };
+
+                // ---------- Build the two-up rule demos ----------
+                const instances = []; // { el, prev }
+                document
+                    .querySelectorAll(
+                        '[data-demo="rule"],[data-demo="chase"],[data-demo="crowd"]',
+                    )
+                    .forEach((demo) => {
+                        const kind = demo.dataset.demo;
+                        ["lo", "hi"].forEach((side) => {
+                            const cv = demo.querySelector(
+                                'canvas[data-side="' + side + '"]',
+                            );
+                            const prev = makePL(
+                                cv,
+                                Object.assign({}, PRESETS[kind][side]),
+                            );
+                            instances.push({ el: cv, prev });
+                        });
+                    });
+
+                // ---------- Hero swarm + its attraction table ----------
+                // The hero runs one random table; the "one rule" section shows
+                // that exact table so people can see the real rulebook driving
+                // the swarm at the top. Values are rounded to a tenth so the
+                // numbers on screen match what the sim uses.
+                const HERO_K = 5;
+                const heroM = randMatrix(HERO_K).map((v) => Math.round(v * 10) / 10);
+                buildMatrixGrid(
+                    document.getElementById("matrix"),
+                    HERO_K,
+                    speciesColors(HERO_K),
+                    heroM,
+                    true,
+                );
+
+                // ---------- Sensitivity demo (one cell differs) ----------
+                (() => {
+                    const K = 3;
+                    const CHANGED = 1; // row 0, col 1: color 0's feeling about 1
+                    // prettier-ignore
+                    const lo = [
+                         0.3, -0.8, -0.1,
+                        -0.1,  0.3, -0.1,
+                        -0.1, -0.1,  0.3,
+                    ];
+                    const hi = lo.slice();
+                    hi[CHANGED] = 0.9; // the single flipped number
+                    const cols = speciesColors(K);
+                    const demo = document.querySelector(
+                        '[data-demo="sensitivity"]',
+                    );
+                    [
+                        ["lo", lo],
+                        ["hi", hi],
+                    ].forEach(([side, mtx]) => {
+                        const cv = demo.querySelector(
+                            'canvas[data-side="' + side + '"]',
+                        );
+                        const prev = makePL(
+                            cv,
+                            mk({ types: K, count: 170, matrix: mtx }),
+                        );
+                        instances.push({ el: cv, prev });
+                        buildMatrixGrid(
+                            demo.querySelector('[data-mtx="' + side + '"]'),
+                            K,
+                            cols,
+                            mtx,
+                            false,
+                            CHANGED,
+                        );
+                    });
+                })();
+
+                // ---------- Reroll demo (with live table) ----------
+                const rerollDemo = document.querySelector(
+                    '[data-demo="reroll"]',
+                );
+                const rerollCanvas = rerollDemo.querySelector("canvas");
+                const RR_K = 4;
+                const rerollGrid = document.getElementById("reroll-matrix");
+                const rerollCols = speciesColors(RR_K);
+                let rerollM = randMatrix(RR_K);
+                const rerollParams = mk({
+                    types: RR_K,
+                    count: 260,
+                    rMax: 64,
+                    matrix: rerollM,
+                });
+                const rerollPrev = makePL(rerollCanvas, rerollParams);
+                instances.push({ el: rerollCanvas, prev: rerollPrev });
+                function paintRerollTable() {
+                    buildMatrixGrid(
+                        rerollGrid,
+                        RR_K,
+                        rerollCols,
+                        rerollM,
+                        true,
+                        -1,
+                        flipCell,
+                    );
+                }
+                function applyRerollMatrix() {
+                    rerollParams.matrix = rerollM; // keep resize re-seed in sync
+                    rerollPrev.setMatrix(rerollM);
+                    paintRerollTable();
+                }
+                // Tapping a cell flips that one pair between pull and push.
+                function flipCell(idx) {
+                    rerollM[idx] = -rerollM[idx];
+                    applyRerollMatrix();
+                }
+                paintRerollTable();
+                rerollCanvas.style.cursor = "pointer";
+                rerollCanvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    rerollM = randMatrix(RR_K); // tapping the swarm rolls a new table
+                    applyRerollMatrix();
+                });
+
+                // ---------- Hero backdrop swarm ----------
+                const heroPrev = makePL(
+                    document.getElementById("hero-canvas"),
+                    mk({ types: HERO_K, count: "auto", rMax: 70, matrix: heroM }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const inst = e.target.__inst;
+                            if (!inst) return;
+                            if (e.isIntersecting) inst.start();
+                            else inst.stop();
+                        });
+                    },
+                    { threshold: 0.15 },
+                );
+                instances.forEach((it) => {
+                    it.el.__inst = it.prev;
+                    io.observe(it.el);
+                });
+                const heroCanvas = document.getElementById("hero-canvas");
+                heroCanvas.__inst = heroPrev;
+                io.observe(heroCanvas);
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        instances.forEach((it) => it.prev.resize());
+                    }, 250);
+                });
+            })();
+        </script>
+    </body>
+</html>
