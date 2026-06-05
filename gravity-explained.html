@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#05070b" />
+        <title>How Gravity Works — Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of how the Gravity simulation works. One rule — closer pulls harder — repeated between thousands of specks until they fall into spinning galaxies."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Gravity Works" />
+        <meta
+            property="og:description"
+            content="One rule — closer pulls harder. A visual walkthrough of the Gravity simulation, from a single speck to spinning galaxies."
+        />
+        <meta property="og:image" content="og/gravity.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/gravity.png" />
+        <meta name="twitter:title" content="How Gravity Works" />
+        <meta
+            name="twitter:description"
+            content="One rule — closer pulls harder — repeated until galaxies appear."
+        />
+
+        <style>
+            :root {
+                --accent: #ff7a3d;
+                --accent-deep: #c25a2e;
+                --ink: #f5f8fc;
+                --muted: rgba(245, 248, 252, 0.72);
+                --faint: rgba(245, 248, 252, 0.45);
+                --line: rgba(255, 255, 255, 0.09);
+                --card: rgba(255, 255, 255, 0.035);
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-behavior: smooth;
+                scroll-padding-top: 64px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+            body {
+                margin: 0;
+                background: #05070b;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(8, 10, 16, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid var(--line);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 18px;
+                align-items: center;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            .nav .links .launch {
+                color: var(--accent);
+            }
+            @media (max-width: 560px) {
+                .nav .links .home {
+                    display: none;
+                }
+            }
+
+            /* ---------- Hero ---------- */
+            .hero {
+                position: relative;
+                min-height: 92vh;
+                min-height: 92svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            .hero canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+            }
+            .hero .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 75% 60% at center 46%,
+                        rgba(0, 0, 0, 0.45),
+                        rgba(0, 0, 0, 0.1) 55%,
+                        rgba(5, 7, 11, 0.7)
+                    ),
+                    linear-gradient(
+                        rgba(5, 7, 11, 0.3),
+                        rgba(5, 7, 11, 0) 30%,
+                        rgba(5, 7, 11, 0) 70%,
+                        rgba(5, 7, 11, 0.95)
+                    );
+            }
+            .hero .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 760px;
+                padding: 90px 24px;
+            }
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .hero .title {
+                font-size: clamp(44px, 9vw, 104px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.18em 0 0.34em;
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 23px);
+                color: var(--muted);
+                max-width: 32ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.5);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Article ---------- */
+            .article {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 8px 22px 40px;
+            }
+            section {
+                padding: 46px 0 8px;
+                scroll-margin-top: 64px;
+            }
+            .step {
+                font-size: 12.5px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent-deep);
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: clamp(27px, 5vw, 38px);
+                line-height: 1.1;
+                letter-spacing: -0.025em;
+                font-weight: 700;
+                margin: 0 0 0.5em;
+            }
+            p {
+                color: var(--muted);
+                font-size: clamp(16px, 2vw, 18px);
+                margin: 0 0 1.1em;
+            }
+            p .hi {
+                color: rgba(245, 248, 252, 0.9);
+                font-weight: 600;
+            }
+
+            /* ---------- Demo cards ---------- */
+            .demo {
+                margin: 22px 0 8px;
+                padding: 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+            }
+            .demo-pair {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            @media (max-width: 540px) {
+                .demo-pair {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .cell {
+                position: relative;
+            }
+            .cell canvas {
+                display: block;
+                width: 100%;
+                height: 196px;
+                border-radius: 12px;
+                background: #07040a;
+                cursor: default;
+            }
+            .demo.wide canvas {
+                height: 300px;
+            }
+            .caption {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 10px 2px 2px;
+                font-size: 13.5px;
+                color: var(--muted);
+            }
+            .tag {
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .tag.off {
+                color: var(--faint);
+            }
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                flex: none;
+            }
+            .dot.lo {
+                background: var(--faint);
+            }
+            .dot.hi {
+                background: var(--accent);
+            }
+
+            /* ---------- Slider control ---------- */
+            .control {
+                margin-top: 14px;
+                padding: 4px 4px 2px;
+            }
+            .control .row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 9px;
+            }
+            .control .label {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .control .val {
+                font-size: 14px;
+                color: var(--accent);
+                font-variant-numeric: tabular-nums;
+            }
+            .control .read {
+                font-size: 13.5px;
+                color: var(--muted);
+                min-height: 1.5em;
+                margin: 9px 2px 0;
+            }
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 4px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.16);
+                outline: none;
+                margin: 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(255, 122, 61, 0.45);
+                border: none;
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 10px rgba(255, 122, 61, 0.45);
+            }
+
+            .hint {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 12px 0 0;
+            }
+
+            /* ---------- Outro / CTA ---------- */
+            .outro {
+                text-align: center;
+                padding-top: 30px;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #2a0c00;
+                padding: 13px 26px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(255, 122, 61, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #ff9461;
+                box-shadow: 0 12px 38px rgba(255, 122, 61, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><span class="mark">✦</span> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="gravity.html">Open the sim →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <p class="eyebrow">How it works · Gravity</p>
+                <h1 class="title">Everything pulls on&nbsp;everything</h1>
+                <p class="lede">
+                    Thousands of specks. Each one tugs on all the others. Watch
+                    where they end&nbsp;up.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>Each dot is a speck of mass</h2>
+                <p>
+                    Every dot up there is
+                    <span class="hi">a tiny speck of mass</span>. It pulls on
+                    every other speck, and every other speck pulls back. The
+                    brighter a dot, the faster it's moving.
+                </p>
+                <p>
+                    Nothing is steering. No speck is in charge of the rest. Each
+                    one only feels the pull of the others and falls toward them.
+                </p>
+                <p>
+                    That pull is the whole rule. Everything you're about to see
+                    comes from it.
+                </p>
+            </section>
+
+            <!-- RULE: GRAVITY STRENGTH -->
+            <section id="pull">
+                <p class="step">The rule</p>
+                <h2>Closer pulls harder</h2>
+                <p>
+                    Two specks far apart barely feel each other. Bring them
+                    close and the pull grows <span class="hi">fast</span>. It's
+                    the same tug either way — distance is what decides how strong
+                    it gets.
+                </p>
+                <p>
+                    Turn the pull up and the specks rush together. Turn it down
+                    and they barely gather.
+                </p>
+                <div class="demo" data-demo="pull">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">A faint pull</span>, they
+                                drift in loose loops
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">A strong pull</span>, they
+                                snap into tight knots
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SOFTENING -->
+            <section id="room">
+                <p class="step">Why it holds together</p>
+                <h2>Every speck needs room</h2>
+                <p>
+                    Get two specks close enough and the pull becomes enormous —
+                    enough to <span class="hi">fling</span> one clear off the
+                    screen. So each speck keeps a little space around it that the
+                    pull can't cross. A near-miss turns into a smooth swing-by
+                    instead of a slingshot.
+                </p>
+                <div class="demo" data-demo="room">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">No room</span>,
+                                near-misses fling specks away
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Room to spare</span>, they
+                                swing past and stay
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DRAG -->
+            <section id="settle">
+                <p class="step">Letting it settle</p>
+                <h2>A gentle brake</h2>
+                <p>
+                    Left alone, the specks keep trading pulls forever and never
+                    sit still. A light brake bleeds off a little speed each
+                    moment. Slowly the churn calms, and the cloud settles into
+                    one flat, <span class="hi">spinning disk</span> — the shape
+                    of a galaxy.
+                </p>
+                <div class="demo" data-demo="settle">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">No brake</span>, it never
+                                stops churning
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">A light brake</span>, it
+                                settles into a disk
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COUNT (slider hero) -->
+            <section id="crowd">
+                <p class="step">The setting behind it all</p>
+                <h2>How crowded is space?</h2>
+                <p>
+                    One speck has nothing to pull on. A handful trace lonely
+                    loops around each other. But
+                    <span class="hi">add enough</span> and their pulls start to
+                    add up — small clumps gather, clumps pull in more, and the
+                    whole screen winds itself into spinning galaxies.
+                </p>
+                <p>Drag the slider to fill up space:</p>
+                <div class="demo wide" data-demo="crowd">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="control">
+                        <div class="row">
+                            <span class="label">How many specks</span>
+                            <span class="val" data-out>getting busy</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="6"
+                            max="280"
+                            value="90"
+                            step="1"
+                            data-count
+                            aria-label="How many specks fill the screen"
+                        />
+                        <p class="read" data-read></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OUTRO -->
+            <section id="together">
+                <p class="step">Put it together</p>
+                <h2>Nobody placed the galaxies</h2>
+                <p>
+                    None of these shapes are drawn in anywhere. They fall out of
+                    one rule, repeated between every pair of specks, many times a
+                    second. Pull, fall, settle.
+                </p>
+                <p>
+                    Try it.
+                    <span class="hi">Drag across the specks below</span> and
+                    they'll rush toward your finger, then keep on spinning.
+                </p>
+                <div class="demo" data-demo="poke">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">Drag across the cloud to pull it ↑</p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go pull it around</h2>
+                <p>
+                    The full sim hands you every dial — the pull, the room, the
+                    brake, the starting shape, and a reroll button. The rule
+                    stays the same. The rest is yours.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="gravity.html"
+                        >Open the Gravity sim <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const DPR = Math.min(window.devicePixelRatio || 1, 2);
+                const TAU = Math.PI * 2;
+
+                // Gravity's "Inferno" palette (matches the sim/landing card).
+                const STOPS = [
+                    "#000000",
+                    "#1a0000",
+                    "#a00010",
+                    "#ff4020",
+                    "#ffec70",
+                ];
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildColors(stops) {
+                    const seg = stops.length - 1;
+                    const out = new Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        const r = (c0[0] + (c1[0] - c0[0]) * u) | 0;
+                        const g = (c0[1] + (c1[1] - c0[1]) * u) | 0;
+                        const b = (c0[2] + (c1[2] - c0[2]) * u) | 0;
+                        out[i] = "rgb(" + r + "," + g + "," + b + ")";
+                    }
+                    return out;
+                }
+                const COLORS = buildColors(STOPS);
+                const BG = hexToRgb(STOPS[0]);
+
+                // ============================================================
+                // Parameterized gravity engine.
+                // p = { count, maxCount, gravity, softening, drag, trail, spin,
+                //       interactive }  — p is read live each frame, so a slider
+                //       can mutate p in place. Softened inverse-square pull,
+                //       same shape as the real sim; positions wrap at edges.
+                // ============================================================
+                function makeGravity(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    const MAXN = p.maxCount || p.count;
+                    const xs = new Float32Array(MAXN);
+                    const ys = new Float32Array(MAXN);
+                    const vx = new Float32Array(MAXN);
+                    const vy = new Float32Array(MAXN);
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        raf = 0;
+                    let pointerActive = false,
+                        pointerX = 0,
+                        pointerY = 0;
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        W = Math.max(2, Math.round(r.width * DPR));
+                        H = Math.max(2, Math.round(r.height * DPR));
+                        canvas.width = W;
+                        canvas.height = H;
+                    }
+                    // Place one speck on a spinning disk around the center.
+                    function place(i) {
+                        const cx = W / 2,
+                            cy = H / 2;
+                        const R = Math.min(W, H) * 0.36;
+                        const rr = Math.sqrt(Math.random()) * R;
+                        const th = Math.random() * TAU;
+                        xs[i] = cx + Math.cos(th) * rr;
+                        ys[i] = cy + Math.sin(th) * rr;
+                        const sp = rr * p.spin;
+                        vx[i] = -Math.sin(th) * sp + (Math.random() - 0.5) * 0.3 * DPR;
+                        vy[i] = Math.cos(th) * sp + (Math.random() - 0.5) * 0.3 * DPR;
+                    }
+                    function seed() {
+                        n = Math.min(p.count, MAXN);
+                        for (let i = 0; i < n; i++) place(i);
+                    }
+                    function init() {
+                        fit();
+                        seed();
+                        ctx.fillStyle = "rgb(" + BG[0] + "," + BG[1] + "," + BG[2] + ")";
+                        ctx.fillRect(0, 0, W, H);
+                    }
+
+                    // Grow/shrink the live pool without reseeding the rest.
+                    function setCount(c) {
+                        if (c > MAXN) c = MAXN;
+                        if (c < 1) c = 1;
+                        if (c > n) for (let i = n; i < c; i++) place(i);
+                        n = c;
+                        p.count = c;
+                    }
+
+                    function step() {
+                        const G = 26 * p.gravity * DPR;
+                        const soft = p.softening * DPR;
+                        const soft2 = soft * soft;
+                        const velR = 1 - p.drag;
+                        const cap = Math.min(W, H) * 0.2;
+                        // Every pair pulls on both of its specks at once.
+                        for (let i = 0; i < n; i++) {
+                            const x = xs[i],
+                                y = ys[i];
+                            let fx = 0,
+                                fy = 0;
+                            for (let j = i + 1; j < n; j++) {
+                                const dx = xs[j] - x,
+                                    dy = ys[j] - y;
+                                // Softening (soft2) keeps close passes finite.
+                                const d2 = dx * dx + dy * dy + soft2;
+                                const inv = G / (d2 * Math.sqrt(d2));
+                                const ax = dx * inv,
+                                    ay = dy * inv;
+                                fx += ax;
+                                fy += ay;
+                                vx[j] -= ax;
+                                vy[j] -= ay;
+                            }
+                            vx[i] += fx;
+                            vy[i] += fy;
+                        }
+                        const pull = pointerActive ? 0.012 : 0;
+                        const pullR2 = Math.pow(Math.min(W, H) * 0.55, 2);
+                        for (let i = 0; i < n; i++) {
+                            let nvx = vx[i] * velR,
+                                nvy = vy[i] * velR;
+                            if (pull > 0) {
+                                const ddx = pointerX - xs[i],
+                                    ddy = pointerY - ys[i];
+                                if (ddx * ddx + ddy * ddy < pullR2) {
+                                    nvx += ddx * pull;
+                                    nvy += ddy * pull;
+                                }
+                            }
+                            const s = Math.hypot(nvx, nvy);
+                            if (s > cap) {
+                                nvx = (nvx / s) * cap;
+                                nvy = (nvy / s) * cap;
+                            }
+                            vx[i] = nvx;
+                            vy[i] = nvy;
+                            let nx = xs[i] + nvx,
+                                ny = ys[i] + nvy;
+                            nx -= Math.floor(nx / W) * W;
+                            ny -= Math.floor(ny / H) * H;
+                            xs[i] = nx;
+                            ys[i] = ny;
+                        }
+                    }
+
+                    function render() {
+                        // Translucent wash leaves a fading trail behind motion.
+                        const trailAlpha = 0.5 - p.trail * 0.46;
+                        ctx.fillStyle =
+                            "rgba(" + BG[0] + "," + BG[1] + "," + BG[2] + "," + trailAlpha + ")";
+                        ctx.fillRect(0, 0, W, H);
+                        const ds = 2.2 * DPR,
+                            half = ds / 2;
+                        for (let i = 0; i < n; i++) {
+                            const sp = Math.hypot(vx[i], vy[i]);
+                            let t = sp / (5 * DPR);
+                            if (t > 1) t = 1;
+                            let idx = ((0.3 + 0.7 * t) * 255) | 0;
+                            if (idx > 255) idx = 255;
+                            ctx.fillStyle = COLORS[idx];
+                            ctx.fillRect(xs[i] - half, ys[i] - half, ds, ds);
+                        }
+                    }
+
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    function toCanvas(clientX, clientY) {
+                        const r = canvas.getBoundingClientRect();
+                        pointerX = ((clientX - r.left) / r.width) * W;
+                        pointerY = ((clientY - r.top) / r.height) * H;
+                    }
+
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 140; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        setCount,
+                        pullStart(cx, cy) {
+                            pointerActive = true;
+                            toCanvas(cx, cy);
+                        },
+                        pullMove(cx, cy) {
+                            if (pointerActive) toCanvas(cx, cy);
+                        },
+                        pullEnd() {
+                            pointerActive = false;
+                        },
+                    };
+                }
+
+                // ============================================================
+                // Per-demo parameter presets.
+                // gravity is a strength multiplier; softening is in CSS px;
+                // drag is the per-step brake; spin sets the seeded orbit.
+                // ============================================================
+                const BASE = {
+                    count: 90,
+                    maxCount: 90,
+                    gravity: 1,
+                    softening: 16,
+                    drag: 0.0015,
+                    trail: 0.85,
+                    spin: 0.012,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                const PRESETS = {
+                    pull: {
+                        lo: mk({ gravity: 0.3, drag: 0.004, softening: 18 }),
+                        hi: mk({ gravity: 2.3, drag: 0.006, softening: 14 }),
+                    },
+                    room: {
+                        lo: mk({ softening: 5, gravity: 1.4, drag: 0.004 }),
+                        hi: mk({ softening: 34, gravity: 1.4, drag: 0.004 }),
+                    },
+                    settle: {
+                        lo: mk({ drag: 0, gravity: 1.1, softening: 16 }),
+                        hi: mk({ drag: 0.022, gravity: 1.1, softening: 16 }),
+                    },
+                };
+
+                // Build the simple two-up rule demos.
+                const instances = []; // { el, prev }
+                document
+                    .querySelectorAll(
+                        '[data-demo="pull"],[data-demo="room"],[data-demo="settle"]',
+                    )
+                    .forEach((demo) => {
+                        const kind = demo.dataset.demo;
+                        ["lo", "hi"].forEach((side) => {
+                            const cv = demo.querySelector(
+                                'canvas[data-side="' + side + '"]',
+                            );
+                            const prev = makeGravity(
+                                cv,
+                                Object.assign({}, PRESETS[kind][side]),
+                            );
+                            instances.push({ el: cv, prev });
+                        });
+                    });
+
+                // Count slider demo.
+                const crowdDemo = document.querySelector('[data-demo="crowd"]');
+                const crowdParams = mk({
+                    count: 90,
+                    maxCount: 300,
+                    gravity: 1,
+                    softening: 16,
+                    drag: 0.004,
+                    trail: 0.86,
+                });
+                const crowdPrev = makeGravity(
+                    crowdDemo.querySelector("canvas"),
+                    crowdParams,
+                );
+                instances.push({
+                    el: crowdDemo.querySelector("canvas"),
+                    prev: crowdPrev,
+                });
+                const slider = crowdDemo.querySelector("[data-count]");
+                const out = crowdDemo.querySelector("[data-out]");
+                const read = crowdDemo.querySelector("[data-read]");
+                function describeCount(v) {
+                    if (v < 40)
+                        return {
+                            word: "nearly empty",
+                            text: "A nearly empty sky. The few specks loop quietly past each other and never gather.",
+                        };
+                    if (v < 120)
+                        return {
+                            word: "getting busy",
+                            text: "Enough to clump. Small knots form, drift, and merge as they wander.",
+                        };
+                    if (v < 210)
+                        return {
+                            word: "crowded",
+                            text: "A crowded sky. The clumps pull together into bright, spinning disks.",
+                        };
+                    return {
+                        word: "packed",
+                        text: "Packed full. The whole sky collapses into a handful of galaxies.",
+                    };
+                }
+                function syncCount() {
+                    const v = +slider.value;
+                    crowdPrev.setCount(v);
+                    const d = describeCount(v);
+                    out.textContent = d.word;
+                    read.textContent = d.text;
+                }
+                slider.addEventListener("input", syncCount);
+                syncCount();
+
+                // Outro: pull / interactive demo.
+                const pokeDemo = document.querySelector('[data-demo="poke"]');
+                const pokeCanvas = pokeDemo.querySelector("canvas");
+                const pokePrev = makeGravity(
+                    pokeCanvas,
+                    mk({
+                        count: 200,
+                        maxCount: 200,
+                        gravity: 1,
+                        softening: 16,
+                        drag: 0.004,
+                        trail: 0.88,
+                    }),
+                );
+                instances.push({ el: pokeCanvas, prev: pokePrev });
+                pokeCanvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    pokePrev.pullStart(e.clientX, e.clientY);
+                });
+                pokeCanvas.addEventListener("pointermove", (e) => {
+                    pokePrev.pullMove(e.clientX, e.clientY);
+                });
+                window.addEventListener("pointerup", () => pokePrev.pullEnd());
+                pokeCanvas.style.cursor = "pointer";
+
+                // Hero backdrop cloud.
+                const heroPrev = makeGravity(
+                    document.getElementById("hero-canvas"),
+                    mk({
+                        count: 240,
+                        maxCount: 240,
+                        gravity: 1,
+                        softening: 16,
+                        drag: 0.001,
+                        trail: 0.9,
+                    }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const inst = e.target.__inst;
+                            if (!inst) return;
+                            if (e.isIntersecting) inst.start();
+                            else inst.stop();
+                        });
+                    },
+                    { threshold: 0.15 },
+                );
+                instances.forEach((it) => {
+                    it.el.__inst = it.prev;
+                    io.observe(it.el);
+                });
+                const heroCanvas = document.getElementById("hero-canvas");
+                heroCanvas.__inst = heroPrev;
+                io.observe(heroCanvas);
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        instances.forEach((it) => it.prev.resize());
+                        syncCount();
+                    }, 250);
+                });
+            })();
+        </script>
+    </body>
+</html>

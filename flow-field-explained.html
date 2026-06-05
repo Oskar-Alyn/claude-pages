@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#000018" />
+        <title>How Flow Fields Work — Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of how a flow-field simulation works. No particle decides anything: each one just follows the arrow beneath it on an invisible map. Drag the sliders and watch the streams appear."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Flow Fields Work" />
+        <meta
+            property="og:description"
+            content="No particle decides where to go: each just follows the arrow beneath it on an invisible map. A visual walkthrough of the Flow Field simulation."
+        />
+        <meta property="og:image" content="og/flow-field.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/flow-field.png" />
+        <meta name="twitter:title" content="How Flow Fields Work" />
+        <meta
+            name="twitter:description"
+            content="An invisible map of arrows, and every particle just follows the one beneath it."
+        />
+
+        <style>
+            :root {
+                --accent: #c060e0;
+                --accent-deep: #7a5ad8;
+                --ink: #f6f2fc;
+                --muted: rgba(246, 242, 252, 0.72);
+                --faint: rgba(246, 242, 252, 0.45);
+                --line: rgba(255, 255, 255, 0.09);
+                --card: rgba(255, 255, 255, 0.035);
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-behavior: smooth;
+                scroll-padding-top: 64px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+            body {
+                margin: 0;
+                background: #000018;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(4, 4, 24, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid var(--line);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 18px;
+                align-items: center;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            .nav .links .launch {
+                color: var(--accent);
+            }
+            @media (max-width: 560px) {
+                .nav .links .home {
+                    display: none;
+                }
+            }
+
+            /* ---------- Hero ---------- */
+            .hero {
+                position: relative;
+                min-height: 92vh;
+                min-height: 92svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            .hero canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+            }
+            .hero .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 75% 60% at center 46%,
+                        rgba(0, 0, 0, 0.45),
+                        rgba(0, 0, 0, 0.1) 55%,
+                        rgba(0, 0, 24, 0.7)
+                    ),
+                    linear-gradient(
+                        rgba(0, 0, 24, 0.3),
+                        rgba(0, 0, 24, 0) 30%,
+                        rgba(0, 0, 24, 0) 70%,
+                        rgba(0, 0, 24, 0.95)
+                    );
+            }
+            .hero .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 760px;
+                padding: 90px 24px;
+            }
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .hero .title {
+                font-size: clamp(44px, 9vw, 104px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.18em 0 0.34em;
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 23px);
+                color: var(--muted);
+                max-width: 32ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.5);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Article ---------- */
+            .article {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 8px 22px 40px;
+            }
+            section {
+                padding: 46px 0 8px;
+                scroll-margin-top: 64px;
+            }
+            .step {
+                font-size: 12.5px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent-deep);
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: clamp(27px, 5vw, 38px);
+                line-height: 1.1;
+                letter-spacing: -0.025em;
+                font-weight: 700;
+                margin: 0 0 0.5em;
+            }
+            p {
+                color: var(--muted);
+                font-size: clamp(16px, 2vw, 18px);
+                margin: 0 0 1.1em;
+            }
+            p .hi {
+                color: rgba(246, 242, 252, 0.92);
+                font-weight: 600;
+            }
+
+            /* ---------- Demo cards ---------- */
+            .demo {
+                margin: 22px 0 8px;
+                padding: 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+            }
+            .demo-pair {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            @media (max-width: 540px) {
+                .demo-pair {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .cell {
+                position: relative;
+            }
+            .cell canvas {
+                display: block;
+                width: 100%;
+                height: 196px;
+                border-radius: 12px;
+                background: #000018;
+                cursor: default;
+            }
+            .demo.wide canvas {
+                height: 300px;
+            }
+            .caption {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 10px 2px 2px;
+                font-size: 13.5px;
+                color: var(--muted);
+            }
+            .tag {
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .tag.off {
+                color: var(--faint);
+            }
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                flex: none;
+            }
+            .dot.lo {
+                background: var(--faint);
+            }
+            .dot.hi {
+                background: var(--accent);
+            }
+
+            /* ---------- Slider control ---------- */
+            .control {
+                margin-top: 14px;
+                padding: 4px 4px 2px;
+            }
+            .control .row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 9px;
+            }
+            .control .label {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .control .val {
+                font-size: 14px;
+                color: var(--accent);
+                font-variant-numeric: tabular-nums;
+            }
+            .control .read {
+                font-size: 13.5px;
+                color: var(--muted);
+                min-height: 1.5em;
+                margin: 9px 2px 0;
+            }
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 4px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.16);
+                outline: none;
+                margin: 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(192, 96, 224, 0.45);
+                border: none;
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 10px rgba(192, 96, 224, 0.45);
+            }
+
+            /* ---------- Emitter chips ---------- */
+            .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 14px;
+                justify-content: center;
+            }
+            .chip {
+                appearance: none;
+                border: 1px solid var(--line);
+                background: rgba(255, 255, 255, 0.04);
+                color: var(--muted);
+                font: inherit;
+                font-size: 13.5px;
+                font-weight: 600;
+                padding: 7px 14px;
+                border-radius: 980px;
+                cursor: pointer;
+                transition:
+                    color 0.15s,
+                    background 0.15s,
+                    border-color 0.15s;
+            }
+            .chip:hover {
+                color: var(--ink);
+            }
+            .chip.active {
+                color: #1a0830;
+                background: var(--accent);
+                border-color: var(--accent);
+            }
+
+            .hint {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 12px 0 0;
+            }
+
+            /* ---------- Outro / CTA ---------- */
+            .outro {
+                text-align: center;
+                padding-top: 30px;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #1a0830;
+                padding: 13px 26px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(192, 96, 224, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #d07ce8;
+                box-shadow: 0 12px 38px rgba(192, 96, 224, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><span class="mark">✦</span> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="flow-field.html">Open the sim →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <p class="eyebrow">How it works · Flow Field</p>
+                <h1 class="title">Riding an invisible&nbsp;current</h1>
+                <p class="lede">
+                    No particle decides where to go. Each one just follows the
+                    arrow it's standing&nbsp;on.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>Each streak is one particle</h2>
+                <p>
+                    Every line of color up there is
+                    <span class="hi">a single particle</span>, drifting on its
+                    own. It can't see the flock, the screen, or where it's
+                    headed. It only reads the one arrow beneath it and takes a
+                    step that way.
+                </p>
+                <p>
+                    Its color comes from <span class="hi">which way</span> it's
+                    flowing, so the palette ends up painting the shape of the
+                    motion itself. The silky streams aren't drawn anywhere —
+                    they're just thousands of these tiny steps, lined up.
+                </p>
+            </section>
+
+            <!-- THE ONE IDEA: THE FIELD -->
+            <section id="field">
+                <p class="step">The one idea</p>
+                <h2>The screen is a hidden map of arrows</h2>
+                <p>
+                    Behind every particle is an invisible
+                    <span class="hi">vector field</span>: at every point on the
+                    screen, an arrow saying which way to go. The arrows are
+                    woven from smooth noise, so nearby ones mostly agree and the
+                    flow bends in long, continuous curves.
+                </p>
+                <p>
+                    A particle never plans. It looks up the arrow under its feet,
+                    nudges toward it, and moves. That's the whole simulation —
+                    everything below is just shaping this map, or the trails it
+                    leaves behind. Here's the field made visible:
+                </p>
+                <div class="demo wide" data-demo="field">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">
+                        Faint arrows: the field. Bright streaks: particles
+                        following it.
+                    </p>
+                </div>
+            </section>
+
+            <!-- SWIRLINESS -->
+            <section id="swirl">
+                <p class="step">Shaping the map · 1</p>
+                <h2>How tightly the map curls</h2>
+                <p>
+                    Stretch the noise out and the arrows turn slowly across the
+                    screen, so particles ride <span class="hi">broad, lazy
+                    sweeps</span>. Compress it and the arrows spin through many
+                    small turns, breaking the flow into
+                    <span class="hi">tight little whirlpools</span>. Same idea,
+                    two very different worlds.
+                </p>
+                <div class="demo" data-demo="swirl">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Stretched out</span>, broad
+                                sweeping currents
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Tightly curled</span>, many
+                                small eddies
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SMOOTHNESS / INERTIA -->
+            <section id="smooth">
+                <p class="step">Shaping the streams · 2</p>
+                <h2>How sharply particles turn</h2>
+                <p>
+                    The same map can be drawn in different handwriting. When
+                    particles <span class="hi">snap</span> instantly to each new
+                    arrow, their paths come out jagged and nervous. When they
+                    turn <span class="hi">lazily</span>, easing toward the arrow
+                    instead of obeying it at once, the same field draws long,
+                    silky curves.
+                </p>
+                <div class="demo" data-demo="smooth">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Snaps to the arrow</span>,
+                                jagged paths
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Turns lazily</span>, long
+                                smooth curves
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DRIFT / EVOLVE -->
+            <section id="breathe">
+                <p class="step">Shaping the map · 3</p>
+                <h2>A map that breathes</h2>
+                <p>
+                    The arrows don't have to hold still. Freeze the map and every
+                    particle traces the same fixed channels forever. Let it
+                    <span class="hi">churn slowly</span> and those channels drift,
+                    so the streams keep wandering into new shapes and never
+                    quite settle.
+                </p>
+                <div class="demo" data-demo="breathe">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Frozen map</span>, fixed
+                                channels
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Churning map</span>, the flow
+                                roams
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TRAILS -->
+            <section id="trails">
+                <p class="step">Shaping the streams · 4</p>
+                <h2>The streams are fading paint</h2>
+                <p>
+                    A particle is really just a moving dot. The streaks are the
+                    <span class="hi">trail it leaves</span>, fading toward the
+                    background a little each frame. Wipe the frame clean every
+                    step and you see bare dots; let the paint
+                    <span class="hi">linger</span> and short steps stretch into
+                    long ribbons.
+                </p>
+                <div class="demo" data-demo="trails">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">No lingering</span>, just
+                                moving dots
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Paint lingers</span>, long
+                                ribbons
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SWIRLINESS SLIDER (hero control) -->
+            <section id="dial">
+                <p class="step">The dial behind it all</p>
+                <h2>Turn the swirliness up</h2>
+                <p>
+                    Of all the knobs, this one reshapes the world the most. It
+                    sets <span class="hi">how tightly the map curls</span> — from
+                    one slow current that sweeps the whole screen, to a froth of
+                    countless tiny whirlpools.
+                </p>
+                <p>Drag the slider to see it:</p>
+                <div class="demo wide" data-demo="dial">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="control">
+                        <div class="row">
+                            <span class="label">Swirliness of the field</span>
+                            <span class="val" data-out>balanced</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0.002"
+                            max="0.02"
+                            value="0.0075"
+                            step="0.0005"
+                            data-swirl
+                            aria-label="How tightly the field curls"
+                        />
+                        <p class="read" data-read></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PUT IT TOGETHER -->
+            <section id="together">
+                <p class="step">Put it together</p>
+                <h2>Nobody drew these streams</h2>
+                <p>
+                    None of the rivers and fountains you've watched are written
+                    down anywhere. They fall out of one rule — follow the arrow
+                    beneath you — repeated by thousands of particles at once.
+                </p>
+                <p>
+                    See it for yourself. The particles are born from an
+                    <span class="hi">emitter</span>; switch its shape to change
+                    where every stream begins. And
+                    <span class="hi">drag across the flow</span> to tug the
+                    current around as it runs.
+                </p>
+                <div class="demo" data-demo="together">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="chips" data-chips>
+                        <button class="chip active" data-pattern="Scatter">
+                            Scatter
+                        </button>
+                        <button class="chip" data-pattern="Ring">Ring</button>
+                        <button class="chip" data-pattern="Grid">Grid</button>
+                        <button class="chip" data-pattern="TwoBlobs">
+                            Two Blobs
+                        </button>
+                    </div>
+                    <p class="hint">
+                        Pick where the streams are born, or drag across the flow
+                        to tug it.
+                    </p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go shape your own field</h2>
+                <p>
+                    The full sim opens every knob: colors, emitter shapes, flow
+                    speed, lifespan, and a link that hands someone the exact
+                    field you made. The one rule stays the same; the rest is
+                    yours.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="flow-field.html"
+                        >Open the Flow Field sim
+                        <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const DPR = Math.min(window.devicePixelRatio || 1, 2);
+                const TAU = Math.PI * 2;
+
+                // Flow Field palette (matches the "Iris" look from the
+                // sim/landing hero, which renders flow field in Iris).
+                const STOPS = [
+                    "#000018",
+                    "#0c1448",
+                    "#4a3ac0",
+                    "#c060e0",
+                    "#ffd0e0",
+                ];
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                function buildColors(stops) {
+                    const seg = stops.length - 1;
+                    const out = new Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        const r = (c0[0] + (c1[0] - c0[0]) * u) | 0;
+                        const g = (c0[1] + (c1[1] - c0[1]) * u) | 0;
+                        const b = (c0[2] + (c1[2] - c0[2]) * u) | 0;
+                        out[i] = "rgb(" + r + "," + g + "," + b + ")";
+                    }
+                    return out;
+                }
+                const COLORS = buildColors(STOPS);
+                const BG = hexToRgb(STOPS[0]);
+                const BG_STR = "rgb(" + BG[0] + "," + BG[1] + "," + BG[2] + ")";
+
+                // ---- Value noise (same field math as flow-field.sim.js) ----
+                function hash2(ix, iy) {
+                    let h =
+                        Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263);
+                    h = Math.imul(h ^ (h >>> 13), 1274126177);
+                    h ^= h >>> 16;
+                    return (h >>> 0) / 4294967295;
+                }
+                function smooth(t) {
+                    return t * t * (3 - 2 * t);
+                }
+                function vnoise(x, y) {
+                    const x0 = Math.floor(x),
+                        y0 = Math.floor(y);
+                    const fx = smooth(x - x0),
+                        fy = smooth(y - y0);
+                    const v00 = hash2(x0, y0),
+                        v10 = hash2(x0 + 1, y0),
+                        v01 = hash2(x0, y0 + 1),
+                        v11 = hash2(x0 + 1, y0 + 1);
+                    const a = v00 + (v10 - v00) * fx;
+                    const b = v01 + (v11 - v01) * fx;
+                    return a + (b - a) * fy;
+                }
+
+                // ============================================================
+                // Parameterized flow-field engine.
+                // p = { count, speed, noiseScale, evolve, inertia, trail,
+                //       lifespan, pattern, regionSize, showField, tug } — p is
+                //       read live each frame, so a slider can mutate it in
+                //       place. noiseScale is in CSS-px space (divided by DPR
+                //       internally) so the swirl density is resolution-stable.
+                //       Same noise + inertia math as flow-field.sim.js, scaled
+                //       to these small demo canvases.
+                // ============================================================
+                function makeFlow(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        age,
+                        raf = 0;
+                    let fieldTime = 0,
+                        offX = 1000,
+                        offY = 1000;
+                    let tugActive = false,
+                        tugX = 0,
+                        tugY = 0;
+
+                    function nsEff() {
+                        return p.noiseScale / DPR;
+                    }
+                    function fieldAngle(x, y) {
+                        const ns = nsEff();
+                        return vnoise(x * ns + offX, y * ns + offY) * TAU * 2;
+                    }
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        W = Math.max(2, Math.round(r.width * DPR));
+                        H = Math.max(2, Math.round(r.height * DPR));
+                        canvas.width = W;
+                        canvas.height = H;
+                    }
+
+                    // A point drawn from the current emitter shape — used for
+                    // the first seed and for rebirth, so the shape behaves like
+                    // a continuous source (mirrors the sim's spawnPos).
+                    function spawnPos() {
+                        const cx = W / 2,
+                            cy = H / 2;
+                        const maxR =
+                            Math.min(W, H) * 0.45 * (p.regionSize || 0.6);
+                        switch (p.pattern) {
+                            case "Ring": {
+                                const th = Math.random() * TAU;
+                                return {
+                                    x: cx + Math.cos(th) * maxR,
+                                    y: cy + Math.sin(th) * maxR,
+                                };
+                            }
+                            case "Grid": {
+                                const cols = Math.max(
+                                    1,
+                                    Math.round(
+                                        Math.sqrt((n * W) / Math.max(H, 1)),
+                                    ),
+                                );
+                                const rows = Math.max(1, Math.ceil(n / cols));
+                                const col = Math.floor(Math.random() * cols);
+                                const row = Math.floor(Math.random() * rows);
+                                return {
+                                    x: ((col + 0.5) * W) / cols,
+                                    y: ((row + 0.5) * H) / rows,
+                                };
+                            }
+                            case "TwoBlobs": {
+                                const bi = Math.floor(Math.random() * 2);
+                                const ba = (bi / 2) * TAU;
+                                const bd =
+                                    Math.min(W, H) * 0.28 * (p.regionSize || 0.6);
+                                const bcx = cx + Math.cos(ba) * bd;
+                                const bcy = cy + Math.sin(ba) * bd;
+                                const r =
+                                    Math.sqrt(Math.random()) *
+                                    Math.min(W, H) *
+                                    0.1;
+                                const th = Math.random() * TAU;
+                                return {
+                                    x: bcx + Math.cos(th) * r,
+                                    y: bcy + Math.sin(th) * r,
+                                };
+                            }
+                            case "Scatter":
+                            default:
+                                return {
+                                    x: Math.random() * W,
+                                    y: Math.random() * H,
+                                };
+                        }
+                    }
+
+                    function spawnParticle(i) {
+                        const pt = spawnPos();
+                        xs[i] = pt.x;
+                        ys[i] = pt.y;
+                        const a = fieldAngle(pt.x, pt.y);
+                        const sp = p.speed * DPR;
+                        vx[i] = Math.cos(a) * sp;
+                        vy[i] = Math.sin(a) * sp;
+                        // Staggered age so the flock doesn't all expire at once.
+                        age[i] = Math.random() * p.lifespan;
+                    }
+
+                    function seed() {
+                        n = p.count;
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
+                        age = new Float32Array(n);
+                        for (let i = 0; i < n; i++) spawnParticle(i);
+                    }
+                    function hardClear() {
+                        ctx.fillStyle = BG_STR;
+                        ctx.fillRect(0, 0, W, H);
+                    }
+                    function init() {
+                        fit();
+                        seed();
+                        hardClear();
+                    }
+
+                    function step() {
+                        const sp = p.speed * DPR;
+                        const ns = nsEff();
+                        const resp = 1 - p.inertia;
+                        const life = p.lifespan;
+                        const pull = tugActive ? 0.02 : 0;
+                        const pullR2 = Math.min(W, H) * 0.45;
+                        const pullR2sq = pullR2 * pullR2;
+                        const hw = W / 2,
+                            hh = H / 2;
+
+                        // Churn the field by orbiting the sample offset.
+                        fieldTime += 1;
+                        const t = fieldTime * p.evolve;
+                        offX = 1000 + Math.cos(t) * 3;
+                        offY = 1000 + Math.sin(t) * 3;
+
+                        for (let i = 0; i < n; i++) {
+                            const x = xs[i],
+                                y = ys[i];
+                            const a =
+                                vnoise(x * ns + offX, y * ns + offY) * TAU * 2;
+                            let nvx = vx[i] + (Math.cos(a) * sp - vx[i]) * resp;
+                            let nvy = vy[i] + (Math.sin(a) * sp - vy[i]) * resp;
+
+                            if (pull > 0) {
+                                let ddx = tugX - x,
+                                    ddy = tugY - y;
+                                if (ddx > hw) ddx -= W;
+                                else if (ddx < -hw) ddx += W;
+                                if (ddy > hh) ddy -= H;
+                                else if (ddy < -hh) ddy += H;
+                                if (ddx * ddx + ddy * ddy < pullR2sq) {
+                                    nvx += ddx * pull;
+                                    nvy += ddy * pull;
+                                }
+                            }
+
+                            vx[i] = nvx;
+                            vy[i] = nvy;
+
+                            let nx = x + nvx,
+                                ny = y + nvy;
+                            nx -= Math.floor(nx / W) * W;
+                            ny -= Math.floor(ny / H) * H;
+                            xs[i] = nx;
+                            ys[i] = ny;
+
+                            age[i] += 1;
+                            if (age[i] >= life) spawnParticle(i);
+                        }
+                    }
+
+                    // Faint arrows sampled on a grid — the field made visible.
+                    function drawField() {
+                        const G = 30 * DPR;
+                        const len = G * 0.42;
+                        ctx.lineWidth = Math.max(1, DPR);
+                        ctx.strokeStyle = "rgba(192,96,224,0.22)";
+                        ctx.beginPath();
+                        for (let gx = G * 0.5; gx < W; gx += G) {
+                            for (let gy = G * 0.5; gy < H; gy += G) {
+                                const a = fieldAngle(gx, gy);
+                                ctx.moveTo(gx, gy);
+                                ctx.lineTo(
+                                    gx + Math.cos(a) * len,
+                                    gy + Math.sin(a) * len,
+                                );
+                            }
+                        }
+                        ctx.stroke();
+                    }
+
+                    const D = 2.2 * DPR,
+                        Dh = D / 2;
+                    function render() {
+                        // Fade the previous frame toward the background for
+                        // trails (same curve as the sim: trail 0 -> 0.5 fade).
+                        const trailAlpha = 0.5 - p.trail * 0.46;
+                        ctx.fillStyle =
+                            "rgba(" +
+                            BG[0] +
+                            "," +
+                            BG[1] +
+                            "," +
+                            BG[2] +
+                            "," +
+                            trailAlpha +
+                            ")";
+                        ctx.fillRect(0, 0, W, H);
+
+                        if (p.showField) drawField();
+
+                        for (let i = 0; i < n; i++) {
+                            const ang = Math.atan2(vy[i], vx[i]);
+                            let idx =
+                                ((0.35 + 0.6 * ((ang + Math.PI) / TAU)) *
+                                    255) |
+                                0;
+                            if (idx > 255) idx = 255;
+                            ctx.fillStyle = COLORS[idx];
+                            ctx.fillRect(xs[i] - Dh, ys[i] - Dh, D, D);
+                        }
+                    }
+
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 120; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        // Swap the emitter and reseed so the change is visible.
+                        setPattern(name) {
+                            p.pattern = name;
+                            if (W) {
+                                seed();
+                                hardClear();
+                            }
+                        },
+                        tugAt(x, y) {
+                            tugActive = true;
+                            tugX = x;
+                            tugY = y;
+                        },
+                        endTug() {
+                            tugActive = false;
+                        },
+                        get size() {
+                            return { W, H };
+                        },
+                    };
+                }
+
+                // ============================================================
+                // Per-demo parameter presets. noiseScale is CSS-space swirl
+                // density; inertia is turn smoothness; evolve is field churn;
+                // trail is how long streaks linger.
+                // ============================================================
+                const BASE = {
+                    count: 320,
+                    speed: 1.4,
+                    noiseScale: 0.0075,
+                    evolve: 0.012,
+                    inertia: 0.82,
+                    trail: 0.86,
+                    lifespan: 220,
+                    pattern: "Scatter",
+                    regionSize: 0.6,
+                    showField: false,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                const PRESETS = {
+                    swirl: {
+                        lo: mk({ noiseScale: 0.004, trail: 0.88 }),
+                        hi: mk({ noiseScale: 0.015, trail: 0.88 }),
+                    },
+                    smooth: {
+                        lo: mk({ inertia: 0.25, trail: 0.9 }),
+                        hi: mk({ inertia: 0.92, trail: 0.9 }),
+                    },
+                    breathe: {
+                        lo: mk({ evolve: 0, trail: 0.86 }),
+                        hi: mk({ evolve: 0.04, trail: 0.86 }),
+                    },
+                    trails: {
+                        lo: mk({ trail: 0.0 }),
+                        hi: mk({ trail: 0.95 }),
+                    },
+                };
+
+                // Build the simple two-up rule demos.
+                const instances = []; // { el, prev }
+                document
+                    .querySelectorAll(
+                        '[data-demo="swirl"],[data-demo="smooth"],[data-demo="breathe"],[data-demo="trails"]',
+                    )
+                    .forEach((demo) => {
+                        const kind = demo.dataset.demo;
+                        ["lo", "hi"].forEach((side) => {
+                            const cv = demo.querySelector(
+                                'canvas[data-side="' + side + '"]',
+                            );
+                            const prev = makeFlow(
+                                cv,
+                                Object.assign({}, PRESETS[kind][side]),
+                            );
+                            instances.push({ el: cv, prev });
+                        });
+                    });
+
+                // Field-reveal demo (arrows visible).
+                const fieldDemo = document.querySelector('[data-demo="field"]');
+                const fieldCanvas = fieldDemo.querySelector("canvas");
+                const fieldPrev = makeFlow(
+                    fieldCanvas,
+                    mk({
+                        count: 240,
+                        noiseScale: 0.007,
+                        inertia: 0.85,
+                        trail: 0.8,
+                        showField: true,
+                    }),
+                );
+                instances.push({ el: fieldCanvas, prev: fieldPrev });
+
+                // Swirliness slider demo.
+                const dialDemo = document.querySelector('[data-demo="dial"]');
+                const dialParams = mk({
+                    count: 420,
+                    noiseScale: 0.0075,
+                    inertia: 0.85,
+                    trail: 0.9,
+                });
+                const dialPrev = makeFlow(
+                    dialDemo.querySelector("canvas"),
+                    dialParams,
+                );
+                instances.push({
+                    el: dialDemo.querySelector("canvas"),
+                    prev: dialPrev,
+                });
+                const slider = dialDemo.querySelector("[data-swirl]");
+                const out = dialDemo.querySelector("[data-out]");
+                const read = dialDemo.querySelector("[data-read]");
+                function describeSwirl(v) {
+                    if (v < 0.005)
+                        return {
+                            word: "broad",
+                            text: "The arrows barely turn. One slow current sweeps the whole screen the same way.",
+                        };
+                    if (v < 0.01)
+                        return {
+                            word: "balanced",
+                            text: "A natural mix. Streams curl and braid into rivers as they roam.",
+                        };
+                    if (v < 0.015)
+                        return {
+                            word: "tight",
+                            text: "The map curls fast. The flow breaks into many small, busy whirlpools.",
+                        };
+                    return {
+                        word: "turbulent",
+                        text: "Countless tiny vortices, all packed together. The streams churn into froth.",
+                    };
+                }
+                function syncSwirl() {
+                    const v = +slider.value;
+                    dialParams.noiseScale = v;
+                    const d = describeSwirl(v);
+                    out.textContent = d.word;
+                    read.textContent = d.text;
+                }
+                slider.addEventListener("input", syncSwirl);
+                syncSwirl();
+
+                // Put-it-together demo: emitter chips + drag-to-tug.
+                const togetherDemo = document.querySelector(
+                    '[data-demo="together"]',
+                );
+                const togetherCanvas = togetherDemo.querySelector("canvas");
+                const togetherPrev = makeFlow(
+                    togetherCanvas,
+                    mk({
+                        count: 520,
+                        noiseScale: 0.008,
+                        inertia: 0.85,
+                        trail: 0.9,
+                        pattern: "Scatter",
+                        regionSize: 0.6,
+                    }),
+                );
+                instances.push({ el: togetherCanvas, prev: togetherPrev });
+
+                const chips = togetherDemo.querySelectorAll(".chip");
+                chips.forEach((chip) => {
+                    chip.addEventListener("click", () => {
+                        chips.forEach((c) => c.classList.remove("active"));
+                        chip.classList.add("active");
+                        togetherPrev.setPattern(chip.dataset.pattern);
+                    });
+                });
+
+                function tugFrom(ev) {
+                    const r = togetherCanvas.getBoundingClientRect();
+                    const x = ((ev.clientX - r.left) / r.width) *
+                        togetherPrev.size.W;
+                    const y = ((ev.clientY - r.top) / r.height) *
+                        togetherPrev.size.H;
+                    togetherPrev.tugAt(x, y);
+                }
+                togetherCanvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    tugFrom(e);
+                });
+                togetherCanvas.addEventListener("pointermove", (e) => {
+                    if (e.buttons) tugFrom(e);
+                });
+                window.addEventListener("pointerup", () =>
+                    togetherPrev.endTug(),
+                );
+                togetherCanvas.style.cursor = "pointer";
+
+                // Hero backdrop field.
+                const heroPrev = makeFlow(
+                    document.getElementById("hero-canvas"),
+                    mk({
+                        count: 600,
+                        noiseScale: 0.0075,
+                        inertia: 0.85,
+                        trail: 0.92,
+                        evolve: 0.01,
+                    }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const inst = e.target.__inst;
+                            if (!inst) return;
+                            if (e.isIntersecting) inst.start();
+                            else inst.stop();
+                        });
+                    },
+                    { threshold: 0.15 },
+                );
+                instances.forEach((it) => {
+                    it.el.__inst = it.prev;
+                    io.observe(it.el);
+                });
+                const heroCanvas = document.getElementById("hero-canvas");
+                heroCanvas.__inst = heroPrev;
+                io.observe(heroCanvas);
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        instances.forEach((it) => it.prev.resize());
+                        syncSwirl();
+                    }, 250);
+                });
+            })();
+        </script>
+    </body>
+</html>

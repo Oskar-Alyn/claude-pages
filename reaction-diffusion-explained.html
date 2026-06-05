@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#050200" />
+        <title>How Reaction–Diffusion Works — Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of the Gray-Scott reaction-diffusion simulation. Two chemicals, one self-copying reaction, and a speed mismatch that breaks it into spots, stripes, and mazes. Drag the map and watch."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Reaction–Diffusion Works" />
+        <meta
+            property="og:description"
+            content="Two chemicals, one self-copying reaction, and a speed mismatch that breaks it into spots and mazes. A visual walkthrough of reaction-diffusion."
+        />
+        <meta property="og:image" content="og/reaction-diffusion.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/reaction-diffusion.png" />
+        <meta name="twitter:title" content="How Reaction–Diffusion Works" />
+        <meta
+            name="twitter:description"
+            content="One reaction copies itself; a speed mismatch breaks it into patterns."
+        />
+
+        <style>
+            :root {
+                --accent: #ff6a3c;
+                --accent-deep: #a02410;
+                --ink: #fbf3ee;
+                --muted: rgba(251, 243, 238, 0.72);
+                --faint: rgba(251, 243, 238, 0.45);
+                --line: rgba(255, 255, 255, 0.09);
+                --card: rgba(255, 255, 255, 0.035);
+                --chem-a: #6fb6c8;
+                --chem-b: #ff7a3c;
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-behavior: smooth;
+                scroll-padding-top: 64px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+            body {
+                margin: 0;
+                background: #050200;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(12, 5, 2, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid var(--line);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 18px;
+                align-items: center;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            .nav .links .launch {
+                color: var(--accent);
+            }
+            @media (max-width: 560px) {
+                .nav .links .home {
+                    display: none;
+                }
+            }
+
+            /* ---------- Hero ---------- */
+            .hero {
+                position: relative;
+                min-height: 92vh;
+                min-height: 92svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            .hero canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+            }
+            .hero .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 75% 60% at center 46%,
+                        rgba(0, 0, 0, 0.45),
+                        rgba(0, 0, 0, 0.1) 55%,
+                        rgba(5, 2, 0, 0.7)
+                    ),
+                    linear-gradient(
+                        rgba(5, 2, 0, 0.3),
+                        rgba(5, 2, 0, 0) 30%,
+                        rgba(5, 2, 0, 0) 70%,
+                        rgba(5, 2, 0, 0.95)
+                    );
+            }
+            .hero .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 760px;
+                padding: 90px 24px;
+            }
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .hero .title {
+                font-size: clamp(44px, 9vw, 104px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.18em 0 0.34em;
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 23px);
+                color: var(--muted);
+                max-width: 32ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.5);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Article ---------- */
+            .article {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 8px 22px 40px;
+            }
+            section {
+                padding: 46px 0 8px;
+                scroll-margin-top: 64px;
+            }
+            .step {
+                font-size: 12.5px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent-deep);
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: clamp(27px, 5vw, 38px);
+                line-height: 1.1;
+                letter-spacing: -0.025em;
+                font-weight: 700;
+                margin: 0 0 0.5em;
+            }
+            p {
+                color: var(--muted);
+                font-size: clamp(16px, 2vw, 18px);
+                margin: 0 0 1.1em;
+            }
+            p .hi {
+                color: rgba(251, 243, 238, 0.92);
+                font-weight: 600;
+            }
+            .a-word {
+                color: var(--chem-a);
+                font-weight: 600;
+            }
+            .b-word {
+                color: var(--chem-b);
+                font-weight: 600;
+            }
+
+            /* ---------- Demo cards ---------- */
+            .demo {
+                margin: 22px 0 8px;
+                padding: 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+            }
+            .demo-pair {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            @media (max-width: 540px) {
+                .demo-pair {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .cell {
+                position: relative;
+            }
+            .cell canvas {
+                display: block;
+                width: 100%;
+                height: 196px;
+                border-radius: 12px;
+                background: #050200;
+                cursor: default;
+            }
+            .demo.wide canvas {
+                height: 280px;
+            }
+            .caption {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 10px 2px 2px;
+                font-size: 13.5px;
+                color: var(--muted);
+            }
+            .tag {
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .tag.off {
+                color: var(--faint);
+            }
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                flex: none;
+            }
+            .dot.lo {
+                background: var(--faint);
+            }
+            .dot.hi {
+                background: var(--accent);
+            }
+
+            /* ---------- Concentration legend ---------- */
+            .legend {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+                margin-top: 14px;
+                font-size: 13px;
+                color: var(--muted);
+            }
+            .legend .ramp {
+                width: 160px;
+                max-width: 50vw;
+                height: 12px;
+                border-radius: 999px;
+                background: linear-gradient(
+                    90deg,
+                    #050200,
+                    #1a0000,
+                    #a00010,
+                    #ff4020,
+                    #ffec70
+                );
+                border: 1px solid var(--line);
+            }
+
+            /* ---------- Feed/kill map (the showpiece) ---------- */
+            .map-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-top: 4px;
+            }
+            @media (min-width: 620px) {
+                .map-grid {
+                    grid-template-columns: 1.1fr 1fr;
+                    align-items: stretch;
+                }
+            }
+            .pad-wrap {
+                display: flex;
+                flex-direction: column;
+            }
+            .pad {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                border-radius: 14px;
+                border: 1px solid var(--line);
+                background:
+                    radial-gradient(
+                        120% 120% at 30% 78%,
+                        rgba(255, 106, 60, 0.16),
+                        rgba(255, 106, 60, 0) 55%
+                    ),
+                    linear-gradient(
+                        180deg,
+                        rgba(160, 36, 16, 0.28),
+                        rgba(5, 2, 0, 0.2)
+                    );
+                cursor: crosshair;
+                touch-action: none;
+                overflow: hidden;
+            }
+            .pad .axis {
+                position: absolute;
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--faint);
+                pointer-events: none;
+            }
+            .pad .axis.x {
+                bottom: 7px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .pad .axis.y {
+                top: 50%;
+                left: 7px;
+                transform: translateY(-50%) rotate(-90deg);
+                transform-origin: left center;
+            }
+            .knob {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                margin: -10px 0 0 -10px;
+                border-radius: 50%;
+                background: var(--accent);
+                border: 2px solid #fff;
+                box-shadow: 0 2px 12px rgba(255, 106, 60, 0.55);
+                pointer-events: none;
+            }
+            .map-side {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .map-side .regime {
+                font-size: clamp(22px, 4.5vw, 30px);
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                margin: 0 0 6px;
+            }
+            .map-side .read {
+                font-size: 14px;
+                color: var(--muted);
+                min-height: 3.6em;
+                margin: 0 0 14px;
+            }
+            .map-side .vals {
+                display: flex;
+                gap: 18px;
+                font-size: 13px;
+                color: var(--faint);
+                font-variant-numeric: tabular-nums;
+            }
+            .map-side .vals b {
+                color: var(--ink);
+                font-weight: 600;
+            }
+
+            .hint {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 12px 0 0;
+            }
+
+            /* ---------- Outro / CTA ---------- */
+            .outro {
+                text-align: center;
+                padding-top: 30px;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #2a0900;
+                padding: 13px 26px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(255, 106, 60, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #ff8a5e;
+                box-shadow: 0 12px 38px rgba(255, 106, 60, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><span class="mark">✦</span> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="reaction-diffusion.html"
+                    >Open the sim →</a
+                >
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <p class="eyebrow">How it works · Reaction–Diffusion</p>
+                <h1 class="title">Patterns out of chemistry</h1>
+                <p class="lede">
+                    Two chemicals, one self-copying reaction, and a single trick
+                    that breaks it into spots and&nbsp;mazes.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rules</p>
+                <h2>A dish with two chemicals</h2>
+                <p>
+                    Picture the screen as a shallow dish, filled edge to edge
+                    with <span class="a-word">chemical A</span>. Drip a little
+                    <span class="b-word">chemical B</span> into it and the two
+                    start to react. Nothing here is a creature or a particle,
+                    just chemistry spread across a grid.
+                </p>
+                <p>
+                    The color is simply <span class="hi">how much B</span> is in
+                    each spot: dark where the dish is empty, bright where the
+                    reaction runs dense. Watch a few drops take hold.
+                </p>
+                <div class="demo" data-demo="orient">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="legend">
+                        <span>Empty</span>
+                        <span class="ramp"></span>
+                        <span>Dense&nbsp;B</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FORCE 1: THE REACTION -->
+            <section id="reaction">
+                <p class="step">Force 1 of 3</p>
+                <h2>The reaction copies itself</h2>
+                <p>
+                    Where <span class="b-word">B</span> meets
+                    <span class="a-word">A</span>, it converts that A into
+                    <span class="hi">more B</span>. So every bit of B helps make
+                    the next bit: a single speck doesn't just sit there, it
+                    spreads outward into fresh medium. Left to itself, B would
+                    copy its way across the entire dish.
+                </p>
+                <div class="demo" data-demo="reaction">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Can't catch</span>, the
+                                speck fades out
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Self-feeding</span>, it
+                                spreads on its own
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FORCE 2: FEED & KILL -->
+            <section id="feedkill">
+                <p class="step">Force 2 of 3</p>
+                <h2>So why doesn't it fill the screen?</h2>
+                <p>
+                    Two things hold it back. <span class="a-word">A</span> is
+                    constantly <span class="hi">fed</span> back into the dish, so
+                    the medium never fully runs out, and
+                    <span class="b-word">B</span> is constantly
+                    <span class="hi">killed</span> off, so it can't just pile up.
+                    Tip that balance and the reaction either floods everything or
+                    starves. Leave it on the knife's edge and it settles into a
+                    living, lasting front.
+                </p>
+                <div class="demo" data-demo="feedkill">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Too little killing</span>,
+                                B floods in
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Balanced</span>, it holds its
+                                shape
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FORCE 3: TWO DIFFUSION SPEEDS (the aha) -->
+            <section id="diffusion">
+                <p class="step">Force 3 of 3</p>
+                <h2>Why a pattern, and not a blob?</h2>
+                <p>
+                    Here's the trick the whole thing turns on. Both chemicals
+                    <span class="hi">spread</span>, but at different speeds:
+                    <span class="a-word">A</span> drifts fast and
+                    <span class="b-word">B</span> oozes slowly. That mismatch is
+                    everything. Where they spread at the
+                    <span class="hi">same</span> speed, the edges blur into a
+                    flat wash. Where A outruns B, the front can't stay smooth, so
+                    it keeps breaking into spots and stripes.
+                </p>
+                <div class="demo" data-demo="diffusion">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Same speed</span>, it
+                                dissolves to a wash
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">A outruns B</span>, structure
+                                appears
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SHOWPIECE: the feed/kill map -->
+            <section id="map">
+                <p class="step">One map, every pattern</p>
+                <h2>The same dish, a hundred worlds</h2>
+                <p>
+                    Now that patterns can form, the
+                    <span class="hi">feed</span> and
+                    <span class="hi">kill</span> rates together decide
+                    <span class="hi">which</span> one. Nudge them a hair and
+                    spots become worms, worms become a maze, a maze fills solid.
+                    Drag across the map and watch the very same dish reorganize.
+                </p>
+                <div class="demo" data-demo="map">
+                    <div class="map-grid">
+                        <div class="pad-wrap">
+                            <div class="cell">
+                                <canvas data-side="solo"></canvas>
+                            </div>
+                        </div>
+                        <div class="map-side">
+                            <div class="pad" data-pad>
+                                <span class="axis x">Feed →</span>
+                                <span class="axis y">Kill →</span>
+                                <div class="knob" data-knob></div>
+                            </div>
+                            <p class="hint">Drag anywhere on the square ↑</p>
+                        </div>
+                    </div>
+                    <div class="map-side" style="margin-top: 14px">
+                        <p class="regime" data-regime>a maze</p>
+                        <p class="read" data-read></p>
+                        <div class="vals">
+                            <span>feed <b data-feed></b></span>
+                            <span>kill <b data-kill></b></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OUTRO -->
+            <section id="together">
+                <p class="step">Put it together</p>
+                <h2>Nobody drew these</h2>
+                <p>
+                    None of the spots and corridors are painted in by hand. They
+                    fall out of three plain forces acting at every point at once:
+                    a reaction that copies itself, a feed-and-kill that holds it
+                    in check, and two speeds of spreading that fracture it into
+                    shape.
+                </p>
+                <p>
+                    The dish below starts empty.
+                    <span class="hi">Drag across it</span> to paint in some
+                    <span class="b-word">B</span>, then watch the reaction take
+                    your strokes and grow them into a pattern of its own.
+                </p>
+                <div class="demo" data-demo="paint">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">Drag on the dish to paint reagent ↑</p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go grow your own</h2>
+                <p>
+                    The full sim hands you every dial, a palette to recolor it,
+                    seed shapes to start from, and a link that hands someone the
+                    exact pattern you found. The chemistry stays the same; the
+                    rest is yours.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="reaction-diffusion.html"
+                        >Open the Reaction–Diffusion sim
+                        <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+                // Reaction–Diffusion palette (the sim's "Inferno" look).
+                const STOPS = [
+                    "#050200",
+                    "#1a0000",
+                    "#a00010",
+                    "#ff4020",
+                    "#ffec70",
+                ];
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                // 256-entry RGB ramp (flat Uint8: idx*3 + channel).
+                function buildLUT(stops) {
+                    const seg = stops.length - 1;
+                    const out = new Uint8ClampedArray(256 * 3);
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        out[i * 3] = c0[0] + (c1[0] - c0[0]) * u;
+                        out[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        out[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                    }
+                    return out;
+                }
+                const LUT = buildLUT(STOPS);
+
+                // Small seeded PRNG so paired (lo/hi) demos start from the exact
+                // same scatter of seeds — then only the parameter differs.
+                function mulberry32(a) {
+                    return function () {
+                        a |= 0;
+                        a = (a + 0x6d2b79f5) | 0;
+                        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                    };
+                }
+
+                // ============================================================
+                // Parameterized Gray-Scott engine.
+                // p = { feed, kill, dA, dB, sub, cells, seed, seedN, rseed }
+                //   p is read live each frame, so a drag can mutate p.feed /
+                //   p.kill in place. Toroidal grid + the same reaction math as
+                //   reaction-diffusion.sim.js, just sized down for these demos.
+                //   seed: "scatter" | "empty"  (empty = blank dish to paint on)
+                // ============================================================
+                function makeRD(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    const off = document.createElement("canvas");
+                    const offCtx = off.getContext("2d");
+                    let gw = 0,
+                        gh = 0,
+                        A,
+                        B,
+                        A2,
+                        B2,
+                        img,
+                        data,
+                        raf = 0;
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        const W = Math.max(2, Math.round(r.width));
+                        const H = Math.max(2, Math.round(r.height));
+                        canvas.width = Math.round(W * DPR);
+                        canvas.height = Math.round(H * DPR);
+                        const aspect = W / H;
+                        const target = p.cells || 16000;
+                        gh = Math.max(48, Math.round(Math.sqrt(target / aspect)));
+                        gw = Math.max(64, Math.round(gh * aspect));
+                        const c = gw * gh;
+                        A = new Float32Array(c);
+                        B = new Float32Array(c);
+                        A2 = new Float32Array(c);
+                        B2 = new Float32Array(c);
+                        off.width = gw;
+                        off.height = gh;
+                        img = offCtx.createImageData(gw, gh);
+                        data = img.data;
+                    }
+
+                    // Drop a filled circle of B (clearing A) at a grid cell,
+                    // wrapping toroidally.
+                    function splat(gx, gy, r) {
+                        const r2 = r * r;
+                        for (let dy = -r; dy <= r; dy++) {
+                            for (let dx = -r; dx <= r; dx++) {
+                                if (dx * dx + dy * dy > r2) continue;
+                                let ix = gx + dx,
+                                    iy = gy + dy;
+                                ix -= Math.floor(ix / gw) * gw;
+                                iy -= Math.floor(iy / gh) * gh;
+                                const i = iy * gw + ix;
+                                B[i] = 1;
+                                A[i] = 0;
+                            }
+                        }
+                    }
+
+                    function seed() {
+                        A.fill(1);
+                        B.fill(0);
+                        if (p.seed === "empty") return;
+                        const rng = mulberry32(p.rseed || 1);
+                        const n = p.seedN || 28;
+                        for (let k = 0; k < n; k++)
+                            splat(
+                                (rng() * gw) | 0,
+                                (rng() * gh) | 0,
+                                2 + ((rng() * 2) | 0),
+                            );
+                    }
+
+                    function init() {
+                        fit();
+                        seed();
+                    }
+
+                    // One cell on the wrapping perimeter.
+                    function edge(x, y, feed, kill, dA, dB) {
+                        const xm = x === 0 ? gw - 1 : x - 1;
+                        const xp = x === gw - 1 ? 0 : x + 1;
+                        const ym = y === 0 ? gh - 1 : y - 1;
+                        const yp = y === gh - 1 ? 0 : y + 1;
+                        const r = y * gw,
+                            rm = ym * gw,
+                            rp = yp * gw;
+                        const i = r + x;
+                        const a = A[i],
+                            b = B[i];
+                        const lapA =
+                            (A[r + xm] + A[r + xp] + A[rm + x] + A[rp + x]) *
+                                0.2 +
+                            (A[rm + xm] + A[rm + xp] + A[rp + xm] + A[rp + xp]) *
+                                0.05 -
+                            a;
+                        const lapB =
+                            (B[r + xm] + B[r + xp] + B[rm + x] + B[rp + x]) *
+                                0.2 +
+                            (B[rm + xm] + B[rm + xp] + B[rp + xm] + B[rp + xp]) *
+                                0.05 -
+                            b;
+                        const abb = a * b * b;
+                        const na = a + (dA * lapA - abb + feed * (1 - a));
+                        const nb = b + (dB * lapB + abb - (kill + feed) * b);
+                        A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                        B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                    }
+
+                    function stepOne() {
+                        const feed = p.feed,
+                            kill = p.kill,
+                            dA = p.dA,
+                            dB = p.dB,
+                            wg = gw,
+                            hg = gh;
+                        for (let y = 1; y < hg - 1; y++) {
+                            const row = y * wg;
+                            for (let x = 1; x < wg - 1; x++) {
+                                const i = row + x;
+                                const a = A[i],
+                                    b = B[i];
+                                const lapA =
+                                    (A[i - 1] +
+                                        A[i + 1] +
+                                        A[i - wg] +
+                                        A[i + wg]) *
+                                        0.2 +
+                                    (A[i - wg - 1] +
+                                        A[i - wg + 1] +
+                                        A[i + wg - 1] +
+                                        A[i + wg + 1]) *
+                                        0.05 -
+                                    a;
+                                const lapB =
+                                    (B[i - 1] +
+                                        B[i + 1] +
+                                        B[i - wg] +
+                                        B[i + wg]) *
+                                        0.2 +
+                                    (B[i - wg - 1] +
+                                        B[i - wg + 1] +
+                                        B[i + wg - 1] +
+                                        B[i + wg + 1]) *
+                                        0.05 -
+                                    b;
+                                const abb = a * b * b;
+                                const na =
+                                    a + (dA * lapA - abb + feed * (1 - a));
+                                const nb =
+                                    b + (dB * lapB + abb - (kill + feed) * b);
+                                A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                                B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                            }
+                        }
+                        for (let x = 0; x < wg; x++) {
+                            edge(x, 0, feed, kill, dA, dB);
+                            edge(x, hg - 1, feed, kill, dA, dB);
+                        }
+                        for (let y = 1; y < hg - 1; y++) {
+                            edge(0, y, feed, kill, dA, dB);
+                            edge(wg - 1, y, feed, kill, dA, dB);
+                        }
+                        let t = A;
+                        A = A2;
+                        A2 = t;
+                        t = B;
+                        B = B2;
+                        B2 = t;
+                    }
+
+                    function draw() {
+                        const cells = gw * gh;
+                        for (let i = 0, q = 0; i < cells; i++, q += 4) {
+                            let idx = (B[i] * 560) | 0;
+                            if (idx > 255) idx = 255;
+                            const c = idx * 3;
+                            data[q] = LUT[c];
+                            data[q + 1] = LUT[c + 1];
+                            data[q + 2] = LUT[c + 2];
+                            data[q + 3] = 255;
+                        }
+                        offCtx.putImageData(img, 0, 0);
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+                    }
+
+                    function frame() {
+                        const sub = p.sub || 8;
+                        for (let s = 0; s < sub; s++) stepOne();
+                        draw();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    // Map a pointer event to a grid cell and splat reagent in.
+                    function paintAt(clientX, clientY) {
+                        if (!gw) return;
+                        const rect = canvas.getBoundingClientRect();
+                        const gx =
+                            (((clientX - rect.left) / rect.width) * gw) | 0;
+                        const gy =
+                            (((clientY - rect.top) / rect.height) * gh) | 0;
+                        const r = Math.max(2, Math.round(Math.min(gw, gh) * 0.03));
+                        splat(gx, gy, r);
+                    }
+
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) {
+                                // No animation: settle a still frame, then stop.
+                                const budget = p.seed === "empty" ? 0 : 900;
+                                for (let k = 0; k < budget; k++) stepOne();
+                                draw();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        reseed() {
+                            if (gw) seed();
+                        },
+                        paintAt,
+                    };
+                }
+
+                // ============================================================
+                // Per-demo presets. feed/kill/dA/dB are the same knobs the sim
+                // exposes; every preset sits in the band that actually forms a
+                // pattern (matching the sim's randomize ranges).
+                // ============================================================
+                const BASE = {
+                    feed: 0.036,
+                    kill: 0.0615,
+                    dA: 1.0,
+                    dB: 0.5,
+                    sub: 8,
+                    cells: 15000,
+                    seed: "scatter",
+                    seedN: 26,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                const PRESETS = {
+                    reaction: {
+                        // Same seeds; high kill starves B, lower kill lets it
+                        // self-copy across the dish.
+                        lo: mk({ feed: 0.022, kill: 0.066, rseed: 7, seedN: 16 }),
+                        hi: mk({ feed: 0.034, kill: 0.0605, rseed: 7, seedN: 16 }),
+                    },
+                    feedkill: {
+                        // Same feed; too little kill floods, balanced kill holds.
+                        lo: mk({ feed: 0.03, kill: 0.05, rseed: 11 }),
+                        hi: mk({ feed: 0.03, kill: 0.062, rseed: 11 }),
+                    },
+                    diffusion: {
+                        // Identical feed/kill; only the A:B speed ratio differs.
+                        lo: mk({
+                            dA: 0.7,
+                            dB: 0.62,
+                            feed: 0.036,
+                            kill: 0.0615,
+                            rseed: 5,
+                        }),
+                        hi: mk({
+                            dA: 1.0,
+                            dB: 0.5,
+                            feed: 0.036,
+                            kill: 0.0615,
+                            rseed: 5,
+                        }),
+                    },
+                };
+
+                const instances = []; // { el, prev }
+
+                // ---------- Orientation (single dish) ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="orient"]');
+                    const cv = demo.querySelector("canvas");
+                    const prev = makeRD(
+                        cv,
+                        mk({ feed: 0.036, kill: 0.0615, seedN: 16, rseed: 3 }),
+                    );
+                    instances.push({ el: cv, prev });
+                })();
+
+                // ---------- Two-up rule demos ----------
+                document
+                    .querySelectorAll(
+                        '[data-demo="reaction"],[data-demo="feedkill"],[data-demo="diffusion"]',
+                    )
+                    .forEach((demo) => {
+                        const kind = demo.dataset.demo;
+                        ["lo", "hi"].forEach((side) => {
+                            const cv = demo.querySelector(
+                                'canvas[data-side="' + side + '"]',
+                            );
+                            const prev = makeRD(
+                                cv,
+                                Object.assign({}, PRESETS[kind][side]),
+                            );
+                            instances.push({ el: cv, prev });
+                        });
+                    });
+
+                // ---------- Showpiece: the feed/kill map ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="map"]');
+                    const cv = demo.querySelector("canvas");
+                    const params = mk({
+                        feed: 0.036,
+                        kill: 0.0615,
+                        cells: 19000,
+                        seedN: 40,
+                        rseed: 21,
+                    });
+                    const prev = makeRD(cv, params);
+                    instances.push({ el: cv, prev });
+
+                    const pad = demo.querySelector("[data-pad]");
+                    const knob = demo.querySelector("[data-knob]");
+                    const regimeEl = demo.querySelector("[data-regime]");
+                    const readEl = demo.querySelector("[data-read]");
+                    const feedEl = demo.querySelector("[data-feed]");
+                    const killEl = demo.querySelector("[data-kill]");
+
+                    // The slice of feed/kill space the map spans (the live band).
+                    const FEED_MIN = 0.012,
+                        FEED_MAX = 0.066;
+                    const KILL_MIN = 0.045,
+                        KILL_MAX = 0.069;
+
+                    // Rough tour of the Gray-Scott map — enough to name where you
+                    // are as you drag through it.
+                    function describe(feed, kill) {
+                        if (kill > 0.064 || (feed < 0.02 && kill > 0.059))
+                            return {
+                                word: "fading out",
+                                text: "B is killed faster than it can copy itself, so the dish drains back toward an empty wash.",
+                            };
+                        if (feed > 0.052 && kill < 0.062)
+                            return {
+                                word: "filling in",
+                                text: "So much feed that B floods almost everywhere — the structure drowns in a near-solid field.",
+                            };
+                        if (feed < 0.026 && kill < 0.061)
+                            return {
+                                word: "dividing spots",
+                                text: "Spots that split and multiply like cells under a microscope, never quite settling.",
+                            };
+                        if (kill > 0.0605)
+                            return {
+                                word: "a maze",
+                                text: "Long winding corridors that branch and reconnect — coral reefs and labyrinths.",
+                            };
+                        return {
+                            word: "worms & loops",
+                            text: "Drifting worms and loops that grow, wander, and fuse into each other.",
+                        };
+                    }
+
+                    function paintKnob() {
+                        const fx =
+                            (params.feed - FEED_MIN) / (FEED_MAX - FEED_MIN);
+                        const ky =
+                            (params.kill - KILL_MIN) / (KILL_MAX - KILL_MIN);
+                        knob.style.left = (fx * 100).toFixed(1) + "%";
+                        knob.style.top = ((1 - ky) * 100).toFixed(1) + "%";
+                    }
+                    function paintReadout() {
+                        const d = describe(params.feed, params.kill);
+                        regimeEl.textContent = d.word;
+                        readEl.textContent = d.text;
+                        feedEl.textContent = params.feed.toFixed(3);
+                        killEl.textContent = params.kill.toFixed(3);
+                    }
+
+                    // Re-seed shortly after the knob settles, so the new regime
+                    // visibly re-blooms instead of stalling in a dead field.
+                    let reseedTimer = null;
+                    function scheduleReseed() {
+                        if (reseedTimer) clearTimeout(reseedTimer);
+                        reseedTimer = setTimeout(() => prev.reseed(), 260);
+                    }
+
+                    function setFromPointer(e) {
+                        const r = pad.getBoundingClientRect();
+                        let fx = (e.clientX - r.left) / r.width;
+                        let py = (e.clientY - r.top) / r.height;
+                        fx = fx < 0 ? 0 : fx > 1 ? 1 : fx;
+                        py = py < 0 ? 0 : py > 1 ? 1 : py;
+                        params.feed = FEED_MIN + fx * (FEED_MAX - FEED_MIN);
+                        params.kill = KILL_MIN + (1 - py) * (KILL_MAX - KILL_MIN);
+                        paintKnob();
+                        paintReadout();
+                        scheduleReseed();
+                    }
+
+                    let padActive = false;
+                    pad.addEventListener("pointerdown", (e) => {
+                        e.preventDefault();
+                        padActive = true;
+                        pad.setPointerCapture(e.pointerId);
+                        setFromPointer(e);
+                    });
+                    pad.addEventListener("pointermove", (e) => {
+                        if (padActive) setFromPointer(e);
+                    });
+                    pad.addEventListener("pointerup", () => {
+                        padActive = false;
+                    });
+
+                    paintKnob();
+                    paintReadout();
+                })();
+
+                // ---------- Outro: paint-your-own ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="paint"]');
+                    const cv = demo.querySelector("canvas");
+                    const prev = makeRD(
+                        cv,
+                        mk({
+                            feed: 0.036,
+                            kill: 0.0615,
+                            cells: 19000,
+                            seed: "empty",
+                        }),
+                    );
+                    instances.push({ el: cv, prev });
+
+                    let painting = false;
+                    cv.addEventListener("pointerdown", (e) => {
+                        e.preventDefault();
+                        painting = true;
+                        cv.setPointerCapture(e.pointerId);
+                        prev.paintAt(e.clientX, e.clientY);
+                    });
+                    cv.addEventListener("pointermove", (e) => {
+                        if (painting) prev.paintAt(e.clientX, e.clientY);
+                    });
+                    cv.addEventListener("pointerup", () => {
+                        painting = false;
+                    });
+                    cv.style.cursor = "crosshair";
+                })();
+
+                // ---------- Hero backdrop ----------
+                const heroPrev = makeRD(
+                    document.getElementById("hero-canvas"),
+                    mk({
+                        feed: 0.0375,
+                        kill: 0.0615,
+                        cells: 48000,
+                        sub: 7,
+                        seedN: 80,
+                        rseed: 99,
+                    }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const inst = e.target.__inst;
+                            if (!inst) return;
+                            if (e.isIntersecting) inst.start();
+                            else inst.stop();
+                        });
+                    },
+                    { threshold: 0.12 },
+                );
+                instances.forEach((it) => {
+                    it.el.__inst = it.prev;
+                    io.observe(it.el);
+                });
+                const heroCanvas = document.getElementById("hero-canvas");
+                heroCanvas.__inst = heroPrev;
+                io.observe(heroCanvas);
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        instances.forEach((it) => it.prev.resize());
+                    }, 250);
+                });
+            })();
+        </script>
+    </body>
+</html>

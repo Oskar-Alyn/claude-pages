@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#060406" />
+        <title>How Slime Mold Works — Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of the Slime Mold (Physarum) simulation. Each critter follows the strongest scent and leaves a trail behind — and a branching map draws itself. Drag the sliders and watch."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Slime Mold Works" />
+        <meta
+            property="og:description"
+            content="Follow the strongest scent, leave a trail behind, and a branching map draws itself. A visual walkthrough of the Slime Mold simulation."
+        />
+        <meta property="og:image" content="og/slime-mold.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/slime-mold.png" />
+        <meta name="twitter:title" content="How Slime Mold Works" />
+        <meta
+            name="twitter:description"
+            content="Follow the scent, leave a scent. A branching map nobody planned."
+        />
+
+        <style>
+            :root {
+                --accent: #ff7a2e;
+                --accent-deep: #b8541e;
+                --ink: #fbf4ee;
+                --muted: rgba(251, 244, 238, 0.72);
+                --faint: rgba(251, 244, 238, 0.45);
+                --line: rgba(255, 255, 255, 0.09);
+                --card: rgba(255, 255, 255, 0.035);
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+            html {
+                scroll-behavior: smooth;
+                scroll-padding-top: 64px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+            body {
+                margin: 0;
+                background: #060406;
+                color: var(--ink);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                line-height: 1.6;
+                overflow-x: hidden;
+            }
+
+            /* ---------- Nav ---------- */
+            .nav {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 max(18px, env(safe-area-inset-left));
+                background: rgba(10, 7, 9, 0.55);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                backdrop-filter: blur(20px) saturate(180%);
+                border-bottom: 1px solid var(--line);
+                font-size: 13px;
+            }
+            .nav .brand {
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .nav .brand .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            .nav .links {
+                display: flex;
+                gap: 18px;
+                align-items: center;
+            }
+            .nav .links a {
+                color: rgba(255, 255, 255, 0.66);
+                text-decoration: none;
+                transition: color 0.15s;
+                white-space: nowrap;
+            }
+            .nav .links a:hover {
+                color: #fff;
+            }
+            .nav .links .launch {
+                color: var(--accent);
+            }
+            @media (max-width: 560px) {
+                .nav .links .home {
+                    display: none;
+                }
+            }
+
+            /* ---------- Hero ---------- */
+            .hero {
+                position: relative;
+                min-height: 92vh;
+                min-height: 92svh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            .hero canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                z-index: 0;
+                image-rendering: auto;
+            }
+            .hero .scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background:
+                    radial-gradient(
+                        ellipse 75% 60% at center 46%,
+                        rgba(0, 0, 0, 0.45),
+                        rgba(0, 0, 0, 0.1) 55%,
+                        rgba(6, 4, 6, 0.7)
+                    ),
+                    linear-gradient(
+                        rgba(6, 4, 6, 0.3),
+                        rgba(6, 4, 6, 0) 30%,
+                        rgba(6, 4, 6, 0) 70%,
+                        rgba(6, 4, 6, 0.95)
+                    );
+            }
+            .hero .content {
+                position: relative;
+                z-index: 2;
+                text-align: center;
+                max-width: 760px;
+                padding: 90px 24px;
+            }
+            .eyebrow {
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin: 0;
+            }
+            .hero .title {
+                font-size: clamp(44px, 9vw, 104px);
+                line-height: 1.02;
+                letter-spacing: -0.035em;
+                font-weight: 700;
+                margin: 0.18em 0 0.34em;
+            }
+            .hero .lede {
+                font-size: clamp(17px, 2.4vw, 23px);
+                color: var(--muted);
+                max-width: 32ch;
+                margin: 0 auto;
+            }
+            .chev {
+                position: absolute;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 2;
+                color: rgba(255, 255, 255, 0.5);
+                animation: bob 2s ease-in-out infinite;
+            }
+            @keyframes bob {
+                0%,
+                100% {
+                    transform: translate(-50%, 0);
+                }
+                50% {
+                    transform: translate(-50%, 8px);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .chev {
+                    animation: none;
+                }
+            }
+
+            /* ---------- Article ---------- */
+            .article {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 8px 22px 40px;
+            }
+            section {
+                padding: 46px 0 8px;
+                scroll-margin-top: 64px;
+            }
+            .step {
+                font-size: 12.5px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent-deep);
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: clamp(27px, 5vw, 38px);
+                line-height: 1.1;
+                letter-spacing: -0.025em;
+                font-weight: 700;
+                margin: 0 0 0.5em;
+            }
+            p {
+                color: var(--muted);
+                font-size: clamp(16px, 2vw, 18px);
+                margin: 0 0 1.1em;
+            }
+            p .hi {
+                color: rgba(251, 244, 238, 0.9);
+                font-weight: 600;
+            }
+
+            /* ---------- Demo cards ---------- */
+            .demo {
+                margin: 22px 0 8px;
+                padding: 16px;
+                border-radius: 18px;
+                background: var(--card);
+                border: 1px solid var(--line);
+            }
+            .demo-pair {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+            @media (max-width: 540px) {
+                .demo-pair {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .cell {
+                position: relative;
+            }
+            .cell canvas {
+                display: block;
+                width: 100%;
+                height: 196px;
+                border-radius: 12px;
+                background: #050204;
+                cursor: default;
+            }
+            .demo.wide canvas {
+                height: 300px;
+            }
+            .caption {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 10px 2px 2px;
+                font-size: 13.5px;
+                color: var(--muted);
+            }
+            .tag {
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .tag.off {
+                color: var(--faint);
+            }
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                flex: none;
+            }
+            .dot.lo {
+                background: var(--faint);
+            }
+            .dot.hi {
+                background: var(--accent);
+            }
+
+            /* ---------- Slider control ---------- */
+            .control {
+                margin-top: 14px;
+                padding: 4px 4px 2px;
+            }
+            .control .row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 9px;
+            }
+            .control .label {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .control .val {
+                font-size: 14px;
+                color: var(--accent);
+                font-variant-numeric: tabular-nums;
+            }
+            .control .read {
+                font-size: 13.5px;
+                color: var(--muted);
+                min-height: 1.5em;
+                margin: 9px 2px 0;
+            }
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 4px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.16);
+                outline: none;
+                margin: 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(255, 122, 46, 0.45);
+                border: none;
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 10px rgba(255, 122, 46, 0.45);
+            }
+
+            .hint {
+                font-size: 13px;
+                color: var(--faint);
+                text-align: center;
+                margin: 12px 0 0;
+            }
+
+            /* ---------- Outro / CTA ---------- */
+            .outro {
+                text-align: center;
+                padding-top: 30px;
+            }
+            .cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--accent);
+                color: #2a0f00;
+                padding: 13px 26px;
+                border-radius: 980px;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition:
+                    transform 0.16s ease,
+                    box-shadow 0.16s ease,
+                    background 0.16s ease;
+                box-shadow: 0 8px 30px rgba(255, 122, 46, 0.25);
+            }
+            .cta:hover {
+                transform: translateY(-2px);
+                background: #ff9657;
+                box-shadow: 0 12px 38px rgba(255, 122, 46, 0.35);
+            }
+            .cta .arrow {
+                transition: transform 0.16s ease;
+            }
+            .cta:hover .arrow {
+                transform: translateX(3px);
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><span class="mark">✦</span> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="slime-mold.html">Open the sim →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <p class="eyebrow">How it works · Slime Mold</p>
+                <h1 class="title">A map that draws&nbsp;itself</h1>
+                <p class="lede">
+                    No critter can see the map. Each just follows the strongest
+                    scent nearby and leaves a little scent of its&nbsp;own.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>Each speck is one critter</h2>
+                <p>
+                    Every glowing point up there is
+                    <span class="hi">a single critter</span>, crawling on its
+                    own. It can't see the network it's part of. It only smells
+                    the faint trail in the patch of ground right in front of it.
+                </p>
+                <p>
+                    So no critter is steering the map. Each just reacts to the
+                    scent nearby. The branching web is whatever all those tiny
+                    sniff-and-step choices leave behind.
+                </p>
+                <p>
+                    Every critter follows the same rule, many times a second.
+                    Here it is.
+                </p>
+            </section>
+
+            <!-- THE RULE -->
+            <section id="rule">
+                <p class="step">The one rule</p>
+                <h2>Follow the strongest scent</h2>
+                <p>
+                    A critter sniffs in three directions, a little to its left,
+                    straight ahead, and a little to its right, and turns
+                    <span class="hi">toward whichever smells strongest</span>.
+                    Then it steps forward and dabs down fresh scent of its own.
+                    Without the sniffing, critters just wander and smear an even
+                    haze. With it, they fall in behind each other and trails
+                    sharpen out of the fog.
+                </p>
+                <div class="demo" data-demo="rule">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Just wandering</span>, an
+                                even haze
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Follows the scent</span>,
+                                trails appear
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SHARED MAP -->
+            <section id="shared">
+                <p class="step">Why it works</p>
+                <h2>The trail is a shared map</h2>
+                <p>
+                    Here's the twist: a critter can't tell its own trail from
+                    anyone else's. It just follows whatever scent is strongest,
+                    so every critter is reading a map that
+                    <span class="hi">all of them are drawing at once</span>. A
+                    few of them leave faint, lonely scribbles that fade as fast
+                    as they're made. Pour in a crowd and those trails pile onto
+                    each other, reinforce, and grow into branching veins. The map
+                    lives in the ground, not in any one critter.
+                </p>
+                <div class="demo" data-demo="shared">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">A handful</span>, faint
+                                scribbles
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">A crowd</span>, veins emerge
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FADE -->
+            <section id="fade">
+                <p class="step">The other half</p>
+                <h2>Trails have to fade</h2>
+                <p>
+                    The ground is also slowly forgetting. Every trail fades a
+                    little each moment, and that's not a flaw, it's the point. If
+                    scent never faded, every path would smell strong forever and
+                    the whole screen would <span class="hi">flood</span> into one
+                    bright smear. Because it fades, only the busy, well-travelled
+                    routes stay lit. Forgetting is what keeps the map sharp.
+                </p>
+                <div class="demo" data-demo="fade">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Barely fades</span>,
+                                floods to a smear
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Fades steadily</span>, crisp
+                                veins
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SENSOR DISTANCE (slider hero) -->
+            <section id="look">
+                <p class="step">The knob that reshapes it</p>
+                <h2>How far ahead do they look?</h2>
+                <p>
+                    All of it turns on one question:
+                    <span class="hi">how far ahead does each critter sniff?</span>
+                    Look only at the ground underfoot and the map knots into a
+                    dense, restless fuzz of short connections. Sniff far down the
+                    road and the same critters stretch into long, bold, sweeping
+                    branches.
+                </p>
+                <p>Drag the slider to see it:</p>
+                <div class="demo wide" data-demo="look">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="control">
+                        <div class="row">
+                            <span class="label">How far ahead they sniff</span>
+                            <span class="val" data-out>a few steps</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="2"
+                            max="20"
+                            value="9"
+                            step="0.5"
+                            data-sense
+                            aria-label="How far ahead each critter sniffs"
+                        />
+                        <p class="read" data-read></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OUTRO -->
+            <section id="together">
+                <p class="step">Put it together</p>
+                <h2>Nobody drew this map</h2>
+                <p>
+                    None of the veins you've watched are drawn anywhere. They
+                    appear because every critter is following scent and leaving
+                    scent, and millions of those exchanges add up to a map no
+                    single critter could plan.
+                </p>
+                <p>
+                    Feed it yourself.
+                    <span class="hi">Drag across the swarm below</span> to lay
+                    down a thick streak of scent, and watch the network reach
+                    over and reroute through it.
+                </p>
+                <div class="demo wide" data-demo="feed">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">Click or drag to feed the swarm ↑</p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go grow your own</h2>
+                <p>
+                    The full sim opens up the whole colony: crowd size, where
+                    they start and which way they face, every trail knob, your
+                    own colors, and a link that hands someone the exact map you
+                    grew.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="slime-mold.html"
+                        >Open the Slime Mold sim
+                        <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const REDUCED = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                const TAU = Math.PI * 2;
+                const DEG = Math.PI / 180;
+
+                // Slime palette (the "Inferno" look from the sim/landing card).
+                const STOPS = [
+                    "#000000",
+                    "#1a0000",
+                    "#a00010",
+                    "#ff4020",
+                    "#ffec70",
+                ];
+                function hexToRgb(h) {
+                    return [
+                        parseInt(h.slice(1, 3), 16),
+                        parseInt(h.slice(3, 5), 16),
+                        parseInt(h.slice(5, 7), 16),
+                    ];
+                }
+                // 256-entry RGB lookup table the pheromone field is colored
+                // through, matching slime-mold.sim.js's buildPaletteLUT.
+                function buildLUT(stops) {
+                    const lut = new Uint8ClampedArray(256 * 3);
+                    const seg = stops.length - 1;
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        lut[i * 3] = c0[0] + (c1[0] - c0[0]) * u;
+                        lut[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        lut[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                    }
+                    return lut;
+                }
+                const LUT = buildLUT(STOPS);
+
+                // ============================================================
+                // Parameterized slime (Physarum) engine — a small-grid version
+                // of slime-mold.sim.js. Thousands of agents sense the trail
+                // field ahead (left/center/right), steer toward the brightest,
+                // step forward, and deposit; the field then diffuses (toroidal
+                // 3x3 blur) and decays each frame, so branching networks self-
+                // organize. The grid backs a low-res canvas stretched by CSS,
+                // exactly like the landing-page preview.
+                //
+                // p = { grid, count|density, sensorAngle(deg), sensorDist,
+                //       turnAngle(deg), speed, deposit, decay, diffuse, wander }
+                // p is read live each frame, so a slider can mutate p.sensorDist
+                // in place.
+                // ============================================================
+                function makeSlime(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    let gw = 0,
+                        gh = 0,
+                        field,
+                        nf,
+                        img,
+                        data,
+                        n = 0,
+                        ax,
+                        ay,
+                        aa,
+                        raf = 0;
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        gw = p.grid || 158;
+                        gh = Math.max(
+                            50,
+                            Math.round((gw * r.height) / Math.max(1, r.width)),
+                        );
+                        canvas.width = gw;
+                        canvas.height = gh;
+                    }
+                    function agentCount() {
+                        if (typeof p.count === "number") return p.count;
+                        return Math.min(
+                            9000,
+                            Math.round(gw * gh * (p.density || 0.22)),
+                        );
+                    }
+                    function seed() {
+                        n = agentCount();
+                        ax = new Float32Array(n);
+                        ay = new Float32Array(n);
+                        aa = new Float32Array(n);
+                        // Seed a central disc, each critter aimed tangentially —
+                        // the sim's default Disc + Spinning start.
+                        const cx = gw / 2,
+                            cy = gh / 2,
+                            R = Math.min(gw, gh) * 0.42;
+                        for (let i = 0; i < n; i++) {
+                            const rr = Math.sqrt(Math.random()) * R,
+                                th = Math.random() * TAU;
+                            ax[i] = cx + Math.cos(th) * rr;
+                            ay[i] = cy + Math.sin(th) * rr;
+                            aa[i] = th + Math.PI / 2;
+                        }
+                    }
+                    function init() {
+                        fit();
+                        field = new Float32Array(gw * gh);
+                        nf = new Float32Array(gw * gh);
+                        img = ctx.createImageData(gw, gh);
+                        data = img.data;
+                        seed();
+                    }
+
+                    // Sample the field one sensor reach ahead at angle a.
+                    function sense(x, y, a, sd) {
+                        let ix = (x + Math.cos(a) * sd) | 0;
+                        let iy = (y + Math.sin(a) * sd) | 0;
+                        ix -= Math.floor(ix / gw) * gw;
+                        iy -= Math.floor(iy / gh) * gh;
+                        return field[iy * gw + ix];
+                    }
+
+                    // Diffuse one perimeter cell with the same 3x3 kernel as the
+                    // interior loop, but with neighbor indices wrapped on the
+                    // torus — keeps the edges from turning into a sticky bright
+                    // seam (same fix as slime-mold.sim.js's diffuseEdgeCell).
+                    function diffuseEdgeCell(x, y, dc, dn, decayMul) {
+                        const xm = x === 0 ? gw - 1 : x - 1;
+                        const xp = x === gw - 1 ? 0 : x + 1;
+                        const ym = y === 0 ? gh - 1 : y - 1;
+                        const yp = y === gh - 1 ? 0 : y + 1;
+                        const rm = ym * gw,
+                            r = y * gw,
+                            rp = yp * gw;
+                        const sum =
+                            field[rm + xm] +
+                            field[rm + x] +
+                            field[rm + xp] +
+                            field[r + xm] +
+                            field[r + xp] +
+                            field[rp + xm] +
+                            field[rp + x] +
+                            field[rp + xp];
+                        nf[r + x] = (field[r + x] * dc + sum * dn) * decayMul;
+                    }
+
+                    function step() {
+                        const sa = p.sensorAngle * DEG;
+                        const ta = p.turnAngle * DEG;
+                        const sd = p.sensorDist;
+                        const sp = p.speed;
+                        const dep = p.deposit;
+                        const wander = p.wander;
+
+                        for (let i = 0; i < n; i++) {
+                            const x = ax[i],
+                                y = ay[i],
+                                a = aa[i];
+                            let na;
+                            if (wander) {
+                                // Ignore the trail entirely — aimless drift.
+                                na = a + (Math.random() - 0.5) * 0.9;
+                            } else {
+                                const vc = sense(x, y, a, sd);
+                                const vl = sense(x, y, a - sa, sd);
+                                const vr = sense(x, y, a + sa, sd);
+                                na = a;
+                                if (vc > vl && vc > vr) {
+                                    /* keep heading */
+                                } else if (vc < vl && vc < vr) {
+                                    na += (Math.random() < 0.5 ? -1 : 1) * ta;
+                                } else if (vr > vl) {
+                                    na += ta;
+                                } else if (vl > vr) {
+                                    na -= ta;
+                                }
+                            }
+                            let nx = x + Math.cos(na) * sp;
+                            let ny = y + Math.sin(na) * sp;
+                            nx -= Math.floor(nx / gw) * gw;
+                            ny -= Math.floor(ny / gh) * gh;
+                            ax[i] = nx;
+                            ay[i] = ny;
+                            aa[i] = na;
+                            field[(ny | 0) * gw + (nx | 0)] += dep;
+                        }
+
+                        const d = p.diffuse,
+                            dn = d / 8,
+                            dc = 1 - d,
+                            decayMul = 1 - p.decay;
+                        for (let y = 1; y < gh - 1; y++) {
+                            const r = y * gw;
+                            for (let x = 1; x < gw - 1; x++) {
+                                const i = r + x;
+                                const sum =
+                                    field[i - gw - 1] +
+                                    field[i - gw] +
+                                    field[i - gw + 1] +
+                                    field[i - 1] +
+                                    field[i + 1] +
+                                    field[i + gw - 1] +
+                                    field[i + gw] +
+                                    field[i + gw + 1];
+                                nf[i] = (field[i] * dc + sum * dn) * decayMul;
+                            }
+                        }
+                        for (let x = 0; x < gw; x++) {
+                            diffuseEdgeCell(x, 0, dc, dn, decayMul);
+                            diffuseEdgeCell(x, gh - 1, dc, dn, decayMul);
+                        }
+                        for (let y = 1; y < gh - 1; y++) {
+                            diffuseEdgeCell(0, y, dc, dn, decayMul);
+                            diffuseEdgeCell(gw - 1, y, dc, dn, decayMul);
+                        }
+                        const t = field;
+                        field = nf;
+                        nf = t;
+                    }
+
+                    function render() {
+                        const N = gw * gh;
+                        for (let i = 0, pix = 0; i < N; i++, pix += 4) {
+                            // Amplify the faint field ~4x into the 256-entry LUT.
+                            const v = field[i] * 4;
+                            const idx = v >= 255 ? 255 : v < 0 ? 0 : v | 0;
+                            const q = idx * 3;
+                            data[pix] = LUT[q];
+                            data[pix + 1] = LUT[q + 1];
+                            data[pix + 2] = LUT[q + 2];
+                            data[pix + 3] = 255;
+                        }
+                        ctx.putImageData(img, 0, 0);
+                    }
+
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    // Redirect a few critters onto (gx, gy) and splat scent there
+                    // — the "feed" gesture (mirrors the sim's depositAtPointer).
+                    function feedAt(gx, gy) {
+                        const m = Math.min(140, Math.max(24, (n * 0.03) | 0));
+                        for (let k = 0; k < m; k++) {
+                            const idx = (Math.random() * n) | 0;
+                            ax[idx] = gx + (Math.random() - 0.5) * 6;
+                            ay[idx] = gy + (Math.random() - 0.5) * 6;
+                            aa[idx] = Math.random() * TAU;
+                        }
+                        const rad = Math.max(3, Math.round(gw * 0.02));
+                        for (let dy = -rad; dy <= rad; dy++) {
+                            for (let dx = -rad; dx <= rad; dx++) {
+                                if (dx * dx + dy * dy > rad * rad) continue;
+                                let ix = (gx + dx) | 0,
+                                    iy = (gy + dy) | 0;
+                                ix -= Math.floor(ix / gw) * gw;
+                                iy -= Math.floor(iy / gh) * gh;
+                                field[iy * gw + ix] += 40;
+                            }
+                        }
+                    }
+
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 170; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        feedAt,
+                        get size() {
+                            return { gw, gh };
+                        },
+                    };
+                }
+
+                // ============================================================
+                // Per-demo parameter presets. Angles are in degrees; sensorDist
+                // is in grid cells. Defaults track slime-mold.sim.js.
+                // ============================================================
+                const BASE = {
+                    grid: 158,
+                    sensorAngle: 22,
+                    sensorDist: 9,
+                    turnAngle: 35,
+                    speed: 1.0,
+                    deposit: 5,
+                    decay: 0.055,
+                    diffuse: 0.18,
+                    density: 0.22,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                const PRESETS = {
+                    rule: {
+                        lo: mk({ wander: true }),
+                        hi: mk({}),
+                    },
+                    shared: {
+                        // Same rules; only the crowd size differs.
+                        lo: mk({ count: 280 }),
+                        hi: mk({ density: 0.24 }),
+                    },
+                    fade: {
+                        lo: mk({ decay: 0.008 }), // barely forgets → floods
+                        hi: mk({ decay: 0.08 }), // forgets steadily → crisp
+                    },
+                };
+
+                // Build the simple two-up rule demos.
+                const instances = []; // { el, prev }
+                document
+                    .querySelectorAll(
+                        '[data-demo="rule"],[data-demo="shared"],[data-demo="fade"]',
+                    )
+                    .forEach((demo) => {
+                        const kind = demo.dataset.demo;
+                        ["lo", "hi"].forEach((side) => {
+                            const cv = demo.querySelector(
+                                'canvas[data-side="' + side + '"]',
+                            );
+                            const prev = makeSlime(
+                                cv,
+                                Object.assign({}, PRESETS[kind][side]),
+                            );
+                            instances.push({ el: cv, prev });
+                        });
+                    });
+
+                // Sensor-distance slider demo.
+                const lookDemo = document.querySelector('[data-demo="look"]');
+                const lookParams = mk({
+                    grid: 190,
+                    sensorDist: 9,
+                    density: 0.22,
+                });
+                const lookPrev = makeSlime(
+                    lookDemo.querySelector("canvas"),
+                    lookParams,
+                );
+                instances.push({
+                    el: lookDemo.querySelector("canvas"),
+                    prev: lookPrev,
+                });
+                const slider = lookDemo.querySelector("[data-sense]");
+                const out = lookDemo.querySelector("[data-out]");
+                const read = lookDemo.querySelector("[data-read]");
+                function describeLook(v) {
+                    if (v < 6)
+                        return {
+                            word: "underfoot",
+                            text: "Barely past its own feet. The map knots into a dense, restless fuzz of tiny connections.",
+                        };
+                    if (v < 12)
+                        return {
+                            word: "a few steps",
+                            text: "A natural balance. Branching veins form, merge, and reroute as the swarm explores.",
+                        };
+                    if (v < 16)
+                        return {
+                            word: "down the road",
+                            text: "Each critter sees well ahead. Trails pull into longer, bolder, sweeping branches.",
+                        };
+                    return {
+                        word: "far ahead",
+                        text: "Sniffing way down the road. The web smooths into a few long, confident highways.",
+                    };
+                }
+                function syncLook() {
+                    const v = +slider.value;
+                    lookParams.sensorDist = v;
+                    const d = describeLook(v);
+                    out.textContent = d.word;
+                    read.textContent = d.text;
+                }
+                slider.addEventListener("input", syncLook);
+                syncLook();
+
+                // Feed / playground demo.
+                const feedDemo = document.querySelector('[data-demo="feed"]');
+                const feedCanvas = feedDemo.querySelector("canvas");
+                const feedPrev = makeSlime(
+                    feedCanvas,
+                    mk({ grid: 190, density: 0.22 }),
+                );
+                instances.push({ el: feedCanvas, prev: feedPrev });
+                let feeding = false;
+                function feed(ev) {
+                    const r = feedCanvas.getBoundingClientRect();
+                    const gx =
+                        ((ev.clientX - r.left) / r.width) * feedPrev.size.gw;
+                    const gy =
+                        ((ev.clientY - r.top) / r.height) * feedPrev.size.gh;
+                    feedPrev.feedAt(gx, gy);
+                }
+                feedCanvas.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    feeding = true;
+                    feed(e);
+                });
+                feedCanvas.addEventListener("pointermove", (e) => {
+                    if (feeding) feed(e);
+                });
+                window.addEventListener("pointerup", () => {
+                    feeding = false;
+                });
+                feedCanvas.style.cursor = "pointer";
+
+                // Hero backdrop swarm.
+                const heroPrev = makeSlime(
+                    document.getElementById("hero-canvas"),
+                    mk({ grid: 250, density: 0.2, speed: 1.05 }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            const inst = e.target.__inst;
+                            if (!inst) return;
+                            if (e.isIntersecting) inst.start();
+                            else inst.stop();
+                        });
+                    },
+                    { threshold: 0.15 },
+                );
+                instances.forEach((it) => {
+                    it.el.__inst = it.prev;
+                    io.observe(it.el);
+                });
+                const heroCanvas = document.getElementById("hero-canvas");
+                heroCanvas.__inst = heroPrev;
+                io.observe(heroCanvas);
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                let rt = null;
+                window.addEventListener("resize", () => {
+                    if (rt) clearTimeout(rt);
+                    rt = setTimeout(() => {
+                        heroPrev.resize();
+                        instances.forEach((it) => it.prev.resize());
+                        syncLook();
+                    }, 250);
+                });
+            })();
+        </script>
+    </body>
+</html>
