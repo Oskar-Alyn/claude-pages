@@ -35,7 +35,6 @@
     };
     const FEED_SIMS = [
         "boids",
-        "gravity",
         "flow-field",
         "particle-life",
         "reaction-diffusion",

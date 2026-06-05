@@ -41,10 +41,9 @@
  *                        when present).
  *     .keys              OPTIONAL { ls, win } — localStorage keys. When absent
  *                        they default to `${sim.id}-state` / `${sim.id}-windows`
- *                        so each sim gets an isolated namespace. All 6 current
- *                        sims pass explicit keys (e.g. gravity passes its legacy
- *                        plife-* keys; gravity+particle-life intentionally share
- *                        plife-state).
+ *                        so each sim gets an isolated namespace. All 5 current
+ *                        sims pass explicit keys (e.g. particle-life passes its
+ *                        legacy plife-* keys rather than an id-derived namespace).
  *     .modals.color      REQUIRED. { intro?, paletteRegistry, presetToCustom
  *                          (stops), generateCustomStops(custom) } — the shell
  *                          tracks mode/name/custom in state.palette directly and
@@ -68,7 +67,7 @@
  *                          direction): secondaryChips? {label, chips (registry),
  *                          getName(), onSelect(id)} and secondarySlider? {label,
  *                          min,max,step,fmt,get,set,visibleFor(secondaryId)}.
- *                          Sims that omit these (e.g. gravity) are unaffected.
+ *                          Sims that omit these (e.g. reaction-diffusion) are unaffected.
  *     .modals.params     REQUIRED. { title, intro?, controls:[ {type:'slider',
  *                          key, group, label, hint, min, max, step, fmt, get(),
  *                          set(v), onApply?(v)} ] }. NOTE: params controls are
@@ -188,8 +187,8 @@
  *
  * Per-control onApply (boundary case 3): a params/settings slider may carry an
  * onApply(v) hook. When present the shell calls it on input INSTEAD of a plain
- * set(); use it for sliders that mutate live structures (e.g. gravity's mass
- * count reconciling the particle pool). With no onApply the shell calls set(v).
+ * set(); use it for sliders that mutate live structures (e.g. particle-life's
+ * count slider reconciling the particle pool). With no onApply the shell calls set(v).
  * ========================================================================== */
 
 const SimShell = (() => {
@@ -987,7 +986,7 @@ const SimShell = (() => {
         // SECOND control axis (boids: "Which way they head" — a heading chip row
         // plus a heading-angle slider gated by the active heading). Those are
         // expressed via the optional `secondaryChips` + `secondarySlider` config
-        // below; sims without them (e.g. gravity) are unaffected.
+        // below; sims without them (e.g. flow-field) are unaffected.
         const shapeCfg = modalsCfg.shape;
         let patternRowCtl = null,
             regionSection = null,

@@ -41,7 +41,6 @@ const HEIGHT = 630;
 const SIMS = {
   'boids':              { dwell: 5000,  mode: 'plain' },
   'flow-field':         { dwell: 4500,  mode: 'plain' },
-  'gravity':            { dwell: 7000,  mode: 'best', tries: 4 },
   'particle-life':      { dwell: 9000,  mode: 'best', tries: 6 },
   'reaction-diffusion': { dwell: 8500,  mode: 'plain' },
   'slime-mold':         { dwell: 16000, mode: 'plain', // networks take a while

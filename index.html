@@ -10,7 +10,7 @@
         <title>Tiny Worlds — a collection of interactive simulations</title>
         <meta
             name="description"
-            content="Six tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, reaction-diffusion, and gravity. Each is a self-contained world you can tweak, color, and share."
+            content="Five tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Each is a self-contained world you can tweak, color, and share."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
@@ -18,7 +18,7 @@
         <meta property="og:title" content="Tiny Worlds" />
         <meta
             property="og:description"
-            content="Six tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, reaction-diffusion, and gravity."
+            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
         />
         <meta property="og:image" content="og/index.png" />
         <meta property="og:image:width" content="1200" />
@@ -28,7 +28,7 @@
         <meta name="twitter:title" content="Tiny Worlds" />
         <meta
             name="twitter:description"
-            content="Six tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, reaction-diffusion, and gravity."
+            content="Five tiny interactive simulations that run in your browser — slime mold, boids, particle life, flow fields, and reaction-diffusion."
         />
 
         <style>
@@ -327,7 +327,6 @@
                 <a href="#particle-life">Particle Life</a>
                 <a href="#flow">Flow Field</a>
                 <a href="#rd">Reaction–Diffusion</a>
-                <a href="#gravity">Gravity</a>
             </div>
         </nav>
 
@@ -367,7 +366,6 @@
                 <a href="particle-life.html">Particle Life</a>
                 <a href="flow-field.html">Flow Field</a>
                 <a href="reaction-diffusion.html">Reaction–Diffusion</a>
-                <a href="gravity.html">Gravity</a>
             </div>
             <div class="f-note">
                 Each one opens on its own page. Tap it, reroll it, and see where
@@ -858,66 +856,6 @@
                     };
                 }
 
-                // ---- Gravity (N-body) ----
-                function createGravity(canvas, stops) {
-                    const ctx = canvas.getContext("2d");
-                    const cstr = colorStrings(buildLUT(stops));
-                    const bg = hexToRgb(stops[0]);
-                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, raf = 0;
-                    function init() {
-                        const s = fitFull(canvas); W = s.w; H = s.h;
-                        n = Math.min(240, Math.round((W * H) / 8000));
-                        xs = new Float32Array(n); ys = new Float32Array(n);
-                        vx = new Float32Array(n); vy = new Float32Array(n);
-                        const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.32;
-                        for (let i = 0; i < n; i++) {
-                            const rr = Math.sqrt(Math.random()) * R, th = Math.random() * TAU;
-                            xs[i] = cx + Math.cos(th) * rr; ys[i] = cy + Math.sin(th) * rr;
-                            const sp = rr * 0.012;
-                            vx[i] = -Math.sin(th) * sp; vy[i] = Math.cos(th) * sp;
-                        }
-                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
-                        ctx.fillRect(0, 0, W, H);
-                    }
-                    function step() {
-                        const G = 26 * DPR, soft2 = (16 * DPR) * (16 * DPR);
-                        const velR = 0.999, cap = Math.min(W, H) * 0.2;
-                        for (let i = 0; i < n; i++) {
-                            const x = xs[i], y = ys[i]; let fx = 0, fy = 0;
-                            for (let j = i + 1; j < n; j++) {
-                                const dx = xs[j] - x, dy = ys[j] - y;
-                                const d2 = dx * dx + dy * dy + soft2;
-                                const inv = G / (d2 * Math.sqrt(d2));
-                                const ax = dx * inv, ay = dy * inv;
-                                fx += ax; fy += ay; vx[j] -= ax; vy[j] -= ay;
-                            }
-                            vx[i] += fx; vy[i] += fy;
-                        }
-                        ctx.fillStyle = "rgba(" + bg[0] + "," + bg[1] + "," + bg[2] + ",0.16)";
-                        ctx.fillRect(0, 0, W, H);
-                        const ds = 2.0 * DPR;
-                        for (let i = 0; i < n; i++) {
-                            let nvx = vx[i] * velR, nvy = vy[i] * velR;
-                            const sp = Math.hypot(nvx, nvy);
-                            if (sp > cap) { nvx = (nvx / sp) * cap; nvy = (nvy / sp) * cap; }
-                            vx[i] = nvx; vy[i] = nvy;
-                            let nx = xs[i] + nvx, ny = ys[i] + nvy;
-                            nx -= Math.floor(nx / W) * W; ny -= Math.floor(ny / H) * H;
-                            xs[i] = nx; ys[i] = ny;
-                            let t = sp / (5 * DPR); if (t > 1) t = 1;
-                            let idx = ((0.3 + 0.7 * t) * 255) | 0; if (idx > 255) idx = 255;
-                            ctx.fillStyle = cstr[idx];
-                            ctx.fillRect(nx - 1, ny - 1, ds, ds);
-                        }
-                    }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
-                    return {
-                        start() { if (!W) init(); if (REDUCED) { for (let k = 0; k < 120; k++) step(); return; } if (!raf) frame(); },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
-                    };
-                }
-
                 // ============================================================
                 // BUILD SECTIONS
                 // ============================================================
@@ -966,15 +904,6 @@
                         pitch: "One chemical feeds, the other kills, and they spread until patterns form. Paint some in and watch it grow.",
                         pal: "Acid",
                         make: createRD,
-                    },
-                    {
-                        id: "gravity",
-                        eyebrow: "Every speck pulls the rest",
-                        name: "Gravity",
-                        file: "gravity.html",
-                        pitch: "Every speck of mass tugs on every other. Drag them together and watch galaxies form.",
-                        pal: "Inferno",
-                        make: createGravity,
                     },
                 ];
 

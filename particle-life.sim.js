@@ -738,8 +738,7 @@
         state,
         defaultState,
         // Preserve particle-life's legacy storage keys so existing saved state
-        // loads. (These collide with gravity's keys on the live site — a
-        // pre-existing collision, preserved verbatim here, not fixed.)
+        // loads, rather than the id-derived namespace new sims get by default.
         config: {
             keys: { ls: "plife-state", win: "plife-windows" },
             modals: {

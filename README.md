@@ -18,7 +18,6 @@ behind it.
 | `particle-life.html` | Colored species attract/repel by a random matrix; cells and creatures self-assemble. |
 | `flow-field.html` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
 | `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
-| `gravity.html` | Softened N-body gravity; masses collapse into spinning galaxies. |
 
 ## Running it
 
@@ -88,7 +87,7 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
   plus custom hue / accent / saturation sliders. Grid sims map field values through
   the LUT into a canvas `ImageData`; particle sims color dots/triangles by a derived
   quantity (speed, heading, species, phase).
-- **Particle sims** (boids, particle-life, flow-field, gravity) share density
+- **Particle sims** (boids, particle-life, flow-field) share density
   scaling (the count is a per-reference-screen target × a Settings multiplier, so
   small screens run proportionally fewer), a toroidal world, and center-anchored
   zoom. **Grid sims** (reaction-diffusion)
@@ -124,7 +123,6 @@ top of `feed.js`.
 - **Keep user-facing copy non-technical** — favor the playful "critters / ants /
   masses" mental model over agent / sensor / pheromone / kernel in anything the user
   reads.
-- **Known quirk:** one pair of sims shares a localStorage key on the same origin
-  (`gravity`/`particle-life` → `plife-state`), preserved from before the shell
-  extraction. New sims that omit `config.keys` get an id-derived namespace
-  automatically.
+- **Known quirk:** `particle-life` keeps a legacy localStorage key
+  (`plife-state`), preserved from before the shell extraction. New sims that omit
+  `config.keys` get an id-derived namespace automatically.
