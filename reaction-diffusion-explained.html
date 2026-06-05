@@ -31,217 +31,28 @@
             content="One reaction copies itself; a speed mismatch breaks it into patterns."
         />
 
+        <link rel="stylesheet" href="explained.css" />
         <style>
             :root {
                 --accent: #ff6a3c;
                 --accent-deep: #a02410;
+                --accent-rgb: 255, 106, 60;
                 --ink: #fbf3ee;
                 --muted: rgba(251, 243, 238, 0.72);
                 --faint: rgba(251, 243, 238, 0.45);
+                --hi: rgba(251, 243, 238, 0.92);
                 --line: rgba(255, 255, 255, 0.09);
                 --card: rgba(255, 255, 255, 0.035);
+                --bg: #050200;
+                --bg-rgb: 5, 2, 0;
+                --nav-bg: rgba(12, 5, 2, 0.55);
+                --cell-bg: #050200;
+                --cta-ink: #2a0900;
+                --cta-hover: #ff8a5e;
                 --chem-a: #6fb6c8;
                 --chem-b: #ff7a3c;
             }
-            * {
-                box-sizing: border-box;
-                -webkit-tap-highlight-color: transparent;
-            }
-            html {
-                scroll-behavior: smooth;
-                scroll-padding-top: 64px;
-            }
-            @media (prefers-reduced-motion: reduce) {
-                html {
-                    scroll-behavior: auto;
-                }
-            }
-            body {
-                margin: 0;
-                background: #050200;
-                color: var(--ink);
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                    "Segoe UI", system-ui, sans-serif;
-                -webkit-font-smoothing: antialiased;
-                line-height: 1.6;
-                overflow-x: hidden;
-            }
 
-            /* ---------- Nav ---------- */
-            .nav {
-                position: sticky;
-                top: 0;
-                z-index: 50;
-                height: 52px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 0 max(18px, env(safe-area-inset-left));
-                background: rgba(12, 5, 2, 0.55);
-                -webkit-backdrop-filter: blur(20px) saturate(180%);
-                backdrop-filter: blur(20px) saturate(180%);
-                border-bottom: 1px solid var(--line);
-                font-size: 13px;
-            }
-            .nav .brand {
-                font-weight: 600;
-                letter-spacing: -0.01em;
-                color: var(--ink);
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .nav .brand .mark {
-                color: var(--accent);
-                font-size: 15px;
-            }
-            .nav .links {
-                display: flex;
-                gap: 18px;
-                align-items: center;
-            }
-            .nav .links a {
-                color: rgba(255, 255, 255, 0.66);
-                text-decoration: none;
-                transition: color 0.15s;
-                white-space: nowrap;
-            }
-            .nav .links a:hover {
-                color: #fff;
-            }
-            .nav .links .launch {
-                color: var(--accent);
-            }
-            @media (max-width: 560px) {
-                .nav .links .home {
-                    display: none;
-                }
-            }
-
-            /* ---------- Hero ---------- */
-            .hero {
-                position: relative;
-                min-height: 92vh;
-                min-height: 92svh;
-                display: grid;
-                place-items: center;
-                overflow: hidden;
-            }
-            .hero canvas {
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                display: block;
-                z-index: 0;
-            }
-            .hero .scrim {
-                position: absolute;
-                inset: 0;
-                z-index: 1;
-                pointer-events: none;
-                background:
-                    radial-gradient(
-                        ellipse 75% 60% at center 46%,
-                        rgba(0, 0, 0, 0.45),
-                        rgba(0, 0, 0, 0.1) 55%,
-                        rgba(5, 2, 0, 0.7)
-                    ),
-                    linear-gradient(
-                        rgba(5, 2, 0, 0.3),
-                        rgba(5, 2, 0, 0) 30%,
-                        rgba(5, 2, 0, 0) 70%,
-                        rgba(5, 2, 0, 0.95)
-                    );
-            }
-            .hero .content {
-                position: relative;
-                z-index: 2;
-                text-align: center;
-                max-width: 760px;
-                padding: 90px 24px;
-            }
-            .eyebrow {
-                font-size: 13px;
-                font-weight: 600;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
-                color: var(--accent);
-                margin: 0;
-            }
-            .hero .title {
-                font-size: clamp(44px, 9vw, 104px);
-                line-height: 1.02;
-                letter-spacing: -0.035em;
-                font-weight: 700;
-                margin: 0.18em 0 0.34em;
-            }
-            .hero .lede {
-                font-size: clamp(17px, 2.4vw, 23px);
-                color: var(--muted);
-                max-width: 32ch;
-                margin: 0 auto;
-            }
-            .chev {
-                position: absolute;
-                bottom: 24px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 2;
-                color: rgba(255, 255, 255, 0.5);
-                animation: bob 2s ease-in-out infinite;
-            }
-            @keyframes bob {
-                0%,
-                100% {
-                    transform: translate(-50%, 0);
-                }
-                50% {
-                    transform: translate(-50%, 8px);
-                }
-            }
-            @media (prefers-reduced-motion: reduce) {
-                .chev {
-                    animation: none;
-                }
-            }
-
-            /* ---------- Article ---------- */
-            .article {
-                max-width: 720px;
-                margin: 0 auto;
-                padding: 8px 22px 40px;
-            }
-            section {
-                padding: 46px 0 8px;
-                scroll-margin-top: 64px;
-            }
-            .step {
-                font-size: 12.5px;
-                font-weight: 600;
-                letter-spacing: 0.12em;
-                text-transform: uppercase;
-                color: var(--accent-deep);
-                margin: 0 0 6px;
-            }
-            h2 {
-                font-size: clamp(27px, 5vw, 38px);
-                line-height: 1.1;
-                letter-spacing: -0.025em;
-                font-weight: 700;
-                margin: 0 0 0.5em;
-            }
-            p {
-                color: var(--muted);
-                font-size: clamp(16px, 2vw, 18px);
-                margin: 0 0 1.1em;
-            }
-            p .hi {
-                color: rgba(251, 243, 238, 0.92);
-                font-weight: 600;
-            }
             .a-word {
                 color: var(--chem-a);
                 font-weight: 600;
@@ -251,64 +62,8 @@
                 font-weight: 600;
             }
 
-            /* ---------- Demo cards ---------- */
-            .demo {
-                margin: 22px 0 8px;
-                padding: 16px;
-                border-radius: 18px;
-                background: var(--card);
-                border: 1px solid var(--line);
-            }
-            .demo-pair {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 14px;
-            }
-            @media (max-width: 540px) {
-                .demo-pair {
-                    grid-template-columns: 1fr;
-                }
-            }
-            .cell {
-                position: relative;
-            }
-            .cell canvas {
-                display: block;
-                width: 100%;
-                height: 196px;
-                border-radius: 12px;
-                background: #050200;
-                cursor: default;
-            }
             .demo.wide canvas {
                 height: 280px;
-            }
-            .caption {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin: 10px 2px 2px;
-                font-size: 13.5px;
-                color: var(--muted);
-            }
-            .tag {
-                font-weight: 600;
-                color: var(--ink);
-            }
-            .tag.off {
-                color: var(--faint);
-            }
-            .dot {
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                flex: none;
-            }
-            .dot.lo {
-                background: var(--faint);
-            }
-            .dot.hi {
-                background: var(--accent);
             }
 
             /* ---------- Concentration legend ---------- */
@@ -432,47 +187,6 @@
             .map-side .vals b {
                 color: var(--ink);
                 font-weight: 600;
-            }
-
-            .hint {
-                font-size: 13px;
-                color: var(--faint);
-                text-align: center;
-                margin: 12px 0 0;
-            }
-
-            /* ---------- Outro / CTA ---------- */
-            .outro {
-                text-align: center;
-                padding-top: 30px;
-            }
-            .cta {
-                display: inline-flex;
-                align-items: center;
-                gap: 7px;
-                background: var(--accent);
-                color: #2a0900;
-                padding: 13px 26px;
-                border-radius: 980px;
-                font-size: 15px;
-                font-weight: 600;
-                text-decoration: none;
-                transition:
-                    transform 0.16s ease,
-                    box-shadow 0.16s ease,
-                    background 0.16s ease;
-                box-shadow: 0 8px 30px rgba(255, 106, 60, 0.25);
-            }
-            .cta:hover {
-                transform: translateY(-2px);
-                background: #ff8a5e;
-                box-shadow: 0 12px 38px rgba(255, 106, 60, 0.35);
-            }
-            .cta .arrow {
-                transition: transform 0.16s ease;
-            }
-            .cta:hover .arrow {
-                transform: translateX(3px);
             }
         </style>
     </head>
@@ -731,12 +445,10 @@
             </section>
         </main>
 
+        <script src="explained.js"></script>
         <script>
             (() => {
-                const REDUCED = window.matchMedia(
-                    "(prefers-reduced-motion: reduce)",
-                ).matches;
-                const DPR = Math.min(window.devicePixelRatio || 1, 2);
+                const { REDUCED, DPR, hexToRgb } = window.EX;
 
                 // Reaction–Diffusion palette (the sim's "Inferno" look).
                 const STOPS = [
@@ -746,13 +458,6 @@
                     "#ff4020",
                     "#ffec70",
                 ];
-                function hexToRgb(h) {
-                    return [
-                        parseInt(h.slice(1, 3), 16),
-                        parseInt(h.slice(3, 5), 16),
-                        parseInt(h.slice(5, 7), 16),
-                    ];
-                }
                 // 256-entry RGB ramp (flat Uint8: idx*3 + channel).
                 function buildLUT(stops) {
                     const seg = stops.length - 1;
@@ -1253,34 +958,19 @@
                 );
 
                 // ---------- Lazy start/stop on scroll ----------
-                const io = new IntersectionObserver(
-                    (entries) => {
-                        entries.forEach((e) => {
-                            const inst = e.target.__inst;
-                            if (!inst) return;
-                            if (e.isIntersecting) inst.start();
-                            else inst.stop();
-                        });
-                    },
-                    { threshold: 0.12 },
-                );
-                instances.forEach((it) => {
-                    it.el.__inst = it.prev;
-                    io.observe(it.el);
-                });
                 const heroCanvas = document.getElementById("hero-canvas");
-                heroCanvas.__inst = heroPrev;
-                io.observe(heroCanvas);
+                window.EX.observeLazy(
+                    [
+                        ...instances.map((it) => ({ el: it.el, inst: it.prev })),
+                        { el: heroCanvas, inst: heroPrev },
+                    ], 0.12,
+                );
                 heroPrev.start();
 
                 // ---------- Resize ----------
-                let rt = null;
-                window.addEventListener("resize", () => {
-                    if (rt) clearTimeout(rt);
-                    rt = setTimeout(() => {
-                        heroPrev.resize();
-                        instances.forEach((it) => it.prev.resize());
-                    }, 250);
+                window.EX.onResize(() => {
+                    heroPrev.resize();
+                    instances.forEach((it) => it.prev.resize());
                 });
             })();
         </script>
