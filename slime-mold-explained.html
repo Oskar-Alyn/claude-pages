@@ -106,20 +106,59 @@
                     sniff-and-step choices leave behind.
                 </p>
                 <p>
-                    Every critter follows the same rule, many times a second.
-                    Here it is.
+                    So how does a web that none of them can see appear at all?
+                    The trick isn't in the critters. It's in the ground.
                 </p>
             </section>
 
-            <!-- THE RULE -->
-            <section id="rule">
-                <p class="step">The one rule</p>
-                <h2>Follow the strongest scent</h2>
+            <!-- SHARED MAP (the big idea) -->
+            <section id="shared">
+                <p class="step">The big idea</p>
+                <h2>The trail is a shared map</h2>
                 <p>
-                    A critter sniffs in three directions, a little to its left,
-                    straight ahead, and a little to its right, and turns
-                    <span class="hi">toward whichever smells strongest</span>.
-                    Then it steps forward and dabs down fresh scent of its own.
+                    Here's the whole trick: a critter can't tell its own trail
+                    from anyone else's. It just follows whatever scent is
+                    strongest, so every critter is reading a map that
+                    <span class="hi">all of them are drawing at once</span>. The
+                    map doesn't live in any one critter. It lives in the ground.
+                </p>
+                <p>
+                    Which is why it only comes alive in a crowd. A handful leave
+                    faint, lonely scribbles that fade as fast as they're made.
+                    Pour in a crowd and those trails pile onto each other,
+                    reinforce, and grow into branching veins.
+                </p>
+                <div class="demo" data-demo="shared">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">A handful</span>, faint
+                                scribbles
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">A crowd</span>, veins emerge
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FORCE 1: WRITING THE MAP -->
+            <section id="rule">
+                <p class="step">Force 1 of 2 — writing</p>
+                <h2>Follow the scent, leave a scent</h2>
+                <p>
+                    So how does a critter write to that shared map? It sniffs in
+                    three directions, a little to its left, straight ahead, and a
+                    little to its right, turns
+                    <span class="hi">toward whichever smells strongest</span>,
+                    then steps forward and dabs down fresh scent of its own.
                     Without the sniffing, critters just wander and smear an even
                     haze. With it, they fall in behind each other and trails
                     sharpen out of the fog.
@@ -146,48 +185,14 @@
                 </div>
             </section>
 
-            <!-- SHARED MAP -->
-            <section id="shared">
-                <p class="step">Why it works</p>
-                <h2>The trail is a shared map</h2>
-                <p>
-                    Here's the twist: a critter can't tell its own trail from
-                    anyone else's. It just follows whatever scent is strongest,
-                    so every critter is reading a map that
-                    <span class="hi">all of them are drawing at once</span>. A
-                    few of them leave faint, lonely scribbles that fade as fast
-                    as they're made. Pour in a crowd and those trails pile onto
-                    each other, reinforce, and grow into branching veins. The map
-                    lives in the ground, not in any one critter.
-                </p>
-                <div class="demo" data-demo="shared">
-                    <div class="demo-pair">
-                        <div class="cell">
-                            <canvas data-side="lo"></canvas>
-                            <div class="caption">
-                                <span class="dot lo"></span
-                                ><span class="tag off">A handful</span>, faint
-                                scribbles
-                            </div>
-                        </div>
-                        <div class="cell">
-                            <canvas data-side="hi"></canvas>
-                            <div class="caption">
-                                <span class="dot hi"></span
-                                ><span class="tag">A crowd</span>, veins emerge
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- FADE -->
             <section id="fade">
-                <p class="step">The other half</p>
+                <p class="step">Force 2 of 2 — erasing</p>
                 <h2>Trails have to fade</h2>
                 <p>
-                    The ground is also slowly forgetting. Every trail fades a
-                    little each moment, and that's not a flaw, it's the point. If
+                    Writing is only half of it. The ground is also slowly
+                    erasing — every trail fades a little each moment, and that's
+                    not a flaw, it's the point. If
                     scent never faded, every path would smell strong forever and
                     the whole screen would <span class="hi">flood</span> into one
                     bright smear. Because it fades, only the busy, well-travelled

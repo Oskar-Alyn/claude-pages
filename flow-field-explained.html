@@ -170,77 +170,44 @@
                 </div>
             </section>
 
-            <!-- SWIRLINESS -->
-            <section id="swirl">
+            <!-- SHAPING THE MAP · 1: SWIRLINESS (slider) -->
+            <section id="dial">
                 <p class="step">Shaping the map · 1</p>
                 <h2>How tightly the map curls</h2>
                 <p>
-                    Stretch the noise out and the arrows turn slowly across the
-                    screen, so particles ride <span class="hi">broad, lazy
-                    sweeps</span>. Compress it and the arrows spin through many
-                    small turns, breaking the flow into
-                    <span class="hi">tight little whirlpools</span>. Same idea,
-                    two very different worlds.
+                    The first thing you can change is the map itself.
+                    <span class="hi">Swirliness</span> sets how tightly the
+                    arrows curl — from one slow current that sweeps the whole
+                    screen, to a froth of countless tiny whirlpools. Of every
+                    knob, this is the one that reshapes the world the most.
                 </p>
-                <div class="demo" data-demo="swirl">
-                    <div class="demo-pair">
-                        <div class="cell">
-                            <canvas data-side="lo"></canvas>
-                            <div class="caption">
-                                <span class="dot lo"></span
-                                ><span class="tag off">Stretched out</span>, broad
-                                sweeping currents
-                            </div>
-                        </div>
-                        <div class="cell">
-                            <canvas data-side="hi"></canvas>
-                            <div class="caption">
-                                <span class="dot hi"></span
-                                ><span class="tag">Tightly curled</span>, many
-                                small eddies
-                            </div>
-                        </div>
+                <p>Drag the slider to see it:</p>
+                <div class="demo wide" data-demo="dial">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
                     </div>
-                </div>
-            </section>
-
-            <!-- SMOOTHNESS / INERTIA -->
-            <section id="smooth">
-                <p class="step">Shaping the streams · 2</p>
-                <h2>How sharply particles turn</h2>
-                <p>
-                    The same map can be drawn in different handwriting. When
-                    particles <span class="hi">snap</span> instantly to each new
-                    arrow, their paths come out jagged and nervous. When they
-                    turn <span class="hi">lazily</span>, easing toward the arrow
-                    instead of obeying it at once, the same field draws long,
-                    silky curves.
-                </p>
-                <div class="demo" data-demo="smooth">
-                    <div class="demo-pair">
-                        <div class="cell">
-                            <canvas data-side="lo"></canvas>
-                            <div class="caption">
-                                <span class="dot lo"></span
-                                ><span class="tag off">Snaps to the arrow</span>,
-                                jagged paths
-                            </div>
+                    <div class="control">
+                        <div class="row">
+                            <span class="label">Swirliness of the field</span>
+                            <span class="val" data-out>balanced</span>
                         </div>
-                        <div class="cell">
-                            <canvas data-side="hi"></canvas>
-                            <div class="caption">
-                                <span class="dot hi"></span
-                                ><span class="tag">Turns lazily</span>, long
-                                smooth curves
-                            </div>
-                        </div>
+                        <input
+                            type="range"
+                            min="0.002"
+                            max="0.02"
+                            value="0.0075"
+                            step="0.0005"
+                            data-swirl
+                            aria-label="How tightly the field curls"
+                        />
+                        <p class="read" data-read></p>
                     </div>
                 </div>
             </section>
 
             <!-- DRIFT / EVOLVE -->
             <section id="breathe">
-                <p class="step">Shaping the map · 3</p>
+                <p class="step">Shaping the map · 2</p>
                 <h2>A map that breathes</h2>
                 <p>
                     The arrows don't have to hold still. Freeze the map and every
@@ -271,17 +238,19 @@
                 </div>
             </section>
 
-            <!-- TRAILS -->
+            <!-- ASIDE: cosmetics (trails + turn smoothness) -->
             <section id="trails">
-                <p class="step">Shaping the streams · 4</p>
-                <h2>The streams are fading paint</h2>
+                <p class="step">Just for looks</p>
+                <h2>The rest is only how it's painted</h2>
                 <p>
-                    A particle is really just a moving dot. The streaks are the
+                    Everything left is paint, not physics. A particle is really
+                    just a moving dot; the streaks are the
                     <span class="hi">trail it leaves</span>, fading toward the
                     background a little each frame. Wipe the frame clean every
                     step and you see bare dots; let the paint
                     <span class="hi">linger</span> and short steps stretch into
-                    long ribbons.
+                    long ribbons. (How sharply each dot turns toward its arrow is
+                    the same kind of choice — looks, not rules.)
                 </p>
                 <div class="demo" data-demo="trails">
                     <div class="demo-pair">
@@ -305,48 +274,16 @@
                 </div>
             </section>
 
-            <!-- SWIRLINESS SLIDER (hero control) -->
-            <section id="dial">
-                <p class="step">The dial behind it all</p>
-                <h2>Turn the swirliness up</h2>
-                <p>
-                    Of all the knobs, this one reshapes the world the most. It
-                    sets <span class="hi">how tightly the map curls</span> — from
-                    one slow current that sweeps the whole screen, to a froth of
-                    countless tiny whirlpools.
-                </p>
-                <p>Drag the slider to see it:</p>
-                <div class="demo wide" data-demo="dial">
-                    <div class="cell">
-                        <canvas data-side="solo"></canvas>
-                    </div>
-                    <div class="control">
-                        <div class="row">
-                            <span class="label">Swirliness of the field</span>
-                            <span class="val" data-out>balanced</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0.002"
-                            max="0.02"
-                            value="0.0075"
-                            step="0.0005"
-                            data-swirl
-                            aria-label="How tightly the field curls"
-                        />
-                        <p class="read" data-read></p>
-                    </div>
-                </div>
-            </section>
-
             <!-- PUT IT TOGETHER -->
             <section id="together">
                 <p class="step">Put it together</p>
-                <h2>Nobody drew these streams</h2>
+                <h2>The streams were already in the map</h2>
                 <p>
-                    None of the rivers and fountains you've watched are written
-                    down anywhere. They fall out of one rule — follow the arrow
-                    beneath you — repeated by thousands of particles at once.
+                    Here's the quiet twist: the rivers and fountains you've
+                    watched were already there, written into the map, before any
+                    particle moved. No particle invents a stream — each just
+                    traces a channel the field had all along. Change the map and
+                    every path changes with it.
                 </p>
                 <p>
                     See it for yourself. The particles are born from an
@@ -738,14 +675,6 @@
                 const mk = (over) => Object.assign({}, BASE, over);
 
                 const PRESETS = {
-                    swirl: {
-                        lo: mk({ noiseScale: 0.004, trail: 0.88 }),
-                        hi: mk({ noiseScale: 0.015, trail: 0.88 }),
-                    },
-                    smooth: {
-                        lo: mk({ inertia: 0.25, trail: 0.9 }),
-                        hi: mk({ inertia: 0.92, trail: 0.9 }),
-                    },
                     breathe: {
                         lo: mk({ evolve: 0, trail: 0.86 }),
                         hi: mk({ evolve: 0.04, trail: 0.86 }),
@@ -760,7 +689,7 @@
                 const instances = []; // { el, prev }
                 document
                     .querySelectorAll(
-                        '[data-demo="swirl"],[data-demo="smooth"],[data-demo="breathe"],[data-demo="trails"]',
+                        '[data-demo="breathe"],[data-demo="trails"]',
                     )
                     .forEach((demo) => {
                         const kind = demo.dataset.demo;

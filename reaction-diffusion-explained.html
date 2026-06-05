@@ -65,6 +65,10 @@
             .demo.wide canvas {
                 height: 280px;
             }
+            /* The speed-mismatch demo is the page's peak — give it more room. */
+            .demo.feature .cell canvas {
+                height: 244px;
+            }
 
             /* ---------- Concentration legend ---------- */
             .legend {
@@ -148,6 +152,16 @@
                 left: 7px;
                 transform: translateY(-50%) rotate(-90deg);
                 transform-origin: left center;
+            }
+            /* Faint signposts so dragging the knob has landmarks. */
+            .pad .land {
+                position: absolute;
+                font-size: 10.5px;
+                letter-spacing: 0.03em;
+                color: rgba(251, 243, 238, 0.4);
+                pointer-events: none;
+                white-space: nowrap;
+                transform: translate(-50%, -50%);
             }
             .knob {
                 position: absolute;
@@ -342,7 +356,7 @@
                     flat wash. Where A outruns B, the front can't stay smooth, so
                     it keeps breaking into spots and stripes.
                 </p>
-                <div class="demo" data-demo="diffusion">
+                <div class="demo feature" data-demo="diffusion">
                     <div class="demo-pair">
                         <div class="cell">
                             <canvas data-side="lo"></canvas>
@@ -369,8 +383,8 @@
                 <p class="step">One map, every pattern</p>
                 <h2>The same dish, a hundred worlds</h2>
                 <p>
-                    Now that patterns can form, the
-                    <span class="hi">feed</span> and
+                    You've now met all three forces. With patterns finally
+                    possible, the <span class="hi">feed</span> and
                     <span class="hi">kill</span> rates together decide
                     <span class="hi">which</span> one. Nudge them a hair and
                     spots become worms, worms become a maze, a maze fills solid.
@@ -387,6 +401,18 @@
                             <div class="pad" data-pad>
                                 <span class="axis x">Feed →</span>
                                 <span class="axis y">Kill →</span>
+                                <span class="land" style="left: 50%; top: 11%"
+                                    >fading</span
+                                >
+                                <span class="land" style="left: 52%; top: 27%"
+                                    >maze</span
+                                >
+                                <span class="land" style="left: 20%; top: 56%"
+                                    >spots</span
+                                >
+                                <span class="land" style="left: 81%; top: 58%"
+                                    >filled</span
+                                >
                                 <div class="knob" data-knob></div>
                             </div>
                             <p class="hint">Drag anywhere on the square ↑</p>
@@ -753,9 +779,11 @@
                     },
                     diffusion: {
                         // Identical feed/kill; only the A:B speed ratio differs.
+                        // lo runs both at the same speed, so no Turing pattern
+                        // can hold and the front blurs to a flat wash.
                         lo: mk({
-                            dA: 0.7,
-                            dB: 0.62,
+                            dA: 0.6,
+                            dB: 0.6,
                             feed: 0.036,
                             kill: 0.0615,
                             rseed: 5,
