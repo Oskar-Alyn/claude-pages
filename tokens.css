@@ -57,16 +57,21 @@
 
     /* ---- Shared radius + motion language ---- */
     --radius-pill: 980px;
-    --radius-lg: 18px;
-    --radius-md: 12px;
     --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 
     /* ---- Default accent (master teal) — overridden per world below ---- */
     --accent: #66d9c2;
     --accent-deep: #2f9e8a;
     --accent-rgb: 102, 217, 194;
-    --cta-ink: #05231d;
-    --cta-hover: #7ee6d2;
+}
+
+/* Universal reset shared by every page that links this file (the sims, the
+   explainers, the home page, the feed). Border-box + suppressing the mobile
+   tap-highlight are baseline everywhere, so they live here once rather than
+   being repeated in each page's own stylesheet. */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Brand glyph: the inline-SVG globe that sits next to "Tiny Worlds". It scales
@@ -100,8 +105,6 @@ svg.mark {
     --bg-rgb: 6, 4, 6;
     --nav-bg: rgba(10, 7, 9, 0.55);
     --cell-bg: #050204;
-    --cta-ink: #2a0f00;
-    --cta-hover: #ff9657;
 }
 
 [data-world="boids"] {
@@ -116,8 +119,6 @@ svg.mark {
     --bg-rgb: 5, 7, 11;
     --nav-bg: rgba(8, 10, 16, 0.55);
     --cell-bg: #04121a;
-    --cta-ink: #04231f;
-    --cta-hover: #7ef4e0;
 }
 
 [data-world="particle-life"] {
@@ -132,8 +133,6 @@ svg.mark {
     --bg-rgb: 6, 3, 9;
     --nav-bg: rgba(9, 6, 14, 0.55);
     --cell-bg: #040208;
-    --cta-ink: #2a0622;
-    --cta-hover: #ff86d2;
 }
 
 [data-world="flow-field"] {
@@ -148,8 +147,6 @@ svg.mark {
     --bg-rgb: 0, 0, 24;
     --nav-bg: rgba(4, 4, 24, 0.55);
     --cell-bg: #000018;
-    --cta-ink: #1a0830;
-    --cta-hover: #d07ce8;
 }
 
 [data-world="reaction-diffusion"] {
@@ -166,8 +163,6 @@ svg.mark {
     --bg-rgb: 2, 6, 0;
     --nav-bg: rgba(5, 12, 2, 0.55);
     --cell-bg: #020600;
-    --cta-ink: #06230a;
-    --cta-hover: #9bf78a;
 }
 
 /* ============================================================================

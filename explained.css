@@ -10,16 +10,11 @@
      --bg, --bg-rgb                          (bg as hex + as rgb triplet)
      --nav-bg                                 (translucent nav background)
      --cell-bg                                (demo canvas background)
-     --cta-ink, --cta-hover
 
    Page-unique components (matrices, chips, maps, …) stay in the
    page's inline <style> after the link to this file.
    ============================================================ */
 
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
 html {
     scroll-behavior: smooth;
     scroll-padding-top: 64px;
