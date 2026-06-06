@@ -67,6 +67,16 @@
                 background: var(--accent);
                 border-color: var(--accent);
             }
+
+            /* Bigger demos: the single-canvas showcases (the arrow map, the
+               swirliness slider, the payoff) carry this page, so give them more
+               height; the two-up comparisons get a modest bump too. */
+            .demo.wide canvas {
+                height: 360px;
+            }
+            .demo-pair canvas {
+                height: 220px;
+            }
         </style>
     </head>
     <body>
@@ -116,13 +126,12 @@
                     <span class="hi">a single particle</span>, drifting on its
                     own. It can't see the flock, the screen, or where it's
                     headed. It only reads the one arrow beneath it and takes a
-                    step that way.
+                    step that way. Its color comes from
+                    <span class="hi">which way</span> it's flowing.
                 </p>
                 <p>
-                    Its color comes from <span class="hi">which way</span> it's
-                    flowing, so the palette ends up painting the shape of the
-                    motion itself. The silky streams aren't drawn anywhere —
-                    they're just thousands of these tiny steps, lined up.
+                    Those silky streams look planned. Nothing here plans
+                    anything, so where do they come from?
                 </p>
             </section>
 
@@ -132,25 +141,58 @@
                 <h2>The screen is a hidden map of arrows</h2>
                 <p>
                     Behind every particle is an invisible
-                    <span class="hi">vector field</span>: at every point on the
-                    screen, an arrow saying which way to go. The arrows are
-                    woven from smooth noise, so nearby ones mostly agree and the
+                    <span class="hi">map of arrows</span>: at every point on the
+                    screen, an arrow saying which way to go. The arrows are woven
+                    from smooth random noise, so neighbors mostly agree and the
                     flow bends in long, continuous curves.
                 </p>
                 <p>
                     A particle never plans. It looks up the arrow under its feet,
-                    nudges toward it, and moves. That's the whole simulation —
-                    everything below is just shaping this map, or the trails it
-                    leaves behind. Here's the field made visible:
+                    nudges toward it, and moves. Here's that hidden map made
+                    visible:
                 </p>
                 <div class="demo wide" data-demo="field">
                     <div class="cell">
                         <canvas data-side="solo"></canvas>
                     </div>
                     <p class="hint">
-                        Faint arrows: the field. Bright streaks: particles
+                        Faint arrows: the map. Bright streaks: particles
                         following it.
                     </p>
+                </div>
+            </section>
+
+            <!-- WHAT THE STREAKS ARE (cosmetics, moved up out of the climax) -->
+            <section id="trails">
+                <p class="step">What you're seeing</p>
+                <h2>The streaks are just trails</h2>
+                <p>
+                    A particle is really just a moving dot. The bright streak is
+                    the <span class="hi">trail it leaves</span>, fading a little
+                    each frame. Wipe the frame clean every step and you see bare
+                    dots; let the paint <span class="hi">linger</span> and short
+                    steps stretch into long ribbons. It's paint, not physics, but
+                    it's most of what gives the flow its look.
+                </p>
+                <div class="demo" data-demo="trails">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">No lingering</span>, just
+                                moving dots
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Paint lingers</span>, long
+                                ribbons
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -159,13 +201,12 @@
                 <p class="step">Shaping the map · 1</p>
                 <h2>How tightly the map curls</h2>
                 <p>
-                    The first thing you can change is the map itself.
+                    Now you can shape the map itself.
                     <span class="hi">Swirliness</span> sets how tightly the
-                    arrows curl — from one slow current that sweeps the whole
-                    screen, to a froth of countless tiny whirlpools. Of every
-                    knob, this is the one that reshapes the world the most.
+                    arrows curl, from one slow current that sweeps the whole
+                    screen to a froth of countless tiny whirlpools. Of every
+                    knob, this one reshapes the world the most. Drag to see it:
                 </p>
-                <p>Drag the slider to see it:</p>
                 <div class="demo wide" data-demo="dial">
                     <div class="cell">
                         <canvas data-side="solo"></canvas>
@@ -195,10 +236,9 @@
                 <h2>A map that breathes</h2>
                 <p>
                     The arrows don't have to hold still. Freeze the map and every
-                    particle traces the same fixed channels forever. Let it
+                    particle traces the same channels forever. Let it
                     <span class="hi">churn slowly</span> and those channels drift,
-                    so the streams keep wandering into new shapes and never
-                    quite settle.
+                    so the streams keep wandering into new shapes.
                 </p>
                 <div class="demo" data-demo="breathe">
                     <div class="demo-pair">
@@ -222,61 +262,26 @@
                 </div>
             </section>
 
-            <!-- ASIDE: cosmetics (trails + turn smoothness) -->
-            <section id="trails">
-                <p class="step">Just for looks</p>
-                <h2>The rest is only how it's painted</h2>
-                <p>
-                    Everything left is paint, not physics. A particle is really
-                    just a moving dot; the streaks are the
-                    <span class="hi">trail it leaves</span>, fading toward the
-                    background a little each frame. Wipe the frame clean every
-                    step and you see bare dots; let the paint
-                    <span class="hi">linger</span> and short steps stretch into
-                    long ribbons. (How sharply each dot turns toward its arrow is
-                    the same kind of choice — looks, not rules.)
-                </p>
-                <div class="demo" data-demo="trails">
-                    <div class="demo-pair">
-                        <div class="cell">
-                            <canvas data-side="lo"></canvas>
-                            <div class="caption">
-                                <span class="dot lo"></span
-                                ><span class="tag off">No lingering</span>, just
-                                moving dots
-                            </div>
-                        </div>
-                        <div class="cell">
-                            <canvas data-side="hi"></canvas>
-                            <div class="caption">
-                                <span class="dot hi"></span
-                                ><span class="tag">Paint lingers</span>, long
-                                ribbons
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- PUT IT TOGETHER -->
             <section id="together">
                 <p class="step">Put it together</p>
                 <h2>The streams were already in the map</h2>
                 <p>
-                    Here's the quiet twist: the rivers and fountains you've
-                    watched were already there, written into the map, before any
-                    particle moved. No particle invents a stream — each just
-                    traces a channel the field had all along. Change the map and
-                    every path changes with it.
+                    Here's the quiet twist: the rivers you've watched were there
+                    before any particle moved, hidden in the arrows. No particle
+                    invents a stream; each just traces a channel the map already
+                    held. And nobody drew those arrows either, they're just
+                    smooth random noise, so the rivers are order that was hiding
+                    in the randomness all along.
                 </p>
                 <p>
-                    See it for yourself. The particles are born from an
-                    <span class="hi">emitter</span>; switch its shape to change
-                    where every stream begins. And
+                    See for yourself. Send the particles in from
+                    <span class="hi">anywhere</span>, a ring, a grid, two blobs,
+                    and they all slide into the same rivers. Or
                     <span class="hi">drag across the flow</span> to tug the
-                    current around as it runs.
+                    current as it runs.
                 </p>
-                <div class="demo" data-demo="together">
+                <div class="demo wide" data-demo="together">
                     <div class="cell">
                         <canvas data-side="solo"></canvas>
                     </div>
