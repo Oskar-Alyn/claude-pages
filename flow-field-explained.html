@@ -7,7 +7,7 @@
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <meta name="theme-color" content="#000018" />
-        <title>How Flow Fields Work — Tiny Worlds</title>
+        <title>How Flow Fields Work · Tiny Worlds</title>
         <meta
             name="description"
             content="A visual walkthrough of how a flow-field simulation works. No particle decides anything: each one just follows the arrow beneath it on an invisible map. Drag the sliders and watch the streams appear."
@@ -167,12 +167,12 @@
                 <p class="step">What you're seeing</p>
                 <h2>The streaks are just trails</h2>
                 <p>
-                    A particle is really just a moving dot. The bright streak is
+                    Each particle is only a moving dot. The bright streak is
                     the <span class="hi">trail it leaves</span>, fading a little
                     each frame. Wipe the frame clean every step and you see bare
                     dots; let the paint <span class="hi">linger</span> and short
-                    steps stretch into long ribbons. It's paint, not physics, but
-                    it's most of what gives the flow its look.
+                    steps stretch into long ribbons. The trail is just how we
+                    draw the motion, and it carries most of the flow's look.
                 </p>
                 <div class="demo" data-demo="trails">
                     <div class="demo-pair">
@@ -264,15 +264,13 @@
 
             <!-- PUT IT TOGETHER -->
             <section id="together">
-                <p class="step">Put it together</p>
+                <p class="step">Look again</p>
                 <h2>The streams were already in the map</h2>
                 <p>
-                    Here's the quiet twist: the rivers you've watched were there
-                    before any particle moved, hidden in the arrows. No particle
-                    invents a stream; each just traces a channel the map already
-                    held. And nobody drew those arrows either, they're just
-                    smooth random noise, so the rivers are order that was hiding
-                    in the randomness all along.
+                    The rivers you've watched were there before any particle
+                    moved, waiting in the arrows. No particle invents a stream;
+                    each just traces a channel the map already held. And the
+                    arrows themselves are nothing more than smooth random noise.
                 </p>
                 <p>
                     See for yourself. Send the particles in from
@@ -306,9 +304,7 @@
                 <h2>Go shape your own field</h2>
                 <p>
                     The full sim opens every knob: colors, emitter shapes, flow
-                    speed, lifespan, and a link that hands someone the exact
-                    field you made. The one rule stays the same; the rest is
-                    yours.
+                    speed, and lifespan. One rule still drives all of it.
                 </p>
                 <p style="margin-top: 22px">
                     <a class="cta" href="flow-field.html"
