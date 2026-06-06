@@ -10,7 +10,7 @@
         <title>How Slime Mold Works — Tiny Worlds</title>
         <meta
             name="description"
-            content="A visual walkthrough of the Slime Mold (Physarum) simulation. Each critter follows the strongest scent and leaves a trail behind — and a branching map draws itself. Drag the sliders and watch."
+            content="A visual walkthrough of the Slime Mold (Physarum) simulation. Each walker heads for the most-worn ground and wears a path of its own, and a branching map draws itself. Drag across it and watch."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
@@ -18,7 +18,7 @@
         <meta property="og:title" content="How Slime Mold Works" />
         <meta
             property="og:description"
-            content="Follow the strongest scent, leave a trail behind, and a branching map draws itself. A visual walkthrough of the Slime Mold simulation."
+            content="Head for the most-worn ground, wear a path of your own, and a branching map draws itself. A visual walkthrough of the Slime Mold simulation."
         />
         <meta property="og:image" content="og/slime-mold.png" />
         <meta property="og:image:width" content="1200" />
@@ -28,7 +28,7 @@
         <meta name="twitter:title" content="How Slime Mold Works" />
         <meta
             name="twitter:description"
-            content="Follow the scent, leave a scent. A branching map nobody planned."
+            content="Follow a path, leave a path. A branching map nobody planned."
         />
 
         <link rel="stylesheet" href="tokens.css" />
@@ -52,8 +52,8 @@
                 <p class="eyebrow">How it works · Slime Mold</p>
                 <h1 class="title">A map that draws&nbsp;itself</h1>
                 <p class="lede">
-                    No critter can see the map. Each just follows the strongest
-                    scent nearby and leaves a little scent of its&nbsp;own.
+                    No walker can see the map. Each just heads for the most-worn
+                    ground nearby and wears a little path of its&nbsp;own.
                 </p>
             </div>
             <svg
@@ -75,40 +75,73 @@
             <!-- ORIENTATION -->
             <section id="what">
                 <p class="step">Before the rule</p>
-                <h2>Each speck is one critter</h2>
+                <h2>Each speck is one walker</h2>
                 <p>
                     Every glowing point up there is
-                    <span class="hi">a single critter</span>, crawling on its
-                    own. It can't see the network it's part of. It only smells
-                    the faint trail in the patch of ground right in front of it.
+                    <span class="hi">a single walker</span>, making its way on
+                    its own. It can't see the network it's part of. It only looks
+                    at how worn the ground is in the patch right in front of it.
                 </p>
                 <p>
-                    So no critter is steering the map. Each just reacts to the
-                    scent nearby. The branching web is whatever all those tiny
-                    sniff-and-step choices leave behind.
-                </p>
-                <p>
-                    So how does a web that none of them can see appear at all?
-                    The trick isn't in the critters. It's in the ground.
+                    So no walker is steering the map. Each one just reacts to the
+                    ground right around it, following one rule.
                 </p>
             </section>
 
-            <!-- SHARED MAP (the big idea) -->
+            <!-- THE ONE RULE -->
+            <section id="rule">
+                <p class="step">The one rule</p>
+                <h2>Follow a path, leave a path</h2>
+                <p>
+                    A walker glances a little ahead, to its left, straight on,
+                    and to its right, heads
+                    <span class="hi">toward whichever ground is most worn</span>,
+                    then presses a fresh bit of path down as it goes. With
+                    nothing worn yet, walkers just wander and trample the ground
+                    flat. Once paths start to show, they fall in behind each
+                    other and trails sharpen out of the open ground.
+                </p>
+                <div class="demo" data-demo="rule">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Just wandering</span>, no
+                                paths form
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Follows a path</span>,
+                                trails appear
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- THE TWIST: SHARED MAP + REINFORCEMENT LOOP -->
             <section id="shared">
-                <p class="step">The big idea</p>
+                <p class="step">The twist</p>
                 <h2>The trail is a shared map</h2>
                 <p>
-                    Here's the whole trick: a critter can't tell its own trail
-                    from anyone else's. It just follows whatever scent is
-                    strongest, so every critter is reading a map that
-                    <span class="hi">all of them are drawing at once</span>. The
-                    map doesn't live in any one critter. It lives in the ground.
+                    A walker can't tell its own path from anyone else's. It just
+                    heads for the most-worn ground, so every walker is reading a
+                    map that
+                    <span class="hi">all of them are wearing in at once</span>.
+                    The map doesn't live in any one walker. The trick isn't in
+                    the walkers; it's in the ground.
                 </p>
                 <p>
-                    Which is why it only comes alive in a crowd. A handful leave
-                    faint, lonely scribbles that fade as fast as they're made.
-                    Pour in a crowd and those trails pile onto each other,
-                    reinforce, and grow into branching veins.
+                    It's the dirt shortcut worn across a grassy lawn: the more
+                    feet take a path, the clearer it gets, and the clearer it
+                    gets, the more feet it pulls in.
+                    <span class="hi">Popular paths get more popular</span>, and
+                    that runaway loop wears a few wandering tracks into a network.
+                    Which is why it only comes alive in a crowd.
                 </p>
                 <div class="demo" data-demo="shared">
                     <div class="demo-pair">
@@ -131,54 +164,18 @@
                 </div>
             </section>
 
-            <!-- FORCE 1: WRITING THE MAP -->
-            <section id="rule">
-                <p class="step">Force 1 of 2 — writing</p>
-                <h2>Follow the scent, leave a scent</h2>
-                <p>
-                    So how does a critter write to that shared map? It sniffs in
-                    three directions, a little to its left, straight ahead, and a
-                    little to its right, turns
-                    <span class="hi">toward whichever smells strongest</span>,
-                    then steps forward and dabs down fresh scent of its own.
-                    Without the sniffing, critters just wander and smear an even
-                    haze. With it, they fall in behind each other and trails
-                    sharpen out of the fog.
-                </p>
-                <div class="demo" data-demo="rule">
-                    <div class="demo-pair">
-                        <div class="cell">
-                            <canvas data-side="lo"></canvas>
-                            <div class="caption">
-                                <span class="dot lo"></span
-                                ><span class="tag off">Just wandering</span>, an
-                                even haze
-                            </div>
-                        </div>
-                        <div class="cell">
-                            <canvas data-side="hi"></canvas>
-                            <div class="caption">
-                                <span class="dot hi"></span
-                                ><span class="tag">Follows the scent</span>,
-                                trails appear
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- FADE -->
             <section id="fade">
-                <p class="step">Force 2 of 2 — erasing</p>
-                <h2>Trails have to fade</h2>
+                <p class="step">The catch</p>
+                <h2>Unused paths fade</h2>
                 <p>
-                    Writing is only half of it. The ground is also slowly
-                    erasing — every trail fades a little each moment, and that's
-                    not a flaw, it's the point. If
-                    scent never faded, every path would smell strong forever and
-                    the whole screen would <span class="hi">flood</span> into one
-                    bright smear. Because it fades, only the busy, well-travelled
-                    routes stay lit. Forgetting is what keeps the map sharp.
+                    Treading is only half of it. The ground also slowly recovers:
+                    every path softens a little each moment, and that's not a
+                    flaw, it's the point. If paths never faded, every step anyone
+                    ever took would stay etched forever, and the whole ground
+                    would <span class="hi">smear</span> into one flat blur.
+                    Because paths heal, only the busy, well-walked routes stay
+                    clear. Forgetting is what keeps the map sharp.
                 </p>
                 <div class="demo" data-demo="fade">
                     <div class="demo-pair">
@@ -186,54 +183,18 @@
                             <canvas data-side="lo"></canvas>
                             <div class="caption">
                                 <span class="dot lo"></span
-                                ><span class="tag off">Barely fades</span>,
-                                floods to a smear
+                                ><span class="tag off">Barely heals</span>, it
+                                all smears
                             </div>
                         </div>
                         <div class="cell">
                             <canvas data-side="hi"></canvas>
                             <div class="caption">
                                 <span class="dot hi"></span
-                                ><span class="tag">Fades steadily</span>, crisp
-                                veins
+                                ><span class="tag">Heals steadily</span>, crisp
+                                paths
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SENSOR DISTANCE (slider hero) -->
-            <section id="look">
-                <p class="step">The knob that reshapes it</p>
-                <h2>How far ahead do they look?</h2>
-                <p>
-                    All of it turns on one question:
-                    <span class="hi">how far ahead does each critter sniff?</span>
-                    Look only at the ground underfoot and the map knots into a
-                    dense, restless fuzz of short connections. Sniff far down the
-                    road and the same critters stretch into long, bold, sweeping
-                    branches.
-                </p>
-                <p>Drag the slider to see it:</p>
-                <div class="demo wide" data-demo="look">
-                    <div class="cell">
-                        <canvas data-side="solo"></canvas>
-                    </div>
-                    <div class="control">
-                        <div class="row">
-                            <span class="label">How far ahead they sniff</span>
-                            <span class="val" data-out>a few steps</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="2"
-                            max="20"
-                            value="9"
-                            step="0.5"
-                            data-sense
-                            aria-label="How far ahead each critter sniffs"
-                        />
-                        <p class="read" data-read></p>
                     </div>
                 </div>
             </section>
@@ -244,21 +205,21 @@
                 <h2>Nobody drew this map</h2>
                 <p>
                     None of the veins you've watched are drawn anywhere. They
-                    appear because every critter is following scent and leaving
-                    scent, and millions of those exchanges add up to a map no
-                    single critter could plan.
+                    appear because every walker is following worn ground and
+                    wearing it further, and millions of those steps add up to a
+                    map no single walker could plan.
                 </p>
                 <p>
-                    Feed it yourself.
-                    <span class="hi">Drag across the swarm below</span> to lay
-                    down a thick streak of scent, and watch the network reach
-                    over and reroute through it.
+                    Wear one yourself.
+                    <span class="hi">Drag across the crowd below</span> to scuff
+                    a fresh path into the ground, and watch walkers pile onto it
+                    and wear it into a route the network reroutes through.
                 </p>
                 <div class="demo wide" data-demo="feed">
                     <div class="cell">
                         <canvas data-side="solo"></canvas>
                     </div>
-                    <p class="hint">Click or drag to feed the swarm ↑</p>
+                    <p class="hint">Click or drag to wear a path ↑</p>
                 </div>
             </section>
 
@@ -293,7 +254,7 @@
                     "#ff4020",
                     "#ffec70",
                 ];
-                // 256-entry RGB lookup table the pheromone field is colored
+                // 256-entry RGB lookup table the trail field is colored
                 // through, matching slime-mold.sim.js's buildPaletteLUT.
                 function buildLUT(stops) {
                     const lut = new Uint8ClampedArray(256 * 3);
@@ -362,7 +323,7 @@
                         ax = new Float32Array(n);
                         ay = new Float32Array(n);
                         aa = new Float32Array(n);
-                        // Seed a central disc, each critter aimed tangentially —
+                        // Seed a central disc, each walker aimed tangentially —
                         // the sim's default Disc + Spinning start.
                         const cx = gw / 2,
                             cy = gh / 2,
@@ -512,7 +473,7 @@
                         raf = requestAnimationFrame(frame);
                     }
 
-                    // Redirect a few critters onto (gx, gy) and splat scent there
+                    // Redirect a few walkers onto (gx, gy) and wear a patch there
                     // — the "feed" gesture (mirrors the sim's depositAtPointer).
                     function feedAt(gx, gy) {
                         const m = Math.min(140, Math.max(24, (n * 0.03) | 0));
@@ -612,55 +573,6 @@
                         });
                     });
 
-                // Sensor-distance slider demo.
-                const lookDemo = document.querySelector('[data-demo="look"]');
-                const lookParams = mk({
-                    grid: 190,
-                    sensorDist: 9,
-                    density: 0.22,
-                });
-                const lookPrev = makeSlime(
-                    lookDemo.querySelector("canvas"),
-                    lookParams,
-                );
-                instances.push({
-                    el: lookDemo.querySelector("canvas"),
-                    prev: lookPrev,
-                });
-                const slider = lookDemo.querySelector("[data-sense]");
-                const out = lookDemo.querySelector("[data-out]");
-                const read = lookDemo.querySelector("[data-read]");
-                function describeLook(v) {
-                    if (v < 6)
-                        return {
-                            word: "underfoot",
-                            text: "Barely past its own feet. The map knots into a dense, restless fuzz of tiny connections.",
-                        };
-                    if (v < 12)
-                        return {
-                            word: "a few steps",
-                            text: "A natural balance. Branching veins form, merge, and reroute as the swarm explores.",
-                        };
-                    if (v < 16)
-                        return {
-                            word: "down the road",
-                            text: "Each critter sees well ahead. Trails pull into longer, bolder, sweeping branches.",
-                        };
-                    return {
-                        word: "far ahead",
-                        text: "Sniffing way down the road. The web smooths into a few long, confident highways.",
-                    };
-                }
-                function syncLook() {
-                    const v = +slider.value;
-                    lookParams.sensorDist = v;
-                    const d = describeLook(v);
-                    out.textContent = d.word;
-                    read.textContent = d.text;
-                }
-                slider.addEventListener("input", syncLook);
-                syncLook();
-
                 // Feed / playground demo.
                 const feedDemo = document.querySelector('[data-demo="feed"]');
                 const feedCanvas = feedDemo.querySelector("canvas");
@@ -691,7 +603,7 @@
                 });
                 feedCanvas.style.cursor = "pointer";
 
-                // Hero backdrop swarm.
+                // Hero backdrop crowd.
                 const heroPrev = makeSlime(
                     document.getElementById("hero-canvas"),
                     mk({ grid: 250, density: 0.2, speed: 1.05 }),
@@ -711,7 +623,6 @@
                 window.EX.onResize(() => {
                     heroPrev.resize();
                     instances.forEach((it) => it.prev.resize());
-                    syncLook();
                 });
             })();
         </script>

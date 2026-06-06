@@ -50,9 +50,11 @@
                 color: var(--chem-b);
             }
 
-            /* The speed-mismatch demo is the page's peak — give it more room. */
-            .demo.feature .cell canvas {
-                height: 244px;
+            /* The feed/kill map is the page's peak. Its dish preview is sized as
+               a square so it matches the square feed/kill pad beside it. */
+            .map-grid .cell canvas {
+                height: auto;
+                aspect-ratio: 1 / 1;
             }
 
             /* ---------- Concentration legend ---------- */
@@ -78,6 +80,10 @@
                     #7af066,
                     #f5ffa8
                 );
+                /* The border makes the gradient default to padding-box sizing;
+                   without no-repeat its start color tiles as a thin sliver at the
+                   far edge (same fix as the sim's color-modal gradient bars). */
+                background-repeat: no-repeat;
                 border: 1px solid var(--line);
             }
 
@@ -90,8 +96,8 @@
             }
             @media (min-width: 620px) {
                 .map-grid {
-                    grid-template-columns: 1.1fr 1fr;
-                    align-items: stretch;
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
                 }
             }
             .pad-wrap {
@@ -115,6 +121,9 @@
                         rgba(26, 138, 60, 0.28),
                         rgba(2, 6, 0, 0.2)
                     );
+                /* See .legend .ramp: keep the bordered gradient from tiling a
+                   sliver at the edge. */
+                background-repeat: no-repeat;
                 cursor: crosshair;
                 touch-action: none;
                 overflow: hidden;
@@ -231,7 +240,7 @@
         <main class="article">
             <!-- ORIENTATION -->
             <section id="what">
-                <p class="step">Before the rules</p>
+                <p class="step">Before the forces</p>
                 <h2>A dish with two chemicals</h2>
                 <p>
                     Picture the screen as a shallow dish, filled edge to edge
@@ -243,9 +252,11 @@
                 <p>
                     The color is simply <span class="hi">how much B</span> is in
                     each spot: dark where the dish is empty, bright where the
-                    reaction runs dense. Watch a few drops take hold.
+                    reaction runs dense.
+                    <span class="hi">Drip a few drops in yourself</span> and
+                    watch them take hold.
                 </p>
-                <div class="demo" data-demo="orient">
+                <div class="demo" data-demo="paint">
                     <div class="cell">
                         <canvas data-side="solo"></canvas>
                     </div>
@@ -254,6 +265,7 @@
                         <span class="ramp"></span>
                         <span>Dense&nbsp;B</span>
                     </div>
+                    <p class="hint">Drag on the dish to drip in B ↑</p>
                 </div>
             </section>
 
@@ -263,11 +275,11 @@
                 <h2>The reaction copies itself</h2>
                 <p>
                     Where <span class="b-word">B</span> meets
-                    <span class="a-word">A</span>, it converts that A into
+                    <span class="a-word">A</span>, it turns that A into
                     <span class="hi">more B</span>. So every bit of B helps make
-                    the next bit: a single speck doesn't just sit there, it
-                    spreads outward into fresh medium. Left to itself, B would
-                    copy its way across the entire dish.
+                    the next bit: a single speck doesn't sit still, it spreads
+                    outward into fresh medium. Left alone, B would copy its way
+                    across the whole dish.
                 </p>
                 <div class="demo" data-demo="reaction">
                     <div class="demo-pair">
@@ -332,16 +344,16 @@
                 <p class="step">Force 3 of 3</p>
                 <h2>Why a pattern, and not a blob?</h2>
                 <p>
-                    Here's the trick the whole thing turns on. Both chemicals
+                    One ingredient left, and it's what turns a spreading stain
+                    into structure. Both chemicals
                     <span class="hi">spread</span>, but at different speeds:
                     <span class="a-word">A</span> drifts fast and
-                    <span class="b-word">B</span> oozes slowly. That mismatch is
-                    everything. Where they spread at the
-                    <span class="hi">same</span> speed, the edges blur into a
-                    flat wash. Where A outruns B, the front can't stay smooth, so
-                    it keeps breaking into spots and stripes.
+                    <span class="b-word">B</span> oozes slowly. Where they spread
+                    at the <span class="hi">same</span> speed, the edges blur
+                    into a flat wash. Where A outruns B, the front can't stay
+                    smooth, so it keeps breaking into spots and stripes.
                 </p>
-                <div class="demo feature" data-demo="diffusion">
+                <div class="demo" data-demo="diffusion">
                     <div class="demo-pair">
                         <div class="cell">
                             <canvas data-side="lo"></canvas>
@@ -363,13 +375,20 @@
                 </div>
             </section>
 
-            <!-- SHOWPIECE: the feed/kill map -->
+            <!-- PAYOFF: the thesis opens the map, and the map is the peak -->
             <section id="map">
-                <p class="step">One map, every pattern</p>
+                <p class="step">Put it together</p>
                 <h2>The same dish, a hundred worlds</h2>
                 <p>
-                    You've now met all three forces. With patterns finally
-                    possible, the <span class="hi">feed</span> and
+                    You've now met all three forces: a reaction that copies
+                    itself, a feed-and-kill that holds it in check, and two
+                    speeds of spreading that fracture it into shape. None of the
+                    spots and corridors below are painted in by hand. They fall
+                    out of those three forces acting at every point at once.
+                </p>
+                <p>
+                    And with patterns finally possible, the
+                    <span class="hi">feed</span> and
                     <span class="hi">kill</span> rates together decide
                     <span class="hi">which</span> one. Nudge them a hair and
                     spots become worms, worms become a maze, a maze fills solid.
@@ -411,31 +430,6 @@
                             <span>kill <b data-kill></b></span>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- OUTRO -->
-            <section id="together">
-                <p class="step">Put it together</p>
-                <h2>Nobody drew these</h2>
-                <p>
-                    None of the spots and corridors are painted in by hand. They
-                    fall out of three plain forces acting at every point at once:
-                    a reaction that copies itself, a feed-and-kill that holds it
-                    in check, and two speeds of spreading that fracture it into
-                    shape.
-                </p>
-                <p>
-                    The dish below starts empty.
-                    <span class="hi">Drag across it</span> to paint in some
-                    <span class="b-word">B</span>, then watch the reaction take
-                    your strokes and grow them into a pattern of its own.
-                </p>
-                <div class="demo" data-demo="paint">
-                    <div class="cell">
-                        <canvas data-side="solo"></canvas>
-                    </div>
-                    <p class="hint">Drag on the dish to paint reagent ↑</p>
                 </div>
             </section>
 
@@ -786,17 +780,6 @@
 
                 const instances = []; // { el, prev }
 
-                // ---------- Orientation (single dish) ----------
-                (() => {
-                    const demo = document.querySelector('[data-demo="orient"]');
-                    const cv = demo.querySelector("canvas");
-                    const prev = makeRD(
-                        cv,
-                        mk({ feed: 0.036, kill: 0.0615, seedN: 16, rseed: 3 }),
-                    );
-                    instances.push({ el: cv, prev });
-                })();
-
                 // ---------- Two-up rule demos ----------
                 document
                     .querySelectorAll(
@@ -854,7 +837,7 @@
                         if (feed > 0.052 && kill < 0.062)
                             return {
                                 word: "filling in",
-                                text: "So much feed that B floods almost everywhere — the structure drowns in a near-solid field.",
+                                text: "So much feed that B floods almost everywhere, drowning the structure in a near-solid field.",
                             };
                         if (feed < 0.026 && kill < 0.061)
                             return {
@@ -864,7 +847,7 @@
                         if (kill > 0.0605)
                             return {
                                 word: "a maze",
-                                text: "Long winding corridors that branch and reconnect — coral reefs and labyrinths.",
+                                text: "Long winding corridors that branch and reconnect, like coral reefs and labyrinths.",
                             };
                         return {
                             word: "worms & loops",
@@ -927,7 +910,7 @@
                     paintReadout();
                 })();
 
-                // ---------- Outro: paint-your-own ----------
+                // ---------- Orientation: paint-your-own empty dish ----------
                 (() => {
                     const demo = document.querySelector('[data-demo="paint"]');
                     const cv = demo.querySelector("canvas");

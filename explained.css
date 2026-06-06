@@ -136,6 +136,9 @@ body {
     text-transform: uppercase;
     color: var(--accent);
     margin: 0;
+    /* The global `p` rule caps width at 66ch; without this the eyebrow becomes a
+       left-anchored narrow box and its centered text drifts left of the title. */
+    max-width: none;
 }
 .hero .title {
     font-size: clamp(44px, 9vw, 104px);
@@ -255,7 +258,9 @@ p .hi {
 .caption {
     display: flex;
     align-items: center;
-    gap: 8px;
+    /* No flex `gap`: the trailing ", …" text is its own flex item, so a gap here
+       would paint a space *before* the comma. The dot carries its own spacing
+       via margin-right instead. */
     margin: 10px 2px 2px;
     font-size: 13.5px;
     color: var(--muted);
@@ -272,6 +277,7 @@ p .hi {
     height: 7px;
     border-radius: 50%;
     flex: none;
+    margin-right: 8px;
 }
 .dot.lo {
     background: var(--faint);
@@ -348,6 +354,9 @@ input[type="range"]::-moz-range-thumb {
     color: var(--faint);
     text-align: center;
     margin: 12px 0 0;
+    /* Like .eyebrow: escape the global `p` max-width:66ch, which would otherwise
+       left-anchor this centered caption and drift it left in wide demos. */
+    max-width: none;
 }
 
 /* ---------- Outro / CTA ---------- */

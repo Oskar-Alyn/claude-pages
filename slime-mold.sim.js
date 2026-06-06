@@ -1,7 +1,7 @@
 /* ============================================================================
  * slime-mold.sim.js — the Slime Mold sim, driven through the SimShell contract.
  *
- * A Physarum-style agent simulation: thousands of critters wander a wrapping
+ * A Physarum-style agent simulation: thousands of agents wander a wrapping
  * (toroidal) pheromone field, each sensing the trail just ahead (left/center/
  * right), steering toward the brightest reading, and depositing a little trail
  * of its own. Between agent steps the field diffuses with a 3x3 blur and decays,
@@ -67,9 +67,9 @@
     const slidersDef = [
         {
             key: "count",
-            group: "The swarm",
+            group: "The crowd",
             label: "Crowd size",
-            hint: "How many critters roam the screen.",
+            hint: "How many walkers roam the screen.",
             min: 200,
             max: 40000,
             step: 100,
@@ -79,7 +79,7 @@
             key: "sensorAngle",
             group: "How they explore",
             label: "Look width",
-            hint: "How wide a critter checks for trails ahead.",
+            hint: "How wide a walker checks for trails ahead.",
             min: 0,
             max: 90,
             step: 0.5,
@@ -89,7 +89,7 @@
             key: "sensorDist",
             group: "How they explore",
             label: "Look ahead",
-            hint: "How far ahead a critter looks for trails.",
+            hint: "How far ahead a walker looks for trails.",
             min: 1,
             max: 30,
             step: 0.5,
@@ -99,7 +99,7 @@
             key: "turnAngle",
             group: "How they explore",
             label: "Turn sharpness",
-            hint: "How hard a critter steers toward a trail it spots.",
+            hint: "How hard a walker steers toward a trail it spots.",
             min: 0,
             max: 90,
             step: 0.5,
@@ -107,9 +107,9 @@
         },
         {
             key: "speed",
-            group: "The swarm",
+            group: "The crowd",
             label: "Speed",
-            hint: "How fast each critter moves.",
+            hint: "How fast each walker moves.",
             min: 0.3,
             max: 3.0,
             step: 0.05,
@@ -119,7 +119,7 @@
             key: "deposit",
             group: "Trails",
             label: "Trail strength",
-            hint: "How bold a trail each critter leaves behind.",
+            hint: "How bold a trail each walker leaves behind.",
             min: 0.5,
             max: 20,
             step: 0.5,
@@ -654,7 +654,7 @@
     }
 
     // ------------------------------------------------------------------
-    // INTERACTION (mouse / touch) — redirect critters + splat the field
+    // INTERACTION (mouse / touch) — redirect agents + splat the field
     // ------------------------------------------------------------------
     let pointerDown = false;
     let pointerX = 0,
@@ -725,7 +725,7 @@
                 shape: {
                     title: "Starting shape",
                     intro:
-                        "Choose where the critters begin and which way they face. Changes restart the swarm right away.",
+                        "Choose where the walkers begin and which way they face. Changes restart the crowd right away.",
                     chipLabel: "Where they start",
                     chips: PATTERNS,
                     getName: () => state.pattern.name,
@@ -779,7 +779,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Thousands of tiny critters wander the screen, each leaving a glowing trail and steering toward the glow it spots just ahead. Old trails slowly fade. These sliders shape how they explore and how their trails behave.",
+                        "Thousands of tiny walkers wander the screen, each leaving a glowing trail and steering toward the most-worn ground just ahead. Old trails slowly fade. These sliders shape how they explore and how their trails behave.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,
@@ -794,7 +794,7 @@
                         set: (v) => {
                             state.params[def.key] = v;
                         },
-                        // Growing the crowd spawns the newly needed critters so
+                        // Growing the crowd spawns the newly needed agents so
                         // they appear immediately, exactly like the original.
                         onApply:
                             def.key === "count"
