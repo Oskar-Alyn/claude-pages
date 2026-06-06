@@ -1,10 +1,26 @@
 /* Shared tokens (ink, muted, accent, glass, fonts) come from tokens.css, which
-   every sim links before this file. data-world on <html> tints the accent per
+   every sim links before this file. data-world on <html> tints the bg/ink per
    world. Only sim-specific tokens live here. */
 :root {
     --accent-2: #f6c177;
     --danger: #ff6e5e;
     --fab-size: 50px;
+}
+
+/* Sim chrome always reads in the master teal, regardless of which world the
+   page is. tokens.css's per-world [data-world] blocks retint the accent for
+   the home cards and the explainer pages (where the world's "special" color
+   belongs), but the sims themselves — buttons, sliders, toggles, the brand
+   glyph, focus rings — stay on one shared accent so the controls read as one
+   product. The higher-specificity html[data-world] selector overrides the
+   per-world accent here; bg/ink/cell tints are left alone on purpose. This
+   only loads on sim pages, so explainers keep their world accent. */
+html[data-world] {
+    --accent: #66d9c2;
+    --accent-deep: #2f9e8a;
+    --accent-rgb: 102, 217, 194;
+    --cta-ink: #05231d;
+    --cta-hover: #7ee6d2;
 }
 
 * {
@@ -44,7 +60,7 @@ body {
 }
 
 /* ---------- Home / brand pill (back to all worlds) ---------- */
-/* Carries the same ✦ Tiny Worlds lockup as the nav on the content pages, so a
+/* Carries the same globe + Tiny Worlds lockup as the nav on the content pages, so a
    sim no longer reads as an unbranded standalone applet and there is always a
    way back out. Suppressed in feed mode by sim-shell.js (the feed owns nav). */
 .sim-home {

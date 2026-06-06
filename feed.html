@@ -7,7 +7,7 @@
             content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
         <meta name="theme-color" content="#05070b" />
-        <title>Discovery Feed</title>
+        <title>Explore</title>
         <meta
             name="description"
             content="A personal discovery feed over the sims."
@@ -44,7 +44,7 @@
 
             /* The sims drop their own home pill in feed mode, so the feed host
                carries one instead — a plain top-level link straight to index.
-               Same ✦ glass lockup as the sims/content pages. */
+               Same globe glass lockup as the sims/content pages. */
             .feed-home {
                 position: fixed;
                 top: max(20px, env(safe-area-inset-top, 0px));
@@ -101,7 +101,7 @@
             href="index.html"
             aria-label="Tiny Worlds — back to all worlds"
         >
-            <span class="mark">✦</span><span class="wordmark">Tiny Worlds</span>
+            <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span class="wordmark">Tiny Worlds</span>
         </a>
         <div id="feed-stage"></div>
         <script src="feed.js"></script>

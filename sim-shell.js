@@ -318,7 +318,7 @@ const SimShell = (() => {
     // --------------------------------------------------------------------
     const CHROME_HTML = `
         <a class="sim-home" id="sim-home" href="index.html" aria-label="Tiny Worlds — back to all worlds">
-            <span class="mark">✦</span><span class="wordmark">Tiny Worlds</span>
+            <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span class="wordmark">Tiny Worlds</span>
         </a>
 
         <div class="settings-menu" id="settings-menu">
