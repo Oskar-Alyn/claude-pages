@@ -317,6 +317,10 @@ const SimShell = (() => {
     // static HTML exactly (ids/classes) so sim-shell.css applies unchanged.
     // --------------------------------------------------------------------
     const CHROME_HTML = `
+        <a class="sim-home" id="sim-home" href="index.html" aria-label="Tiny Worlds — back to all worlds">
+            <span class="mark">✦</span><span class="wordmark">Tiny Worlds</span>
+        </a>
+
         <div class="settings-menu" id="settings-menu">
             <button class="fab" id="settings-trigger" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -586,6 +590,13 @@ const SimShell = (() => {
 
         // ---- inject chrome DOM --------------------------------------
         document.body.insertAdjacentHTML("beforeend", CHROME_HTML);
+
+        // The feed owns global navigation (Back / Next), so a sim embedded in it
+        // must not offer its own way out — drop the home pill in feed mode.
+        if (FEED) {
+            const home = byId("sim-home");
+            if (home) home.remove();
+        }
 
         const canvas = byId("canvas");
         const backdrop = byId("backdrop");

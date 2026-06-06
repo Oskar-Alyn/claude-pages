@@ -1,0 +1,164 @@
+/* ============================================================================
+   tokens.css — the single source of truth for the whole site.
+
+   Every surface (the home page, the explainer pages, and the sims) links this
+   file FIRST, then its own stylesheet. It defines:
+
+     • brand neutrals (ink / muted / lines / cards)
+     • one canonical near-black background
+     • the shared font stack
+     • the glass system (was sim-only; now shared so content buttons can match)
+     • a shared radius + motion language
+     • the DEFAULT accent (master teal), used by the home hero/footer & feed
+
+   Per-world identity (option 10-B) lives in the [data-world="…"] blocks at the
+   bottom: set data-world on <html> (a whole sim or explainer) or on any element
+   (a single gallery card) and every accent/bg token retargets to that world.
+   Because the accents live in exactly one place, the sim chrome, the explainer,
+   and the home card for a given world can no longer drift apart.
+
+   Cross-document view transitions (option 9) are opted-in here, so navigating
+   between any two of these pages crossfades instead of hard-cutting.
+   ============================================================================ */
+
+:root {
+    /* ---- Brand neutrals (master / cool-white theme) ---- */
+    --ink: #f5f8fc;
+    --muted: rgba(245, 248, 252, 0.72);
+    --faint: rgba(245, 248, 252, 0.45);
+    --hi: rgba(245, 248, 252, 0.9);
+    --line: rgba(255, 255, 255, 0.09);
+    --card: rgba(255, 255, 255, 0.035);
+
+    /* ---- One canonical near-black (option 2) ---- */
+    --bg: #05070b;
+    --bg-rgb: 5, 7, 11;
+    --nav-bg: rgba(8, 10, 16, 0.55);
+    --cell-bg: #04121a;
+
+    /* ---- Shared type (option 2) ---- */
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+        system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* ---- Glass system (shared so page buttons can match the sims) ---- */
+    --glass-bg: rgba(18, 22, 30, 0.45);
+    --glass-bg-strong: rgba(20, 25, 35, 0.72);
+    --glass-modal: rgba(20, 25, 35, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-strong: rgba(255, 255, 255, 0.18);
+    --glass-highlight: rgba(255, 255, 255, 0.07);
+    --glass-blur: blur(20px) saturate(180%);
+
+    /* ---- Shared radius + motion language ---- */
+    --radius-pill: 980px;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    /* ---- Default accent (master teal) — overridden per world below ---- */
+    --accent: #66d9c2;
+    --accent-deep: #2f9e8a;
+    --accent-rgb: 102, 217, 194;
+    --cta-ink: #05231d;
+    --cta-hover: #7ee6d2;
+}
+
+/* ============================================================================
+   Per-world identity (option 10-B).
+
+   Set on <html data-world="boids"> for a whole sim/explainer, or on a single
+   element (e.g. a home gallery card) to tint just that subtree.
+   --line / --card are identical across worlds, so they stay on :root only.
+   ============================================================================ */
+
+[data-world="slime-mold"] {
+    --accent: #ff7a2e;
+    --accent-deep: #b8541e;
+    --accent-rgb: 255, 122, 46;
+    --ink: #fbf4ee;
+    --muted: rgba(251, 244, 238, 0.72);
+    --faint: rgba(251, 244, 238, 0.45);
+    --hi: rgba(251, 244, 238, 0.9);
+    --bg: #060406;
+    --bg-rgb: 6, 4, 6;
+    --nav-bg: rgba(10, 7, 9, 0.55);
+    --cell-bg: #050204;
+    --cta-ink: #2a0f00;
+    --cta-hover: #ff9657;
+}
+
+[data-world="boids"] {
+    --accent: #5af0d8;
+    --accent-deep: #0a8a98;
+    --accent-rgb: 90, 240, 216;
+    --ink: #f5f8fc;
+    --muted: rgba(245, 248, 252, 0.72);
+    --faint: rgba(245, 248, 252, 0.45);
+    --hi: rgba(245, 248, 252, 0.9);
+    --bg: #05070b;
+    --bg-rgb: 5, 7, 11;
+    --nav-bg: rgba(8, 10, 16, 0.55);
+    --cell-bg: #04121a;
+    --cta-ink: #04231f;
+    --cta-hover: #7ef4e0;
+}
+
+[data-world="particle-life"] {
+    --accent: #ff63c4;
+    --accent-deep: #9a2a86;
+    --accent-rgb: 255, 99, 196;
+    --ink: #f7f3fa;
+    --muted: rgba(247, 243, 250, 0.72);
+    --faint: rgba(247, 243, 250, 0.45);
+    --hi: rgba(247, 243, 250, 0.92);
+    --bg: #060309;
+    --bg-rgb: 6, 3, 9;
+    --nav-bg: rgba(9, 6, 14, 0.55);
+    --cell-bg: #040208;
+    --cta-ink: #2a0622;
+    --cta-hover: #ff86d2;
+}
+
+[data-world="flow-field"] {
+    --accent: #c060e0;
+    --accent-deep: #7a5ad8;
+    --accent-rgb: 192, 96, 224;
+    --ink: #f6f2fc;
+    --muted: rgba(246, 242, 252, 0.72);
+    --faint: rgba(246, 242, 252, 0.45);
+    --hi: rgba(246, 242, 252, 0.92);
+    --bg: #000018;
+    --bg-rgb: 0, 0, 24;
+    --nav-bg: rgba(4, 4, 24, 0.55);
+    --cell-bg: #000018;
+    --cta-ink: #1a0830;
+    --cta-hover: #d07ce8;
+}
+
+[data-world="reaction-diffusion"] {
+    /* Acid-green identity, drawn from the home demo's Acid palette
+       (#1a8a3c / #7af066) so the world reads green, not another orange. */
+    --accent: #7af066;
+    --accent-deep: #1a8a3c;
+    --accent-rgb: 122, 240, 102;
+    --ink: #f3faee;
+    --muted: rgba(243, 250, 238, 0.72);
+    --faint: rgba(243, 250, 238, 0.45);
+    --hi: rgba(243, 250, 238, 0.92);
+    --bg: #020600;
+    --bg-rgb: 2, 6, 0;
+    --nav-bg: rgba(5, 12, 2, 0.55);
+    --cell-bg: #020600;
+    --cta-ink: #06230a;
+    --cta-hover: #9bf78a;
+}
+
+/* ============================================================================
+   Cross-document view transitions (option 9) — a shared crossfade between
+   worlds. Browsers without support simply hard-cut as before.
+   ============================================================================ */
+@view-transition {
+    navigation: auto;
+}

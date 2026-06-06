@@ -6,19 +6,20 @@
             name="viewport"
             content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#0a0d14" />
+        <meta name="theme-color" content="#05070b" />
         <title>Discovery Feed</title>
         <meta
             name="description"
             content="A personal discovery feed over the sims."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="stylesheet" href="tokens.css" />
         <style>
             html,
             body {
                 margin: 0;
                 height: 100%;
-                background: #0a0d14;
+                background: var(--bg);
                 overflow: hidden;
             }
             #feed-stage {
@@ -40,9 +41,68 @@
                 pointer-events: auto;
                 z-index: 1;
             }
+
+            /* The sims drop their own home pill in feed mode, so the feed host
+               carries one instead — a plain top-level link straight to index.
+               Same ✦ glass lockup as the sims/content pages. */
+            .feed-home {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                left: max(20px, env(safe-area-inset-left, 0px));
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                height: 50px;
+                padding: 0 16px 0 15px;
+                border-radius: 999px;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: var(--glass-blur);
+                backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                text-decoration: none;
+                font-family: var(--font-sans);
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                white-space: nowrap;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+                transition:
+                    background 0.15s,
+                    transform 0.15s;
+            }
+            .feed-home:hover {
+                background: var(--glass-bg-strong);
+                transform: translateY(-1px);
+            }
+            .feed-home:active {
+                transform: translateY(0) scale(0.98);
+            }
+            .feed-home .mark {
+                color: var(--accent);
+                font-size: 15px;
+            }
+            @media (max-width: 420px) {
+                .feed-home {
+                    padding: 0;
+                    width: 50px;
+                    justify-content: center;
+                }
+                .feed-home .wordmark {
+                    display: none;
+                }
+            }
         </style>
     </head>
     <body>
+        <a
+            class="feed-home"
+            href="index.html"
+            aria-label="Tiny Worlds — back to all worlds"
+        >
+            <span class="mark">✦</span><span class="wordmark">Tiny Worlds</span>
+        </a>
         <div id="feed-stage"></div>
         <script src="feed.js"></script>
     </body>

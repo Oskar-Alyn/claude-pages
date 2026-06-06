@@ -33,9 +33,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family:
-        -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
-        system-ui, sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     line-height: 1.6;
     overflow-x: hidden;
@@ -316,25 +314,27 @@ input[type="range"] {
 }
 /* Vendor thumb pseudo-elements are kept as separate rules on purpose:
    grouping them in one selector list makes browsers drop the whole rule. */
+/* Slider thumb is shared with the sims (sim-shell.css): same size, same dark
+   ring for definition on any background, same accent glow. */
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: var(--accent);
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.45);
-    border: none;
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.4);
+    border: 2px solid rgba(8, 10, 16, 0.9);
 }
 input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: var(--accent);
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.45);
+    border: 2px solid rgba(8, 10, 16, 0.9);
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.4);
 }
 
 .hint {
@@ -349,27 +349,36 @@ input[type="range"]::-moz-range-thumb {
     text-align: center;
     padding-top: 30px;
 }
+/* Accent-tinted glass — the same primary-button language as the sims'
+   .fab-primary, so the content pages and the sims read as one product. */
 .cta {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: var(--accent);
-    color: var(--cta-ink);
+    background: rgba(var(--accent-rgb), 0.16);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    color: var(--accent);
     padding: 13px 26px;
-    border-radius: 980px;
+    border-radius: var(--radius-pill);
     font-size: 15px;
     font-weight: 600;
     text-decoration: none;
     transition:
         transform 0.16s ease,
         box-shadow 0.16s ease,
-        background 0.16s ease;
-    box-shadow: 0 8px 30px rgba(var(--accent-rgb), 0.25);
+        background 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease;
+    box-shadow: 0 8px 30px rgba(var(--accent-rgb), 0.18);
 }
 .cta:hover {
     transform: translateY(-2px);
-    background: var(--cta-hover);
-    box-shadow: 0 12px 38px rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.28);
+    border-color: rgba(var(--accent-rgb), 0.7);
+    color: var(--ink);
+    box-shadow: 0 12px 38px rgba(var(--accent-rgb), 0.3);
 }
 .cta .arrow {
     transition: transform 0.16s ease;

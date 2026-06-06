@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-world="reaction-diffusion">
     <head>
         <meta charset="UTF-8" />
         <meta
             name="viewport"
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#050200" />
+        <meta name="theme-color" content="#020600" />
         <title>How Reaction–Diffusion Works — Tiny Worlds</title>
         <meta
             name="description"
@@ -31,35 +31,23 @@
             content="One reaction copies itself; a speed mismatch breaks it into patterns."
         />
 
+        <link rel="stylesheet" href="tokens.css" />
         <link rel="stylesheet" href="explained.css" />
         <style>
             :root {
-                --accent: #ff6a3c;
-                --accent-deep: #a02410;
-                --accent-rgb: 255, 106, 60;
-                --ink: #fbf3ee;
-                --muted: rgba(251, 243, 238, 0.72);
-                --faint: rgba(251, 243, 238, 0.45);
-                --hi: rgba(251, 243, 238, 0.92);
-                --line: rgba(255, 255, 255, 0.09);
-                --card: rgba(255, 255, 255, 0.035);
-                --bg: #050200;
-                --bg-rgb: 5, 2, 0;
-                --nav-bg: rgba(12, 5, 2, 0.55);
-                --cell-bg: #050200;
-                --cta-ink: #2a0900;
-                --cta-hover: #ff8a5e;
+                /* Page-unique reagent label colors; design tokens come from
+                   tokens.css. A is a cool teal, B the acid green it renders as
+                   in the dish — the color alone tracks them, so the words carry
+                   no bold (bold is reserved for .hi emphasis). */
                 --chem-a: #6fb6c8;
-                --chem-b: #ff7a3c;
+                --chem-b: #7af066;
             }
 
             .a-word {
                 color: var(--chem-a);
-                font-weight: 600;
             }
             .b-word {
                 color: var(--chem-b);
-                font-weight: 600;
             }
 
             .demo.wide canvas {
@@ -87,11 +75,11 @@
                 border-radius: 999px;
                 background: linear-gradient(
                     90deg,
-                    #050200,
-                    #1a0000,
-                    #a00010,
-                    #ff4020,
-                    #ffec70
+                    #000000,
+                    #082a14,
+                    #1a8a3c,
+                    #7af066,
+                    #f5ffa8
                 );
                 border: 1px solid var(--line);
             }
@@ -122,13 +110,13 @@
                 background:
                     radial-gradient(
                         120% 120% at 30% 78%,
-                        rgba(255, 106, 60, 0.16),
-                        rgba(255, 106, 60, 0) 55%
+                        rgba(var(--accent-rgb), 0.16),
+                        rgba(var(--accent-rgb), 0) 55%
                     ),
                     linear-gradient(
                         180deg,
-                        rgba(160, 36, 16, 0.28),
-                        rgba(5, 2, 0, 0.2)
+                        rgba(26, 138, 60, 0.28),
+                        rgba(2, 6, 0, 0.2)
                     );
                 cursor: crosshair;
                 touch-action: none;
@@ -158,7 +146,7 @@
                 position: absolute;
                 font-size: 10.5px;
                 letter-spacing: 0.03em;
-                color: rgba(251, 243, 238, 0.4);
+                color: var(--faint);
                 pointer-events: none;
                 white-space: nowrap;
                 transform: translate(-50%, -50%);
@@ -171,7 +159,7 @@
                 border-radius: 50%;
                 background: var(--accent);
                 border: 2px solid #fff;
-                box-shadow: 0 2px 12px rgba(255, 106, 60, 0.55);
+                box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.55);
                 pointer-events: none;
             }
             .map-side {
@@ -476,13 +464,14 @@
             (() => {
                 const { REDUCED, DPR, hexToRgb } = window.EX;
 
-                // Reaction–Diffusion palette (the sim's "Inferno" look).
+                // Reaction–Diffusion palette — the "Acid" green look, matching
+                // the home page demo and this world's accent.
                 const STOPS = [
-                    "#050200",
-                    "#1a0000",
-                    "#a00010",
-                    "#ff4020",
-                    "#ffec70",
+                    "#000000",
+                    "#082a14",
+                    "#1a8a3c",
+                    "#7af066",
+                    "#f5ffa8",
                 ];
                 // 256-entry RGB ramp (flat Uint8: idx*3 + channel).
                 function buildLUT(stops) {
