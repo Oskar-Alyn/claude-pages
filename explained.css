@@ -109,6 +109,13 @@ body {
     z-index: 1;
     pointer-events: none;
     background:
+        /* Soft accent glow behind the title — bleeds the world's colour up from
+           where the text sits, bridging the live canvas into the heading. */
+        radial-gradient(
+            ellipse 70% 50% at center 78%,
+            rgba(var(--accent-rgb), 0.12),
+            transparent 60%
+        ),
         radial-gradient(
             ellipse 75% 60% at center 46%,
             rgba(0, 0, 0, 0.45),
@@ -276,7 +283,9 @@ p .hi {
     padding: 16px;
     border-radius: 18px;
     background: var(--card);
-    border: 1px solid var(--line);
+    /* Faint accent frame per world (data-world retints --accent-rgb), so each
+       demo carries its world's colour the way the home cards do. */
+    border: 1px solid rgba(var(--accent-rgb), 0.18);
 }
 .demo-pair {
     display: grid;

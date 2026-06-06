@@ -303,10 +303,25 @@
                 position: relative;
                 overflow: hidden;
                 border-radius: 20px;
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                /* Faint accent edge per world (data-world retints --accent-rgb),
+                   brightening into a soft glow ring on hover. */
+                border: 1px solid rgba(var(--accent-rgb), 0.22);
                 min-height: clamp(360px, 56vh, 600px);
                 display: flex;
                 align-items: flex-end;
+                transition:
+                    border-color 0.2s ease,
+                    box-shadow 0.2s ease;
+            }
+            .world:hover {
+                border-color: rgba(var(--accent-rgb), 0.5);
+                box-shadow: 0 0 40px rgba(var(--accent-rgb), 0.18);
+            }
+            @media (hover: none) {
+                .world:hover {
+                    border-color: rgba(var(--accent-rgb), 0.22);
+                    box-shadow: none;
+                }
             }
             .world .content {
                 position: relative;
