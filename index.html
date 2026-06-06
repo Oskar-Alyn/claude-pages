@@ -182,14 +182,6 @@
                 }
             }
 
-            .eyebrow {
-                font-size: 13px;
-                font-weight: 600;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
-                color: var(--accent);
-                margin: 0;
-            }
             .title {
                 font-size: clamp(42px, 8vw, 96px);
                 line-height: 1.02;
@@ -385,7 +377,6 @@
             <canvas class="bg hero-bg" id="hero-b"></canvas>
             <div class="scrim"></div>
             <div class="content in">
-                <p class="eyebrow">Worlds that run themselves</p>
                 <h1 class="title">Tiny Worlds</h1>
                 <p class="lede">
                     A few simple rules, surprising results. Press play and just
@@ -908,7 +899,6 @@
                 const APPS = [
                     {
                         id: "slime",
-                        eyebrow: "Each one follows a path",
                         name: "Slime Mold",
                         file: "slime-mold.html",
                         pitch: "Head for the most-worn ground, wear a path of your own. Watch the map grow, then reroll for a new one.",
@@ -917,7 +907,6 @@
                     },
                     {
                         id: "boids",
-                        eyebrow: "Three rules per bird",
                         name: "Boids",
                         file: "boids.html",
                         pitch: "Stick together, match speed, don't crowd. Nudge the flock and see what happens.",
@@ -926,7 +915,6 @@
                     },
                     {
                         id: "particle-life",
-                        eyebrow: "Colors attract and repel",
                         name: "Particle Life",
                         file: "particle-life.html",
                         pitch: "Some colors pull together, others shove apart. Roll new rules and see what assembles.",
@@ -935,7 +923,6 @@
                     },
                     {
                         id: "flow",
-                        eyebrow: "A hidden current",
                         name: "Flow Field",
                         file: "flow-field.html",
                         pitch: "Thousands of particles ride an invisible current across the screen. Drag through it and watch the streams bend.",
@@ -944,7 +931,6 @@
                     },
                     {
                         id: "rd",
-                        eyebrow: "Two chemicals, one grid",
                         name: "Reaction-Diffusion",
                         file: "reaction-diffusion.html",
                         pitch: "One chemical feeds, the other kills, and they spread until patterns form. Paint some in and watch it grow.",
@@ -973,7 +959,6 @@
                         <canvas class="bg"></canvas>
                         <div class="scrim"></div>
                         <div class="content">
-                            <p class="eyebrow">${app.eyebrow}</p>
                             <h2 class="wname">${app.name}</h2>
                             <p class="pitch">${app.pitch}</p>
                             <div class="cta-row">
@@ -994,7 +979,6 @@
                 about.className = "world world-about";
                 about.innerHTML = `
                     <div class="content">
-                        <p class="eyebrow">About</p>
                         <h2 class="wname">A handful of rules each</h2>
                         <p class="pitch">
                             Each one runs nothing but a few simple rules, yet

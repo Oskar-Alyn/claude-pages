@@ -129,17 +129,6 @@ body {
     max-width: 760px;
     padding: 90px 24px;
 }
-.eyebrow {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0;
-    /* The global `p` rule caps width at 66ch; without this the eyebrow becomes a
-       left-anchored narrow box and its centered text drifts left of the title. */
-    max-width: none;
-}
 .hero .title {
     font-size: clamp(44px, 9vw, 104px);
     line-height: 1.02;
@@ -192,13 +181,71 @@ section {
     padding: 46px 0 8px;
     scroll-margin-top: 64px;
 }
-.step {
-    font-size: 12.5px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent-deep);
-    margin: 0 0 6px;
+/* Section dots: the wayfinding, pinned to the right edge. Hover (or the
+   active dot) reveals the section name so a dot is never a mystery. */
+.secnav {
+    position: fixed;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    align-items: center;
+}
+.secnav a {
+    position: relative;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(var(--accent-rgb), 0.25);
+    transition:
+        background 0.18s,
+        transform 0.18s;
+}
+.secnav a:hover {
+    background: rgba(var(--accent-rgb), 0.6);
+    transform: scale(1.25);
+}
+.secnav a[aria-current="true"] {
+    background: var(--accent);
+    transform: scale(1.4);
+}
+.secnav a::after {
+    content: attr(data-label);
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 11px;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 3px 9px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.secnav a:hover::after {
+    opacity: 1;
+}
+/* No room for the dot rail next to a narrow reading column. */
+@media (max-width: 820px) {
+    .secnav {
+        display: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .secnav a,
+    .secnav a::after {
+        transition: none;
+    }
 }
 h2 {
     font-size: clamp(27px, 5vw, 38px);
@@ -354,8 +401,8 @@ input[type="range"]::-moz-range-thumb {
     color: var(--faint);
     text-align: center;
     margin: 12px 0 0;
-    /* Like .eyebrow: escape the global `p` max-width:66ch, which would otherwise
-       left-anchor this centered caption and drift it left in wide demos. */
+    /* Escape the global `p` max-width:66ch, which would otherwise left-anchor
+       this centered caption and drift it left in wide demos. */
     max-width: none;
 }
 

@@ -77,4 +77,59 @@
     };
 
     window.EX = EX;
+
+    // ----- Section dots ---------------------------------------------
+    // Right-edge wayfinding: one dot per <section>, current one lit, click
+    // to jump. Injected here so every explainer page gets it for free.
+    function initSecnav() {
+        const sections = Array.from(
+            document.querySelectorAll(".article > section"),
+        );
+        if (sections.length < 2) return;
+
+        const nav = document.createElement("nav");
+        nav.className = "secnav";
+        nav.setAttribute("aria-label", "Sections");
+        const dots = sections.map((sec) => {
+            const a = document.createElement("a");
+            a.href = "#" + sec.id;
+            const label = (
+                sec.querySelector("h2")?.textContent || sec.id
+            ).trim();
+            a.setAttribute("aria-label", label);
+            a.dataset.label = label;
+            a.addEventListener("click", (e) => {
+                e.preventDefault();
+                sec.scrollIntoView({
+                    behavior: EX.REDUCED ? "auto" : "smooth",
+                    block: "start",
+                });
+            });
+            nav.appendChild(a);
+            return a;
+        });
+        document.body.appendChild(nav);
+
+        let active = -1;
+        const update = () => {
+            // Active = last section whose top has crossed the upper third.
+            const mark = window.innerHeight * 0.35;
+            let i = 0;
+            for (let s = 0; s < sections.length; s++) {
+                if (sections[s].getBoundingClientRect().top <= mark) i = s;
+            }
+            if (i !== active) {
+                if (dots[active]) dots[active].removeAttribute("aria-current");
+                dots[i].setAttribute("aria-current", "true");
+                active = i;
+            }
+        };
+
+        update();
+        window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+    }
+
+    if (document.readyState !== "loading") initSecnav();
+    else document.addEventListener("DOMContentLoaded", initSecnav);
 })();
