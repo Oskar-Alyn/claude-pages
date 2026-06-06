@@ -564,7 +564,7 @@
                     },
                 },
                 shape: {
-                    title: "Seed shape",
+                    title: "Starting shape",
                     intro:
                         "Choose where the reaction ignites — a drop of reagent in this shape against an empty medium, from which the pattern grows. Changes restart the simulation right away.",
                     chipLabel: "Where it ignites",

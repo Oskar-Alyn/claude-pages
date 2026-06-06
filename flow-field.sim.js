@@ -587,7 +587,7 @@
                     },
                 },
                 shape: {
-                    title: "Emitter shape",
+                    title: "Starting shape",
                     intro:
                         "Particles are born here and reborn here when their lifespan runs out, so the shape acts as a continuous emitter — a ring becomes a fountain, a grid a lattice of sources. Changes restart the field right away.",
                     chipLabel: "Where they spawn",

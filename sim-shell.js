@@ -339,10 +339,9 @@ const SimShell = (() => {
                     </svg>
                 </button>
                 <button class="dropdown-item" data-modal="pattern" role="menuitem" title="Shape" aria-label="Shape">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="5" cy="5" r="1.6" /><circle cx="12" cy="5" r="1.6" /><circle cx="19" cy="5" r="1.6" />
-                        <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
-                        <circle cx="5" cy="19" r="1.6" /><circle cx="12" cy="19" r="1.6" /><circle cx="19" cy="19" r="1.6" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                        <rect x="4" y="4" width="11" height="11" rx="1.5" />
+                        <circle cx="15" cy="15" r="5.5" />
                     </svg>
                 </button>
                 <button class="dropdown-item" data-modal="params" role="menuitem" title="Parameters" aria-label="Parameters">
@@ -488,9 +487,14 @@ const SimShell = (() => {
     function slider(def, onPersist) {
         const wrap = document.createElement("div");
         wrap.className = "ctrl";
+        // An optional description scans inline after the label: a bold label,
+        // then the lighter hint on the same line — compact and easy to skim.
+        const labelInner = def.hint
+            ? `<span class="ctrl-name">${def.label}:</span> <span class="ctrl-desc">${def.hint}</span>`
+            : `<span class="ctrl-name">${def.label}</span>`;
         wrap.innerHTML = `
             <div class="ctrl-head">
-                <span class="ctrl-name">${def.label}</span>
+                <span class="ctrl-label">${labelInner}</span>
                 <span class="ctrl-val"></span>
             </div>
             <input type="range" min="${def.min}" max="${def.max}" step="${def.step}">
@@ -1132,24 +1136,20 @@ const SimShell = (() => {
             if (paramsCfg.intro) body.appendChild(introEl(paramsCfg.intro));
 
             const groups = {};
-            const lcFirst = (s) => s.charAt(0).toLowerCase() + s.slice(1);
             function groupContainer(name) {
                 if (!groups[name]) {
                     const sec = sectionEl(name);
-                    const sliders = document.createElement("div");
-                    const desc = document.createElement("div");
-                    desc.className = "section-desc";
-                    sec.append(sliders, desc);
                     body.appendChild(sec);
-                    groups[name] = { sliders, desc };
+                    groups[name] = sec;
                 }
                 return groups[name];
             }
             paramsCfg.controls.forEach((def) => {
-                const g = groupContainer(def.group);
+                const sec = groupContainer(def.group);
                 const ctl = slider(
                     {
                         label: def.label,
+                        hint: def.hint,
                         min: def.min,
                         max: def.max,
                         step: def.step,
@@ -1161,12 +1161,7 @@ const SimShell = (() => {
                     persistState,
                 );
                 paramSliders[def.key] = ctl;
-                g.sliders.appendChild(ctl.wrap);
-                if (def.hint) {
-                    const p = document.createElement("p");
-                    p.innerHTML = `<strong>${def.label}</strong> — ${lcFirst(def.hint)}`;
-                    g.desc.appendChild(p);
-                }
+                sec.appendChild(ctl.wrap);
             });
         }
 

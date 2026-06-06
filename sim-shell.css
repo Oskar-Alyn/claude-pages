@@ -618,9 +618,19 @@ body.ui-hidden .modal {
     align-items: baseline;
     gap: 8px;
 }
+.ctrl-label {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.45;
+}
 .ctrl-name {
     color: var(--ink);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 11.5px;
+}
+.ctrl-desc {
+    color: var(--muted);
+    font-weight: 400;
     font-size: 11.5px;
 }
 
@@ -634,23 +644,6 @@ body.ui-hidden .modal {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Per-section description footer (Parameters modal) */
-.section-desc {
-    margin-top: 14px;
-    font-size: 11.5px;
-    color: var(--muted);
-    line-height: 1.5;
-}
-.section-desc p {
-    margin: 0 0 6px;
-}
-.section-desc p:last-child {
-    margin-bottom: 0;
-}
-.section-desc strong {
-    color: var(--ink);
-    font-weight: 600;
-}
 .ctrl-val {
     color: var(--accent-2);
     font-variant-numeric: tabular-nums;

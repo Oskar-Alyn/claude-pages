@@ -723,7 +723,7 @@
                     },
                 },
                 shape: {
-                    title: "Starting pattern",
+                    title: "Starting shape",
                     intro:
                         "Choose where the critters begin and which way they face. Changes restart the swarm right away.",
                     chipLabel: "Where they start",
