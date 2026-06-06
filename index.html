@@ -7,10 +7,10 @@
             content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <meta name="theme-color" content="#05070b" />
-        <title>Tiny Worlds — a self-playing feed of interactive simulations</title>
+        <title>Tiny Worlds: interactive simulations that run themselves</title>
         <meta
             name="description"
-            content="Five tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Press play for an endless feed, dive into a single world, or read a visual walkthrough of how each one works."
+            content="Tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Press play and watch, dive into a single world, or read a visual walkthrough of how each one works."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
         <link rel="stylesheet" href="tokens.css" />
@@ -19,7 +19,7 @@
         <meta property="og:title" content="Tiny Worlds" />
         <meta
             property="og:description"
-            content="A self-playing feed of tiny interactive simulations — slime mold, boids, particle life, flow fields, and reaction-diffusion. Watch, play, or see how they work."
+            content="Tiny interactive simulations that run themselves: slime mold, boids, particle life, flow fields, and reaction-diffusion. Watch, play, or see how they work."
         />
         <meta property="og:image" content="og/index.png" />
         <meta property="og:image:width" content="1200" />
@@ -29,7 +29,7 @@
         <meta name="twitter:title" content="Tiny Worlds" />
         <meta
             name="twitter:description"
-            content="A self-playing feed of tiny interactive simulations. Watch, play, or see how they work."
+            content="Tiny interactive simulations that run themselves. Watch, play, or see how they work."
         />
 
         <style>
@@ -306,21 +306,6 @@
                 margin: 0 auto;
                 padding: 84px max(18px, env(safe-area-inset-left)) 36px;
             }
-            .section-label {
-                text-align: center;
-                color: var(--accent);
-                text-transform: uppercase;
-                letter-spacing: 0.14em;
-                font-size: 13px;
-                font-weight: 600;
-                margin: 0;
-            }
-            .section-sub {
-                text-align: center;
-                color: var(--muted);
-                font-size: 15px;
-                margin: 8px 0 32px;
-            }
             .gallery {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -399,18 +384,18 @@
             <canvas class="bg hero-bg" id="hero-b"></canvas>
             <div class="scrim"></div>
             <div class="content in">
-                <p class="eyebrow">▶ A self-playing stream of tiny worlds</p>
+                <p class="eyebrow">Worlds that run themselves</p>
                 <h1 class="title">Tiny Worlds</h1>
                 <p class="lede">
-                    A few simple rules, endless worlds. Press play and just
-                    watch — or dive into one.
+                    A few simple rules, surprising results. Press play and just
+                    watch, or dive into one.
                 </p>
                 <div class="cta-row">
                     <a class="cta" href="feed.html"
                         >Explore <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></a
                     >
                     <a class="cta-ghost" href="#worlds"
-                        >or explore the five worlds ↓</a
+                        >or see them all ↓</a
                     >
                 </div>
             </div>
@@ -430,10 +415,6 @@
         </header>
 
         <section class="worlds" id="worlds">
-            <p class="section-label">The five worlds</p>
-            <p class="section-sub">
-                Live previews — tap to play, or see how it works.
-            </p>
             <div class="gallery" id="gallery"></div>
         </section>
 
@@ -995,10 +976,8 @@
                             <h2 class="wname">${app.name}</h2>
                             <p class="pitch">${app.pitch}</p>
                             <div class="cta-row">
-                                <a class="cta" href="${app.file}">
-                                    Play <span class="arrow">→</span>
-                                </a>
-                                <a class="cta-ghost" href="${explainOf(app.file)}">How it works</a>
+                                <a class="cta" href="${app.file}">Poke It</a>
+                                <a class="cta-ghost" href="${explainOf(app.file)}">Understand It</a>
                             </div>
                         </div>`;
                     galleryEl.appendChild(card);
@@ -1017,13 +996,10 @@
                         <p class="eyebrow">About</p>
                         <h2 class="wname">A handful of rules each</h2>
                         <p class="pitch">
-                            Tiny Worlds is a small set of interactive
-                            simulations. Each one runs nothing but a few simple
-                            local rules, yet flocks, trails, and lifelike
-                            patterns appear on their own — nobody draws them
-                            directly. Watch the self-playing feed, open a world
-                            to play with its controls, or read a short visual
-                            walkthrough of how it works.
+                            Each one runs nothing but a few simple rules, yet
+                            flocks, trails, and lifelike patterns appear on their
+                            own. Nobody draws them directly. Watch them run, poke
+                            at one, or see how it works.
                         </p>
                         <div class="cta-row">
                             <a class="cta" href="feed.html">Explore <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></a>
