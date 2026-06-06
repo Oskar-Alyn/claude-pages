@@ -184,6 +184,11 @@ body {
     max-width: 720px;
     margin: 0 auto;
     padding: 8px 22px 40px;
+    /* Long-form reading wants softer body text than the UI default: less glare
+       on a long column, and clear separation from the --hi emphasis colour
+       (0.9), which the global 0.86 had flattened. Scoped to the article so the
+       brighter --muted still applies to nav/header chrome. */
+    --muted: rgba(245, 248, 252, 0.75);
 }
 section {
     padding: 46px 0 8px;
@@ -207,6 +212,12 @@ h2 {
 p {
     color: var(--muted);
     font-size: clamp(16px, 2vw, 18px);
+    /* Inter has a large x-height, so long-form prose needs more leading than the
+       system font did to keep lines from feeling cramped. */
+    line-height: 1.75;
+    /* Hold the reading column to a comfortable ~66 characters; demos keep the
+       full .article width since they're not <p>. */
+    max-width: 66ch;
     margin: 0 0 1.1em;
 }
 p .hi {

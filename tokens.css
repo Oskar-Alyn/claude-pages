@@ -21,10 +21,14 @@
    between any two of these pages crossfades instead of hard-cutting.
    ============================================================================ */
 
+/* Inter — the site-wide UI/display sans. Loaded once here so every page that
+   links tokens.css gets it; @import must stay the first statement in the file. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap");
+
 :root {
     /* ---- Brand neutrals (master / cool-white theme) ---- */
     --ink: #f5f8fc;
-    --muted: rgba(245, 248, 252, 0.72);
+    --muted: rgba(245, 248, 252, 0.86);
     --faint: rgba(245, 248, 252, 0.45);
     --hi: rgba(245, 248, 252, 0.9);
     --line: rgba(255, 255, 255, 0.09);
@@ -38,7 +42,7 @@
 
     /* ---- Shared type (option 2) ---- */
     --font-sans:
-        -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+        "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
         system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -89,7 +93,7 @@ svg.mark {
     --accent-deep: #b8541e;
     --accent-rgb: 255, 122, 46;
     --ink: #fbf4ee;
-    --muted: rgba(251, 244, 238, 0.72);
+    --muted: rgba(251, 244, 238, 0.86);
     --faint: rgba(251, 244, 238, 0.45);
     --hi: rgba(251, 244, 238, 0.9);
     --bg: #060406;
@@ -105,7 +109,7 @@ svg.mark {
     --accent-deep: #0a8a98;
     --accent-rgb: 90, 240, 216;
     --ink: #f5f8fc;
-    --muted: rgba(245, 248, 252, 0.72);
+    --muted: rgba(245, 248, 252, 0.86);
     --faint: rgba(245, 248, 252, 0.45);
     --hi: rgba(245, 248, 252, 0.9);
     --bg: #05070b;
@@ -121,7 +125,7 @@ svg.mark {
     --accent-deep: #9a2a86;
     --accent-rgb: 255, 99, 196;
     --ink: #f7f3fa;
-    --muted: rgba(247, 243, 250, 0.72);
+    --muted: rgba(247, 243, 250, 0.86);
     --faint: rgba(247, 243, 250, 0.45);
     --hi: rgba(247, 243, 250, 0.92);
     --bg: #060309;
@@ -137,7 +141,7 @@ svg.mark {
     --accent-deep: #7a5ad8;
     --accent-rgb: 192, 96, 224;
     --ink: #f6f2fc;
-    --muted: rgba(246, 242, 252, 0.72);
+    --muted: rgba(246, 242, 252, 0.86);
     --faint: rgba(246, 242, 252, 0.45);
     --hi: rgba(246, 242, 252, 0.92);
     --bg: #000018;
@@ -155,7 +159,7 @@ svg.mark {
     --accent-deep: #1a8a3c;
     --accent-rgb: 122, 240, 102;
     --ink: #f3faee;
-    --muted: rgba(243, 250, 238, 0.72);
+    --muted: rgba(243, 250, 238, 0.86);
     --faint: rgba(243, 250, 238, 0.45);
     --hi: rgba(243, 250, 238, 0.92);
     --bg: #020600;
