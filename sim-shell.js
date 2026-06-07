@@ -3,10 +3,12 @@
  * ============================================================================
  *
  * claude-pages is a set of single-canvas sims that all share the same chrome:
- * a settings cogwheel + dropdown, a FAB toolbar (record / share / hide-UI /
- * speed / reset / pause / randomize), a recording indicator, a hide banner,
- * and four modals (Color, Shape, Parameters, Settings) with desktop floating-
- * window + mobile bottom-sheet behavior. All of that — DOM, styling hooks,
+ * direct Color/Shape/Parameters launchers + a Settings gear, a FAB toolbar
+ * (record / share / hide-UI / speed / reset / pause / randomize), a recording
+ * indicator, a hide banner, and four modals (Color, Shape, Parameters,
+ * Settings) with desktop floating-window + mobile modeless-tray behavior. In
+ * the feed host the chrome runs in a lean "explore" mode (hidden) until "take
+ * control" flips it to "studio". All of that — DOM, styling hooks,
  * persistence, share links, recording, the rAF loop — lives here. A sim is just
  * a state object + a config describing its modals + a few callbacks.
  *

@@ -343,8 +343,6 @@
         if (!d || typeof d !== "object" || !d.type) return;
         const src = e.source;
         if (d.type === "ready") onReady(src, d);
-        else if (d.type === "next") onNext();
-        else if (d.type === "back") onBack();
         else if (d.type === "resetTaste") onResetTaste();
         else if (d.type === "recipe") onRecipe(d);
     });
