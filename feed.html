@@ -95,8 +95,59 @@
                 }
             }
 
-            /* Bottom stream bar: Back / Next (compass) / Take control. Host-
-               owned; explore only. Buttons reuse .fab from sim-shell.css. */
+            /* Top-right "Take control": the mode switch out of the stream into
+               studio. A glass pill symmetric with the top-left home pill, kept
+               apart from the bottom Back/Next pager. Explore only. */
+            .feed-take {
+                position: fixed;
+                top: max(20px, env(safe-area-inset-top, 0px));
+                right: max(20px, env(safe-area-inset-right, 0px));
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                height: 50px;
+                padding: 0 16px;
+                border-radius: 999px;
+                background: var(--glass-bg);
+                -webkit-backdrop-filter: var(--glass-blur);
+                backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                color: var(--ink);
+                font-family: var(--font-sans);
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                white-space: nowrap;
+                cursor: pointer;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+                transition:
+                    background 0.15s,
+                    transform 0.15s;
+            }
+            .feed-take:hover {
+                background: var(--glass-bg-strong);
+                transform: translateY(-1px);
+            }
+            .feed-take:active {
+                transform: translateY(0) scale(0.98);
+            }
+            .feed-take .mark {
+                font-size: 15px;
+            }
+            @media (max-width: 420px) {
+                .feed-take {
+                    padding: 0;
+                    width: 50px;
+                    justify-content: center;
+                }
+                .feed-take .wordmark {
+                    display: none;
+                }
+            }
+
+            /* Bottom stream bar: Back / Next (compass). Host-owned; explore
+               only. Buttons reuse .fab from sim-shell.css. */
             .feed-bar {
                 position: fixed;
                 bottom: max(20px, env(safe-area-inset-bottom, 0px));
@@ -106,10 +157,6 @@
                 display: flex;
                 align-items: center;
                 gap: 12px;
-            }
-            .feed-bar .label {
-                /* optional text beside Take control; icon-only by default */
-                display: none;
             }
 
             /* Top-left "Return to explore", studio only, hidden until taken. */
@@ -144,6 +191,7 @@
 
             /* Taken control: hide explore chrome, show the return affordance. */
             body.taken .feed-home,
+            body.taken .feed-take,
             body.taken .feed-bar {
                 display: none;
             }
@@ -169,13 +217,18 @@
             <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg><span>Explore</span>
         </button>
 
+        <button
+            class="feed-take"
+            id="feed-take"
+            title="Take control"
+            aria-label="Take control"
+        >
+            <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.5" fill="rgba(20,25,35,0.95)"/><circle cx="15" cy="16" r="2.5" fill="rgba(20,25,35,0.95)"/></svg><span class="wordmark">Take control</span>
+        </button>
+
         <div class="feed-bar" id="feed-bar">
             <button class="fab" id="feed-back" title="Back" aria-label="Back">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <button class="fab" id="feed-take" title="Take control" aria-label="Take control">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.5" fill="rgba(20,25,35,0.95)"/><circle cx="15" cy="16" r="2.5" fill="rgba(20,25,35,0.95)"/></svg>
-                <span class="label">Take control</span>
             </button>
             <button class="fab fab-primary" id="feed-next" title="Next" aria-label="Next">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5" fill="currentColor" stroke="none"/></svg>

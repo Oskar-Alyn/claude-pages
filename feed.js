@@ -65,6 +65,7 @@
     // A cross-sim reveal awaiting an iframe's `ready` before the hard cut.
     let pendingReveal = null;
     const history = []; // back-stack of past items {sim, recipe}
+    const forward = []; // redo-stack: items backed away from, replayed by Next
 
     // ====================================================================
     // TASTE PROFILE (passive learning, persisted to localStorage)
@@ -374,11 +375,20 @@
     }
 
     function onNext() {
-        if (stopped || !nextItem) return;
+        if (stopped) return;
+        // After going Back, Next replays the exact item we backed away from
+        // (moving "forward" through history) before drawing anything fresh.
+        if (forward.length) {
+            goTo(forward.pop(), true);
+            return;
+        }
+        if (!nextItem) return;
         goTo(nextItem, true);
     }
     function onBack() {
         if (stopped || !history.length) return;
+        // Stash the world we're leaving so Next can return to it.
+        forward.push({ sim: current.sim, recipe: current.recipe });
         goTo(history.pop(), false);
     }
     function onResetTaste() {
