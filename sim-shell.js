@@ -723,24 +723,37 @@ const SimShell = (() => {
         // world coords with absolute sensing radii and glyph sizes, so on a
         // small screen the same crowd packs into far less area and reads as
         // crowded. Rather than have each sim correct for screen size, the shell
-        // runs those sims in a fixed virtual world (REF_AREA) and zooms the
-        // whole picture to fit: it reports a virtual W/H (= real size / scale)
-        // and folds `scale` into the dpr the sim draws with. A fixed crowd then
-        // keeps a constant density across screens, and glyphs/sensing radii
-        // scale with the viewport. Field sims (slime-mold, reaction-diffusion)
-        // already render a grid stretched to fill the screen, so they opt out
-        // with `worldScale: false` and get the raw viewport size as before.
+        // runs those sims in a fixed virtual world and zooms the whole picture
+        // to fit: it reports a virtual W/H (= real size / scale) and folds
+        // `scale` into the dpr the sim draws with. A fixed crowd then keeps a
+        // constant density across screens, and glyphs/sensing radii scale with
+        // the viewport. Field sims (slime-mold, reaction-diffusion) already
+        // render a grid stretched to fill the screen, so they opt out with
+        // `worldScale: false` and get the raw viewport size as before.
+        //
+        // Quality folds into the virtual world size: the world is REF_AREA times
+        // the quality scalar, so a higher quality grows the world and (with the
+        // sim's count = base × scalar) packs in more, smaller particles at the
+        // SAME density rather than a denser flock. Density = count/REF_AREA is
+        // invariant to both screen size and quality — quality means finer detail
+        // at constant coverage, matching how the field sims treat their grid.
         const REF_AREA = 1440 * 900;
         const scaled = sim.worldScale !== false;
+        function qScalar() {
+            return QUALITY_LADDER[state.settings.quality] != null
+                ? QUALITY_LADDER[state.settings.quality]
+                : 1;
+        }
         function resizeCanvas(rescale) {
             const cssW = window.innerWidth;
             const cssH = window.innerHeight;
             const realDpr = Math.min(window.devicePixelRatio || 1, 2);
-            // One uniform world-scale keyed to viewport area, clamped so the
-            // crowd never turns microscopic on tiny phones or oversized on 4K.
+            // One uniform world-scale keyed to viewport area and quality,
+            // clamped so the crowd never turns microscopic on tiny phones or
+            // oversized on 4K (the clamp only affects look, never cost).
             let scale = 1;
             if (scaled) {
-                scale = Math.sqrt((cssW * cssH) / REF_AREA);
+                scale = Math.sqrt((cssW * cssH) / (REF_AREA * qScalar()));
                 if (scale < 0.5) scale = 0.5;
                 else if (scale > 1.5) scale = 1.5;
             }
@@ -1392,6 +1405,10 @@ const SimShell = (() => {
                         state.settings.quality = id;
                     },
                     onChange: () => {
+                        // For world-scaled sims the virtual world size depends
+                        // on quality, so re-fit the canvas (which rescales the
+                        // sim's positions) before it reconciles its count.
+                        if (scaled) resizeCanvas(true);
                         if (typeof sim.onQualityChange === "function")
                             sim.onQualityChange();
                     },
@@ -1861,10 +1878,7 @@ const SimShell = (() => {
             isPlaying: () => playing,
             // Active Quality scalar — the sim multiplies its own baseline by
             // this for its dominant cost (count budget / grid target).
-            qualityScalar: () =>
-                QUALITY_LADDER[state.settings.quality] != null
-                    ? QUALITY_LADDER[state.settings.quality]
-                    : 1,
+            qualityScalar: qScalar,
         };
 
         // ============================================================
