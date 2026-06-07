@@ -379,7 +379,21 @@
     <body>
         <nav class="nav">
             <a class="brand" href="#top"
-                ><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg> Tiny Worlds</a
+                ><svg
+                    class="mark"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                    <path d="M2 12h20" />
+                </svg>
+                Tiny Worlds</a
             >
             <div class="links">
                 <a class="feed-link" href="feed.html">Explore</a>
@@ -393,17 +407,26 @@
             <div class="scrim"></div>
             <div class="content in">
                 <h1 class="title">Tiny Worlds</h1>
-                <p class="lede">
-                    A few simple rules, surprising results. Press play and just
-                    watch, or dive into one.
-                </p>
+                <p class="lede">A few simple rules, with surprising results.</p>
                 <div class="cta-row">
                     <a class="cta" href="feed.html"
-                        >Explore <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></a
-                    >
-                    <a class="cta-ghost" href="#worlds"
-                        >or see them all ↓</a
-                    >
+                        >Explore
+                        <svg
+                            class="arrow"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon
+                                points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"
+                            /></svg
+                    ></a>
+                    <a class="cta-ghost" href="#worlds">or see them all ↓</a>
                 </div>
             </div>
             <svg
@@ -435,12 +458,48 @@
 
                 // ---------- shared palette + noise helpers ----------
                 const PALS = {
-                    Inferno: ["#000000", "#1a0000", "#a00010", "#ff4020", "#ffec70"],
-                    Cyber: ["#000810", "#0a2030", "#0a8a98", "#5af0d8", "#fff088"],
-                    Twilight: ["#040208", "#280a40", "#8a2080", "#ff60c0", "#ffe098"],
-                    Frost: ["#000814", "#0a2e58", "#3a86d0", "#9ed4ff", "#f0faff"],
-                    Acid: ["#000000", "#082a14", "#1a8a3c", "#7af066", "#f5ffa8"],
-                    Iris: ["#000018", "#0c1448", "#4a3ac0", "#c060e0", "#ffd0e0"],
+                    Inferno: [
+                        "#000000",
+                        "#1a0000",
+                        "#a00010",
+                        "#ff4020",
+                        "#ffec70",
+                    ],
+                    Cyber: [
+                        "#000810",
+                        "#0a2030",
+                        "#0a8a98",
+                        "#5af0d8",
+                        "#fff088",
+                    ],
+                    Twilight: [
+                        "#040208",
+                        "#280a40",
+                        "#8a2080",
+                        "#ff60c0",
+                        "#ffe098",
+                    ],
+                    Frost: [
+                        "#000814",
+                        "#0a2e58",
+                        "#3a86d0",
+                        "#9ed4ff",
+                        "#f0faff",
+                    ],
+                    Acid: [
+                        "#000000",
+                        "#082a14",
+                        "#1a8a3c",
+                        "#7af066",
+                        "#f5ffa8",
+                    ],
+                    Iris: [
+                        "#000018",
+                        "#0c1448",
+                        "#4a3ac0",
+                        "#c060e0",
+                        "#ffd0e0",
+                    ],
                 };
                 function hexToRgb(h) {
                     return [
@@ -532,7 +591,16 @@
                     const ctx = canvas.getContext("2d");
                     const cstr = colorStrings(buildLUT(stops));
                     const bg = hexToRgb(stops[0]);
-                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, age, raf = 0, t = 0;
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        age,
+                        raf = 0,
+                        t = 0;
                     const ns = 0.009 / DPR;
                     function respawn(i) {
                         xs[i] = Math.random() * W;
@@ -543,13 +611,17 @@
                     }
                     function init() {
                         const s = fitFull(canvas);
-                        W = s.w; H = s.h;
+                        W = s.w;
+                        H = s.h;
                         n = Math.min(900, Math.round((W * H) / 2200));
-                        xs = new Float32Array(n); ys = new Float32Array(n);
-                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
                         age = new Float32Array(n);
                         for (let i = 0; i < n; i++) respawn(i);
-                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillStyle =
+                            "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
                         ctx.fillRect(0, 0, W, H);
                     }
                     function step() {
@@ -559,33 +631,57 @@
                         const sp = 1.5 * DPR;
                         const ds = 2.2 * DPR;
                         ctx.fillStyle =
-                            "rgba(" + bg[0] + "," + bg[1] + "," + bg[2] + ",0.09)";
+                            "rgba(" +
+                            bg[0] +
+                            "," +
+                            bg[1] +
+                            "," +
+                            bg[2] +
+                            ",0.09)";
                         ctx.fillRect(0, 0, W, H);
                         for (let i = 0; i < n; i++) {
-                            const a = vnoise(xs[i] * ns + ox, ys[i] * ns + oy) * TAU * 2;
+                            const a =
+                                vnoise(xs[i] * ns + ox, ys[i] * ns + oy) *
+                                TAU *
+                                2;
                             vx[i] += (Math.cos(a) * sp - vx[i]) * 0.18;
                             vy[i] += (Math.sin(a) * sp - vy[i]) * 0.18;
-                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
+                            let nx = xs[i] + vx[i],
+                                ny = ys[i] + vy[i];
                             nx -= Math.floor(nx / W) * W;
                             ny -= Math.floor(ny / H) * H;
-                            xs[i] = nx; ys[i] = ny;
+                            xs[i] = nx;
+                            ys[i] = ny;
                             const ang = Math.atan2(vy[i], vx[i]);
-                            let idx = ((0.4 + 0.6 * ((ang + Math.PI) / TAU)) * 255) | 0;
+                            let idx =
+                                ((0.4 + 0.6 * ((ang + Math.PI) / TAU)) * 255) |
+                                0;
                             if (idx > 255) idx = 255;
                             ctx.fillStyle = cstr[idx];
                             ctx.fillRect(nx - 1, ny - 1, ds, ds);
                             if (++age[i] > 220) respawn(i);
                         }
                     }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
                     return {
                         start() {
                             if (!W) init();
-                            if (REDUCED) { for (let k = 0; k < 80; k++) step(); return; }
+                            if (REDUCED) {
+                                for (let k = 0; k < 80; k++) step();
+                                return;
+                            }
                             if (!raf) frame();
                         },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
                     };
                 }
 
@@ -594,13 +690,23 @@
                     const ctx = canvas.getContext("2d");
                     const cstr = colorStrings(buildLUT(stops));
                     const bg = hexToRgb(stops[0]);
-                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, raf = 0;
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        raf = 0;
                     function init() {
                         const s = fitFull(canvas);
-                        W = s.w; H = s.h;
+                        W = s.w;
+                        H = s.h;
                         n = Math.min(170, Math.round((W * H) / 9000));
-                        xs = new Float32Array(n); ys = new Float32Array(n);
-                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
                         const sp = 2.2 * DPR;
                         for (let i = 0; i < n; i++) {
                             xs[i] = Math.random() * W;
@@ -613,54 +719,94 @@
                     function step() {
                         const visSq = (46 * DPR) ** 2;
                         const sepSq = (17 * DPR) ** 2;
-                        const max = 2.6 * DPR, min = max * 0.5;
-                        const edge = 0.6 * DPR, marg = 46 * DPR;
+                        const max = 2.6 * DPR,
+                            min = max * 0.5;
+                        const edge = 0.6 * DPR,
+                            marg = 46 * DPR;
                         for (let i = 0; i < n; i++) {
-                            let avx = 0, avy = 0, apx = 0, apy = 0, sx = 0, sy = 0, c = 0;
+                            let avx = 0,
+                                avy = 0,
+                                apx = 0,
+                                apy = 0,
+                                sx = 0,
+                                sy = 0,
+                                c = 0;
                             for (let j = 0; j < n; j++) {
                                 if (i === j) continue;
-                                const dx = xs[j] - xs[i], dy = ys[j] - ys[i];
+                                const dx = xs[j] - xs[i],
+                                    dy = ys[j] - ys[i];
                                 const d2 = dx * dx + dy * dy;
                                 if (d2 > visSq) continue;
-                                c++; avx += vx[j]; avy += vy[j]; apx += xs[j]; apy += ys[j];
-                                if (d2 < sepSq) { sx -= dx; sy -= dy; }
+                                c++;
+                                avx += vx[j];
+                                avy += vy[j];
+                                apx += xs[j];
+                                apy += ys[j];
+                                if (d2 < sepSq) {
+                                    sx -= dx;
+                                    sy -= dy;
+                                }
                             }
-                            let nvx = vx[i], nvy = vy[i];
+                            let nvx = vx[i],
+                                nvy = vy[i];
                             if (c > 0) {
-                                avx /= c; avy /= c; apx /= c; apy /= c;
-                                nvx += (avx - nvx) * 0.06 + (apx - xs[i]) * 0.0008;
-                                nvy += (avy - nvy) * 0.06 + (apy - ys[i]) * 0.0008;
+                                avx /= c;
+                                avy /= c;
+                                apx /= c;
+                                apy /= c;
+                                nvx +=
+                                    (avx - nvx) * 0.06 + (apx - xs[i]) * 0.0008;
+                                nvy +=
+                                    (avy - nvy) * 0.06 + (apy - ys[i]) * 0.0008;
                             }
-                            nvx += sx * 0.05; nvy += sy * 0.05;
+                            nvx += sx * 0.05;
+                            nvy += sy * 0.05;
                             if (xs[i] < marg) nvx += edge;
                             else if (xs[i] > W - marg) nvx -= edge;
                             if (ys[i] < marg) nvy += edge;
                             else if (ys[i] > H - marg) nvy -= edge;
                             const s = Math.hypot(nvx, nvy);
-                            if (s > max) { nvx = (nvx / s) * max; nvy = (nvy / s) * max; }
-                            else if (s < min && s > 0) { nvx = (nvx / s) * min; nvy = (nvy / s) * min; }
-                            vx[i] = nvx; vy[i] = nvy;
+                            if (s > max) {
+                                nvx = (nvx / s) * max;
+                                nvy = (nvy / s) * max;
+                            } else if (s < min && s > 0) {
+                                nvx = (nvx / s) * min;
+                                nvy = (nvy / s) * min;
+                            }
+                            vx[i] = nvx;
+                            vy[i] = nvy;
                         }
                         for (let i = 0; i < n; i++) {
-                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
-                            if (nx < 0) nx = 0; else if (nx > W) nx = W;
-                            if (ny < 0) ny = 0; else if (ny > H) ny = H;
-                            xs[i] = nx; ys[i] = ny;
+                            let nx = xs[i] + vx[i],
+                                ny = ys[i] + vy[i];
+                            if (nx < 0) nx = 0;
+                            else if (nx > W) nx = W;
+                            if (ny < 0) ny = 0;
+                            else if (ny > H) ny = H;
+                            xs[i] = nx;
+                            ys[i] = ny;
                         }
-                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillStyle =
+                            "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
                         ctx.fillRect(0, 0, W, H);
                         const S = 5 * DPR;
-                        const max2 = 2.6 * DPR, min2 = max2 * 0.5, span = max2 - min2;
+                        const max2 = 2.6 * DPR,
+                            min2 = max2 * 0.5,
+                            span = max2 - min2;
                         for (let i = 0; i < n; i++) {
                             const sp = Math.hypot(vx[i], vy[i]) || 1;
-                            const ux = vx[i] / sp, uy = vy[i] / sp;
+                            const ux = vx[i] / sp,
+                                uy = vy[i] / sp;
                             let t = (sp - min2) / span;
-                            if (t < 0) t = 0; else if (t > 1) t = 1;
+                            if (t < 0) t = 0;
+                            else if (t > 1) t = 1;
                             let idx = ((0.45 + 0.55 * t) * 255) | 0;
                             if (idx > 255) idx = 255;
                             ctx.fillStyle = cstr[idx];
-                            const nx = xs[i] + ux * S, ny = ys[i] + uy * S;
-                            const bx = xs[i] - ux * S * 0.7, by = ys[i] - uy * S * 0.7;
+                            const nx = xs[i] + ux * S,
+                                ny = ys[i] + uy * S;
+                            const bx = xs[i] - ux * S * 0.7,
+                                by = ys[i] - uy * S * 0.7;
                             ctx.beginPath();
                             ctx.moveTo(nx, ny);
                             ctx.lineTo(bx - uy * S * 0.5, by + ux * S * 0.5);
@@ -669,15 +815,26 @@
                             ctx.fill();
                         }
                     }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
                     return {
                         start() {
                             if (!W) init();
-                            if (REDUCED) { for (let k = 0; k < 90; k++) step(); return; }
+                            if (REDUCED) {
+                                for (let k = 0; k < 90; k++) step();
+                                return;
+                            }
                             if (!raf) frame();
                         },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
                     };
                 }
 
@@ -689,71 +846,140 @@
                     const scol = [];
                     for (let k = 0; k < K; k++) {
                         const idx = ((0.4 + 0.6 * (k / (K - 1))) * 255) | 0;
-                        scol[k] = "rgb(" + lut[idx * 3] + "," + lut[idx * 3 + 1] + "," + lut[idx * 3 + 2] + ")";
+                        scol[k] =
+                            "rgb(" +
+                            lut[idx * 3] +
+                            "," +
+                            lut[idx * 3 + 1] +
+                            "," +
+                            lut[idx * 3 + 2] +
+                            ")";
                     }
                     const bg = hexToRgb(stops[0]);
-                    let W = 0, H = 0, n = 0, xs, ys, vx, vy, ty, M, raf = 0;
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        ty,
+                        M,
+                        raf = 0;
                     function init() {
                         const s = fitFull(canvas);
-                        W = s.w; H = s.h;
+                        W = s.w;
+                        H = s.h;
                         n = Math.min(340, Math.round((W * H) / 6500));
-                        xs = new Float32Array(n); ys = new Float32Array(n);
-                        vx = new Float32Array(n); vy = new Float32Array(n);
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
                         ty = new Int8Array(n);
                         M = new Float32Array(K * K);
-                        for (let i = 0; i < K * K; i++) M[i] = Math.random() * 2 - 1;
+                        for (let i = 0; i < K * K; i++)
+                            M[i] = Math.random() * 2 - 1;
                         for (let i = 0; i < n; i++) {
-                            xs[i] = Math.random() * W; ys[i] = Math.random() * H;
-                            vx[i] = 0; vy[i] = 0; ty[i] = (Math.random() * K) | 0;
+                            xs[i] = Math.random() * W;
+                            ys[i] = Math.random() * H;
+                            vx[i] = 0;
+                            vy[i] = 0;
+                            ty[i] = (Math.random() * K) | 0;
                         }
                     }
                     function step() {
-                        const rMax = 62 * DPR, rMaxSq = rMax * rMax, beta = 0.3;
-                        const force = 0.5, velR = 0.88, cap = rMax;
+                        const rMax = 62 * DPR,
+                            rMaxSq = rMax * rMax,
+                            beta = 0.3;
+                        const force = 0.5,
+                            velR = 0.88,
+                            cap = rMax;
                         for (let i = 0; i < n; i++) {
-                            let fx = 0, fy = 0;
-                            const ti = ty[i] * K, x = xs[i], y = ys[i];
+                            let fx = 0,
+                                fy = 0;
+                            const ti = ty[i] * K,
+                                x = xs[i],
+                                y = ys[i];
                             for (let j = 0; j < n; j++) {
                                 if (i === j) continue;
-                                const dx = xs[j] - x, dy = ys[j] - y;
+                                const dx = xs[j] - x,
+                                    dy = ys[j] - y;
                                 const d2 = dx * dx + dy * dy;
                                 if (d2 > 0 && d2 < rMaxSq) {
-                                    const r = Math.sqrt(d2), rn = r / rMax;
+                                    const r = Math.sqrt(d2),
+                                        rn = r / rMax;
                                     let f;
                                     if (rn < beta) f = rn / beta - 1;
-                                    else f = M[ti + ty[j]] * (1 - Math.abs(2 * rn - 1 - beta) / (1 - beta));
-                                    fx += (dx / r) * f; fy += (dy / r) * f;
+                                    else
+                                        f =
+                                            M[ti + ty[j]] *
+                                            (1 -
+                                                Math.abs(2 * rn - 1 - beta) /
+                                                    (1 - beta));
+                                    fx += (dx / r) * f;
+                                    fy += (dy / r) * f;
                                 }
                             }
                             let nvx = vx[i] * velR + fx * force;
                             let nvy = vy[i] * velR + fy * force;
                             const s = Math.hypot(nvx, nvy);
-                            if (s > cap) { nvx = (nvx / s) * cap; nvy = (nvy / s) * cap; }
-                            vx[i] = nvx; vy[i] = nvy;
+                            if (s > cap) {
+                                nvx = (nvx / s) * cap;
+                                nvy = (nvy / s) * cap;
+                            }
+                            vx[i] = nvx;
+                            vy[i] = nvy;
                         }
                         for (let i = 0; i < n; i++) {
-                            let nx = xs[i] + vx[i], ny = ys[i] + vy[i];
-                            if (nx < 0) { nx = 0; vx[i] *= -0.5; } else if (nx > W) { nx = W; vx[i] *= -0.5; }
-                            if (ny < 0) { ny = 0; vy[i] *= -0.5; } else if (ny > H) { ny = H; vy[i] *= -0.5; }
-                            xs[i] = nx; ys[i] = ny;
+                            let nx = xs[i] + vx[i],
+                                ny = ys[i] + vy[i];
+                            if (nx < 0) {
+                                nx = 0;
+                                vx[i] *= -0.5;
+                            } else if (nx > W) {
+                                nx = W;
+                                vx[i] *= -0.5;
+                            }
+                            if (ny < 0) {
+                                ny = 0;
+                                vy[i] *= -0.5;
+                            } else if (ny > H) {
+                                ny = H;
+                                vy[i] *= -0.5;
+                            }
+                            xs[i] = nx;
+                            ys[i] = ny;
                         }
-                        ctx.fillStyle = "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
+                        ctx.fillStyle =
+                            "rgb(" + bg[0] + "," + bg[1] + "," + bg[2] + ")";
                         ctx.fillRect(0, 0, W, H);
-                        const D = 3 * DPR, Dh = D / 2;
+                        const D = 3 * DPR,
+                            Dh = D / 2;
                         for (let i = 0; i < n; i++) {
                             ctx.fillStyle = scol[ty[i]];
                             ctx.fillRect(xs[i] - Dh, ys[i] - Dh, D, D);
                         }
                     }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
                     return {
                         start() {
                             if (!W) init();
-                            if (REDUCED) { for (let k = 0; k < 120; k++) step(); return; }
+                            if (REDUCED) {
+                                for (let k = 0; k < 120; k++) step();
+                                return;
+                            }
                             if (!raf) frame();
                         },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
                     };
                 }
 
@@ -761,19 +987,35 @@
                 function createSlime(canvas, stops) {
                     const ctx = canvas.getContext("2d");
                     const lut = buildLUT(stops);
-                    let gw = 0, gh = 0, field, nf, img, data, na = 0, ax, ay, aa, raf = 0;
+                    let gw = 0,
+                        gh = 0,
+                        field,
+                        nf,
+                        img,
+                        data,
+                        na = 0,
+                        ax,
+                        ay,
+                        aa,
+                        raf = 0;
                     function init() {
                         const g = fitGrid(canvas, 200);
-                        gw = g.gw; gh = g.gh;
+                        gw = g.gw;
+                        gh = g.gh;
                         field = new Float32Array(gw * gh);
                         nf = new Float32Array(gw * gh);
                         img = ctx.createImageData(gw, gh);
                         data = img.data;
                         na = Math.min(7000, Math.round(gw * gh * 0.28));
-                        ax = new Float32Array(na); ay = new Float32Array(na); aa = new Float32Array(na);
-                        const cx = gw / 2, cy = gh / 2, R = Math.min(gw, gh) * 0.42;
+                        ax = new Float32Array(na);
+                        ay = new Float32Array(na);
+                        aa = new Float32Array(na);
+                        const cx = gw / 2,
+                            cy = gh / 2,
+                            R = Math.min(gw, gh) * 0.42;
                         for (let i = 0; i < na; i++) {
-                            const rr = Math.sqrt(Math.random()) * R, th = Math.random() * TAU;
+                            const rr = Math.sqrt(Math.random()) * R,
+                                th = Math.random() * TAU;
                             ax[i] = cx + Math.cos(th) * rr;
                             ay[i] = cy + Math.sin(th) * rr;
                             aa[i] = th + Math.PI / 2;
@@ -787,53 +1029,87 @@
                         return field[iy * gw + ix];
                     }
                     function step() {
-                        const sa = 0.38, ta = 0.6, sd = 9, sp = 1.0, dep = 5;
+                        const sa = 0.38,
+                            ta = 0.6,
+                            sd = 9,
+                            sp = 1.0,
+                            dep = 5;
                         for (let i = 0; i < na; i++) {
-                            const x = ax[i], y = ay[i], a = aa[i];
+                            const x = ax[i],
+                                y = ay[i],
+                                a = aa[i];
                             const vc = sense(x, y, a, sd);
                             const vl = sense(x, y, a - sa, sd);
                             const vr = sense(x, y, a + sa, sd);
                             let na2 = a;
-                            if (vc > vl && vc > vr) {} else if (vc < vl && vc < vr)
+                            if (vc > vl && vc > vr) {
+                            } else if (vc < vl && vc < vr)
                                 na2 += (Math.random() < 0.5 ? -1 : 1) * ta;
                             else if (vr > vl) na2 += ta;
                             else if (vl > vr) na2 -= ta;
-                            let nx = x + Math.cos(na2) * sp, ny = y + Math.sin(na2) * sp;
+                            let nx = x + Math.cos(na2) * sp,
+                                ny = y + Math.sin(na2) * sp;
                             nx -= Math.floor(nx / gw) * gw;
                             ny -= Math.floor(ny / gh) * gh;
-                            ax[i] = nx; ay[i] = ny; aa[i] = na2;
+                            ax[i] = nx;
+                            ay[i] = ny;
+                            aa[i] = na2;
                             field[(ny | 0) * gw + (nx | 0)] += dep;
                         }
-                        const d = 0.18, dn = d / 8, dc = 1 - d, decay = 1 - 0.05;
+                        const d = 0.18,
+                            dn = d / 8,
+                            dc = 1 - d,
+                            decay = 1 - 0.05;
                         for (let y = 1; y < gh - 1; y++) {
                             const r = y * gw;
                             for (let x = 1; x < gw - 1; x++) {
                                 const i = r + x;
                                 const sum =
-                                    field[i - gw - 1] + field[i - gw] + field[i - gw + 1] +
-                                    field[i - 1] + field[i + 1] +
-                                    field[i + gw - 1] + field[i + gw] + field[i + gw + 1];
+                                    field[i - gw - 1] +
+                                    field[i - gw] +
+                                    field[i - gw + 1] +
+                                    field[i - 1] +
+                                    field[i + 1] +
+                                    field[i + gw - 1] +
+                                    field[i + gw] +
+                                    field[i + gw + 1];
                                 nf[i] = (field[i] * dc + sum * dn) * decay;
                             }
                         }
-                        const t = field; field = nf; nf = t;
+                        const t = field;
+                        field = nf;
+                        nf = t;
                         for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
                             let v = field[i] * 4;
                             let idx = v >= 255 ? 255 : v < 0 ? 0 : v | 0;
                             const q = idx * 3;
-                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
+                            data[p] = lut[q];
+                            data[p + 1] = lut[q + 1];
+                            data[p + 2] = lut[q + 2];
+                            data[p + 3] = 255;
                         }
                         ctx.putImageData(img, 0, 0);
                     }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
                     return {
                         start() {
                             if (!gw) init();
-                            if (REDUCED) { for (let k = 0; k < 120; k++) step(); return; }
+                            if (REDUCED) {
+                                for (let k = 0; k < 120; k++) step();
+                                return;
+                            }
                             if (!raf) frame();
                         },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
                     };
                 }
 
@@ -841,50 +1117,97 @@
                 function createRD(canvas, stops) {
                     const ctx = canvas.getContext("2d");
                     const lut = buildLUT(stops);
-                    let gw = 0, gh = 0, A, B, A2, B2, img, data, raf = 0;
+                    let gw = 0,
+                        gh = 0,
+                        A,
+                        B,
+                        A2,
+                        B2,
+                        img,
+                        data,
+                        raf = 0;
                     function splat(gx, gy, r) {
                         for (let dy = -r; dy <= r; dy++)
                             for (let dx = -r; dx <= r; dx++) {
                                 if (dx * dx + dy * dy > r * r) continue;
-                                let ix = gx + dx, iy = gy + dy;
-                                if (ix < 0 || ix >= gw || iy < 0 || iy >= gh) continue;
-                                const i = iy * gw + ix; B[i] = 1; A[i] = 0;
+                                let ix = gx + dx,
+                                    iy = gy + dy;
+                                if (ix < 0 || ix >= gw || iy < 0 || iy >= gh)
+                                    continue;
+                                const i = iy * gw + ix;
+                                B[i] = 1;
+                                A[i] = 0;
                             }
                     }
                     function init() {
                         const g = fitGrid(canvas, 156);
-                        gw = g.gw; gh = g.gh;
+                        gw = g.gw;
+                        gh = g.gh;
                         const c = gw * gh;
-                        A = new Float32Array(c); B = new Float32Array(c);
-                        A2 = new Float32Array(c); B2 = new Float32Array(c);
+                        A = new Float32Array(c);
+                        B = new Float32Array(c);
+                        A2 = new Float32Array(c);
+                        B2 = new Float32Array(c);
                         A.fill(1);
-                        img = ctx.createImageData(gw, gh); data = img.data;
+                        img = ctx.createImageData(gw, gh);
+                        data = img.data;
                         const seeds = 34;
                         for (let k = 0; k < seeds; k++)
-                            splat((Math.random() * gw) | 0, (Math.random() * gh) | 0, 2);
+                            splat(
+                                (Math.random() * gw) | 0,
+                                (Math.random() * gh) | 0,
+                                2,
+                            );
                     }
                     function stepOne() {
-                        const feed = 0.0545, kill = 0.062, dA = 1.0, dB = 0.5;
+                        const feed = 0.0545,
+                            kill = 0.062,
+                            dA = 1.0,
+                            dB = 0.5;
                         for (let y = 1; y < gh - 1; y++) {
                             const r = y * gw;
                             for (let x = 1; x < gw - 1; x++) {
                                 const i = r + x;
-                                const a = A[i], b = B[i];
+                                const a = A[i],
+                                    b = B[i];
                                 const lapA =
-                                    (A[i - 1] + A[i + 1] + A[i - gw] + A[i + gw]) * 0.2 +
-                                    (A[i - gw - 1] + A[i - gw + 1] + A[i + gw - 1] + A[i + gw + 1]) * 0.05 - a;
+                                    (A[i - 1] +
+                                        A[i + 1] +
+                                        A[i - gw] +
+                                        A[i + gw]) *
+                                        0.2 +
+                                    (A[i - gw - 1] +
+                                        A[i - gw + 1] +
+                                        A[i + gw - 1] +
+                                        A[i + gw + 1]) *
+                                        0.05 -
+                                    a;
                                 const lapB =
-                                    (B[i - 1] + B[i + 1] + B[i - gw] + B[i + gw]) * 0.2 +
-                                    (B[i - gw - 1] + B[i - gw + 1] + B[i + gw - 1] + B[i + gw + 1]) * 0.05 - b;
+                                    (B[i - 1] +
+                                        B[i + 1] +
+                                        B[i - gw] +
+                                        B[i + gw]) *
+                                        0.2 +
+                                    (B[i - gw - 1] +
+                                        B[i - gw + 1] +
+                                        B[i + gw - 1] +
+                                        B[i + gw + 1]) *
+                                        0.05 -
+                                    b;
                                 const abb = a * b * b;
                                 let na = a + (dA * lapA - abb + feed * (1 - a));
-                                let nb = b + (dB * lapB + abb - (kill + feed) * b);
+                                let nb =
+                                    b + (dB * lapB + abb - (kill + feed) * b);
                                 A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
                                 B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
                             }
                         }
-                        let t = A; A = A2; A2 = t;
-                        t = B; B = B2; B2 = t;
+                        let t = A;
+                        A = A2;
+                        A2 = t;
+                        t = B;
+                        B = B2;
+                        B2 = t;
                     }
                     function step() {
                         for (let s = 0; s < 6; s++) stepOne();
@@ -892,19 +1215,33 @@
                             let idx = (B[i] * 560) | 0;
                             if (idx > 255) idx = 255;
                             const q = idx * 3;
-                            data[p] = lut[q]; data[p + 1] = lut[q + 1]; data[p + 2] = lut[q + 2]; data[p + 3] = 255;
+                            data[p] = lut[q];
+                            data[p + 1] = lut[q + 1];
+                            data[p + 2] = lut[q + 2];
+                            data[p + 3] = 255;
                         }
                         ctx.putImageData(img, 0, 0);
                     }
-                    function frame() { step(); raf = requestAnimationFrame(frame); }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
                     return {
                         start() {
                             if (!gw) init();
-                            if (REDUCED) { for (let k = 0; k < 60; k++) step(); return; }
+                            if (REDUCED) {
+                                for (let k = 0; k < 60; k++) step();
+                                return;
+                            }
                             if (!raf) frame();
                         },
-                        stop() { cancelAnimationFrame(raf); raf = 0; },
-                        resize() { init(); },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
                     };
                 }
 
@@ -1024,7 +1361,10 @@
                 function buildHero(slot, appIdx) {
                     if (heroEngine[slot]) heroEngine[slot].stop();
                     const app = APPS[appIdx];
-                    heroEngine[slot] = app.make(heroCanvas[slot], PALS[app.pal]);
+                    heroEngine[slot] = app.make(
+                        heroCanvas[slot],
+                        PALS[app.pal],
+                    );
                     return heroEngine[slot];
                 }
                 function cycleHero() {
@@ -1036,12 +1376,16 @@
                     heroCanvas[old].classList.remove("show");
                     heroVisible = slot;
                     // Drop the outgoing engine once the crossfade has finished.
-                    setTimeout(() => heroEngine[old] && heroEngine[old].stop(), 1200);
+                    setTimeout(
+                        () => heroEngine[old] && heroEngine[old].stop(),
+                        1200,
+                    );
                 }
                 function startHero() {
                     if (heroActive) return;
                     heroActive = true;
-                    if (!heroEngine[heroVisible]) buildHero(heroVisible, heroIdx);
+                    if (!heroEngine[heroVisible])
+                        buildHero(heroVisible, heroIdx);
                     heroCanvas[heroVisible].classList.add("show");
                     heroEngine[heroVisible].start();
                     if (!REDUCED) heroTimer = setInterval(cycleHero, 6000);
@@ -1062,14 +1406,20 @@
                     (entries) => {
                         entries.forEach((e) => {
                             if (e.target === heroEl) {
-                                if (e.isIntersecting && e.intersectionRatio > 0.2)
+                                if (
+                                    e.isIntersecting &&
+                                    e.intersectionRatio > 0.2
+                                )
                                     startHero();
                                 else stopHero();
                                 return;
                             }
                             const prev = e.target.__prev;
                             const content = e.target.querySelector(".content");
-                            if (e.isIntersecting && e.intersectionRatio > 0.35) {
+                            if (
+                                e.isIntersecting &&
+                                e.intersectionRatio > 0.35
+                            ) {
                                 if (prev) prev.start();
                                 if (content) content.classList.add("in");
                             } else if (prev) {
@@ -1080,7 +1430,9 @@
                     { threshold: [0, 0.2, 0.35, 0.7] },
                 );
                 io.observe(heroEl);
-                document.querySelectorAll(".world").forEach((s) => io.observe(s));
+                document
+                    .querySelectorAll(".world")
+                    .forEach((s) => io.observe(s));
 
                 // Hero is on screen at load — kick it off immediately.
                 startHero();
