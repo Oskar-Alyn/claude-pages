@@ -21,11 +21,11 @@
     const state = {
         params: {
             count: 1500,
-            speed: 1.6,
-            noiseScale: 0.006,
-            evolve: 0.012,
+            speed: 1.5,
+            noiseScale: 0.009,
+            evolve: 0.01,
             inertia: 0.82,
-            trail: 0.85,
+            trail: 0.89,
             lifespan: 220,
         },
         pattern: {
@@ -34,7 +34,7 @@
         },
         palette: {
             mode: "preset", // 'preset' | 'custom'
-            name: "Cyber",
+            name: "Iris",
             custom: { hue: 130, accentHue: 60, saturation: 85 },
         },
         settings: {

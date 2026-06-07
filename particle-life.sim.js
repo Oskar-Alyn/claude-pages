@@ -21,8 +21,8 @@
     const state = {
         params: {
             count: 1200,
-            types: 5,
-            rMax: 80,
+            types: 4,
+            rMax: 62,
             force: 0.5,
             friction: 0.12,
             beta: 0.3,
@@ -39,7 +39,7 @@
         },
         palette: {
             mode: "preset", // 'preset' | 'custom'
-            name: "Iris",
+            name: "Twilight",
             custom: { hue: 130, accentHue: 60, saturation: 85 },
         },
         settings: {

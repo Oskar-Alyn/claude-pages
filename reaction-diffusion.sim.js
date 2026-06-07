@@ -26,7 +26,7 @@
     // ------------------------------------------------------------------
     const state = {
         params: {
-            feed: 0.055,
+            feed: 0.0545,
             kill: 0.062,
             dA: 1.0,
             dB: 0.5,
@@ -37,7 +37,7 @@
         },
         palette: {
             mode: "preset",
-            name: "Inferno",
+            name: "Acid",
             custom: { hue: 130, accentHue: 60, saturation: 85 },
         },
         settings: {

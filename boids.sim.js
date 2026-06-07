@@ -31,12 +31,12 @@
     const state = {
         params: {
             count: 250,
-            vision: 65,
-            sepDist: 22,
-            sep: 0.06,
+            vision: 46,
+            sepDist: 17,
+            sep: 0.05,
             align: 0.06,
-            coh: 0.006,
-            speed: 3.2,
+            coh: 0.0008,
+            speed: 2.6,
             edge: 0.6,
         },
         pattern: {
@@ -47,7 +47,7 @@
         },
         palette: {
             mode: "preset", // 'preset' | 'custom'
-            name: "Inferno",
+            name: "Cyber",
             custom: { hue: 130, accentHue: 60, saturation: 85 },
         },
         settings: {
