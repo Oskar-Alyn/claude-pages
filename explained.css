@@ -1,15 +1,14 @@
 /* ============================================================
    Shared styles for the "How it works" explainer pages.
 
-   Each page supplies its own theme via a small inline <style>
-   that defines these custom properties on :root:
+   Theme tokens come from tokens.css via data-world on <html>:
 
-     --accent, --accent-deep, --accent-rgb   (rgb triplet, e.g. 90, 240, 216)
+     --accent, --accent-rgb   (monochrome white, shared site-wide)
      --ink, --muted, --faint, --hi
      --line, --card
-     --bg, --bg-rgb                          (bg as hex + as rgb triplet)
-     --nav-bg                                 (translucent nav background)
-     --cell-bg                                (demo canvas background)
+     --bg, --bg-rgb           (bg as hex + as rgb triplet, per world)
+     --nav-bg                 (translucent nav background)
+     --cell-bg                (demo canvas background)
 
    Page-unique components (matrices, chips, maps, …) stay in the
    page's inline <style> after the link to this file.

@@ -2,23 +2,8 @@
    every sim links before this file. data-world on <html> tints the bg/ink per
    world. Only sim-specific tokens live here. */
 :root {
-    --accent-2: #fff;
     --danger: #ff6e5e;
     --fab-size: 50px;
-}
-
-/* Sim chrome always reads in the master teal, regardless of which world the
-   page is. tokens.css's per-world [data-world] blocks retint the accent for
-   the home cards and the explainer pages (where the world's "special" color
-   belongs), but the sims themselves — buttons, sliders, toggles, the brand
-   glyph, focus rings — stay on one shared accent so the controls read as one
-   product. The higher-specificity html[data-world] selector overrides the
-   per-world accent here; bg/ink/cell tints are left alone on purpose. This
-   only loads on sim pages, so explainers keep their world accent. */
-html[data-world] {
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
 }
 
 html,
@@ -638,7 +623,7 @@ body.ui-hidden .modal {
 }
 
 .ctrl-val {
-    color: var(--accent-2);
+    color: var(--accent);
     font-variant-numeric: tabular-nums;
     font-family: var(--font-mono);
     font-size: 11.5px;

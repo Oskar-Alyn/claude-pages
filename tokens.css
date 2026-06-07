@@ -9,13 +9,16 @@
      • the shared font stack
      • the glass system (was sim-only; now shared so content buttons can match)
      • a shared radius + motion language
-     • the DEFAULT accent (master teal), used by the home hero/footer & feed
+     • the accent — a single monochrome white, shared by every surface
 
-   Per-world identity (option 10-B) lives in the [data-world="…"] blocks at the
-   bottom: set data-world on <html> (a whole sim or explainer) or on any element
-   (a single gallery card) and every accent/bg token retargets to that world.
-   Because the accents live in exactly one place, the sim chrome, the explainer,
-   and the home card for a given world can no longer drift apart.
+   The chrome is deliberately uncolored; the color lives in the simulations
+   themselves (their particle/cell palettes), for high contrast between a
+   minimal UI and big colorful worlds.
+
+   Per-world identity lives in the [data-world="…"] blocks at the bottom: set
+   data-world on <html> (a whole sim or explainer) or on any element (a single
+   gallery card) to retarget the bg/ink tints for that world. The accent stays
+   white across all of them, so it is defined once on :root.
 
    Cross-document view transitions (option 9) are opted-in here, so navigating
    between any two of these pages crossfades instead of hard-cutting.
@@ -59,9 +62,11 @@
     --radius-pill: 980px;
     --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-    /* ---- Default accent (master teal) — overridden per world below ---- */
+    /* ---- Accent — monochrome white site-wide. The chrome (buttons, sliders,
+       focus rings, card edges) stays minimal and uncolored so it reads as one
+       product against the big colorful simulations. Single knob: every surface
+       reads --accent / --accent-rgb, so reintroducing color is one edit here. */
     --accent: #fff;
-    --accent-deep: #fff;
     --accent-rgb: 255, 255, 255;
 }
 
@@ -94,9 +99,6 @@ svg.mark {
    ============================================================================ */
 
 [data-world="slime-mold"] {
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
     --ink: #fbf4ee;
     --muted: rgba(251, 244, 238, 0.86);
     --faint: rgba(251, 244, 238, 0.45);
@@ -108,9 +110,6 @@ svg.mark {
 }
 
 [data-world="boids"] {
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
     --ink: #f5f8fc;
     --muted: rgba(245, 248, 252, 0.86);
     --faint: rgba(245, 248, 252, 0.45);
@@ -122,9 +121,6 @@ svg.mark {
 }
 
 [data-world="particle-life"] {
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
     --ink: #f7f3fa;
     --muted: rgba(247, 243, 250, 0.86);
     --faint: rgba(247, 243, 250, 0.45);
@@ -136,9 +132,6 @@ svg.mark {
 }
 
 [data-world="flow-field"] {
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
     --ink: #f6f2fc;
     --muted: rgba(246, 242, 252, 0.86);
     --faint: rgba(246, 242, 252, 0.45);
@@ -150,11 +143,6 @@ svg.mark {
 }
 
 [data-world="reaction-diffusion"] {
-    /* Acid-green identity, drawn from the home demo's Acid palette
-       (#1a8a3c / #7af066) so the world reads green, not another orange. */
-    --accent: #fff;
-    --accent-deep: #fff;
-    --accent-rgb: 255, 255, 255;
     --ink: #f3faee;
     --muted: rgba(243, 250, 238, 0.86);
     --faint: rgba(243, 250, 238, 0.45);

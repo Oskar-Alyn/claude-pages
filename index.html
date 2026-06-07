@@ -34,7 +34,8 @@
 
         <style>
             /* Tokens (accent, ink, muted, glass, fonts) come from tokens.css.
-               Gallery cards set data-world to retint their accent per world. */
+               Gallery cards set data-world to retint their bg/ink per world;
+               the accent stays monochrome white across all of them. */
             html {
                 scroll-padding-top: 52px;
                 scroll-behavior: smooth;
@@ -1317,8 +1318,9 @@
                     const card = document.createElement("article");
                     card.className = "world";
                     card.id = app.id;
-                    // Retint this card's accent to its world (option 10-B); the
-                    // world id is the sim's filename (e.g. "slime-mold").
+                    // Tag this card with its world so its bg/ink tints match
+                    // the sim; the world id is the sim's filename (e.g.
+                    // "slime-mold"). The accent stays white across all worlds.
                     card.dataset.world = app.file.replace(".html", "");
                     card.innerHTML = `
                         <canvas class="bg"></canvas>
