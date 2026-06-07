@@ -376,11 +376,11 @@
     }
 
     function onNext() {
-        if (!nextItem) return;
+        if (stopped || !nextItem) return;
         goTo(nextItem, true);
     }
     function onBack() {
-        if (!history.length) return;
+        if (stopped || !history.length) return;
         goTo(history.pop(), false);
     }
     function onResetTaste() {
@@ -395,6 +395,10 @@
         commitDwell(current);
         stopped = true;
         destroyWarm(); // the visible frame is never touched — it keeps running
+        // Discard any in-flight cross-sim load too: otherwise its later `ready`
+        // would hardCut over the world we just took control of and restart dwell.
+        if (pendingReveal && pendingReveal.iframe) pendingReveal.iframe.remove();
+        pendingReveal = null;
         document.body.classList.add("taken");
         current.iframe.contentWindow.postMessage({ type: "takeControl" }, "*");
     }
