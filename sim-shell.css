@@ -386,6 +386,9 @@ body.ui-hidden .modal {
     backdrop-filter: blur(40px) saturate(180%);
     border: 1px solid var(--glass-border-strong);
     color: var(--ink);
+    /* Clip the scrolling .modal-body to the rounded corners; without this the
+       square scroll container's scrollbar runs straight into the radius. */
+    overflow: hidden;
     z-index: 110;
     opacity: 0;
     pointer-events: none;
@@ -460,6 +463,11 @@ body.ui-hidden .modal {
 }
 .modal-body::-webkit-scrollbar {
     width: 6px;
+}
+/* Inset the track past the modal's corner radius so the thumb stays on the
+   straight part of the edge instead of being clipped by the rounded corner. */
+.modal-body::-webkit-scrollbar-track {
+    margin: 20px 0;
 }
 .modal-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.12);
