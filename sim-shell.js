@@ -130,11 +130,23 @@
  *                        store. The sim rescales its own world-space buffers.
  *                        `rescale` is true here. NOT called for the first layout
  *                        — the sim reads the size in init() and seeds there.
+ *   sim.worldScale       OPTIONAL, default true. When true the shell runs the
+ *                        sim in a fixed virtual world (REF_AREA) and zooms it to
+ *                        fit the viewport, so a fixed crowd keeps constant
+ *                        density and glyphs/radii scale with screen size — the
+ *                        sim just reads getCanvasSize() and draws in pixels.
+ *                        Field sims that already stretch a grid to fill the
+ *                        screen set this false to get the raw viewport size.
  *
  * The `ctx` the shell hands sim.init(ctx):
  *
  *   ctx.canvas          The <canvas id="canvas"> element.
- *   ctx.getCanvasSize() -> { W, H, dpr } current logical size + device ratio.
+ *   ctx.getCanvasSize() -> { W, H, dpr } the world size the sim draws in plus
+ *                          the transform scale to use (setTransform(dpr,...)).
+ *                          With world scaling on (the default) W/H are the
+ *                          virtual world size and dpr folds in the world scale;
+ *                          with worldScale:false they are the raw CSS viewport
+ *                          size and the real device pixel ratio.
  *   ctx.isPlaying()     -> the shell's current play state (the same `playing`
  *                          the rAF loop uses). For sims that need play state for
  *                          RENDERING or INTERACTION — e.g. RD paints the brush
@@ -707,16 +719,42 @@ const SimShell = (() => {
             dpr = 1;
         let booted = false; // gate the sim.resize callback until after init()
         const ctx2d = canvas.getContext("2d");
+        // World scaling: agent sims (boids, particle swarms) work in pixel-space
+        // world coords with absolute sensing radii and glyph sizes, so on a
+        // small screen the same crowd packs into far less area and reads as
+        // crowded. Rather than have each sim correct for screen size, the shell
+        // runs those sims in a fixed virtual world (REF_AREA) and zooms the
+        // whole picture to fit: it reports a virtual W/H (= real size / scale)
+        // and folds `scale` into the dpr the sim draws with. A fixed crowd then
+        // keeps a constant density across screens, and glyphs/sensing radii
+        // scale with the viewport. Field sims (slime-mold, reaction-diffusion)
+        // already render a grid stretched to fill the screen, so they opt out
+        // with `worldScale: false` and get the raw viewport size as before.
+        const REF_AREA = 1440 * 900;
+        const scaled = sim.worldScale !== false;
         function resizeCanvas(rescale) {
-            const newW = window.innerWidth;
-            const newH = window.innerHeight;
-            dpr = Math.min(window.devicePixelRatio || 1, 2);
-            W = newW;
-            H = newH;
-            canvas.width = Math.round(W * dpr);
-            canvas.height = Math.round(H * dpr);
-            canvas.style.width = W + "px";
-            canvas.style.height = H + "px";
+            const cssW = window.innerWidth;
+            const cssH = window.innerHeight;
+            const realDpr = Math.min(window.devicePixelRatio || 1, 2);
+            // One uniform world-scale keyed to viewport area, clamped so the
+            // crowd never turns microscopic on tiny phones or oversized on 4K.
+            let scale = 1;
+            if (scaled) {
+                scale = Math.sqrt((cssW * cssH) / REF_AREA);
+                if (scale < 0.5) scale = 0.5;
+                else if (scale > 1.5) scale = 1.5;
+            }
+            // Virtual size the sim works in, and the effective transform scale
+            // it draws with (real device ratio × world scale).
+            W = cssW / scale;
+            H = cssH / scale;
+            dpr = realDpr * scale;
+            // Backing store stays at full device resolution; the element fills
+            // the viewport in CSS pixels.
+            canvas.width = Math.round(cssW * realDpr);
+            canvas.height = Math.round(cssH * realDpr);
+            canvas.style.width = cssW + "px";
+            canvas.style.height = cssH + "px";
             ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
             // On first layout the sim hasn't initialized its buffers yet — it
             // reads the size in init() and seeds there. Only forward genuine

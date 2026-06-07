@@ -697,6 +697,10 @@
         id: "slime-mold",
         state,
         defaultState,
+        // Field sim: the grid is sized to the viewport aspect and stretched to
+        // fill the screen, so it already scales cleanly. Opt out of the shell's
+        // world scaling and work in raw viewport pixels.
+        worldScale: false,
         // id matches the page's filename stem, like every other sim — so the
         // shell's default storage keys (`slime-mold-state` / `slime-mold-windows`)
         // and recording filename (`slime-mold-<ts>.webm`) all follow the same

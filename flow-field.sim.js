@@ -213,10 +213,9 @@
     );
 
     const MAX_PARTICLES = 4000;
-    // Particle count is a *density* target defined for a reference-size screen;
-    // the live count scales with the actual viewport area so phones run
-    // proportionally fewer particles.
-    const REF_AREA = 1440 * 900;
+    // The shell runs this sim in a fixed virtual world and zooms it to fit
+    // (sim.worldScale, default on), so a fixed crowd already keeps a constant
+    // density across screens — the count is a plain particle count again.
     const MIN_ACTIVE = 60;
     let activeCount = 0;
 
@@ -435,11 +434,11 @@
         for (let i = 0; i < activeCount; i++) spawnParticle(i);
     }
 
-    // Live particle target: base density count, scaled by viewport area vs the
-    // reference screen, times the settings multiplier — clamped to the buffer.
+    // Live particle target: the base count times the Quality multiplier,
+    // clamped to the buffer. Density across screens is handled by the shell's
+    // world scaling, not here.
     function targetCount() {
-        const areaScale = (W * H) / REF_AREA;
-        let n = Math.round(state.params.count * areaScale * qualityScalar());
+        let n = Math.round(state.params.count * qualityScalar());
         if (n > MAX_PARTICLES) n = MAX_PARTICLES;
         if (n < MIN_ACTIVE) n = MIN_ACTIVE;
         return n;

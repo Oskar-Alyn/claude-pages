@@ -541,6 +541,10 @@
         id: "reaction-diffusion",
         state,
         defaultState,
+        // Field sim: the grid is sized to the viewport aspect and stretched to
+        // fill the screen, so it already scales cleanly. Opt out of the shell's
+        // world scaling and work in raw viewport pixels.
+        worldScale: false,
         // Preserve RD's legacy storage keys so existing saved state loads.
         config: {
             keys: { ls: "rd-state", win: "rd-windows" },
