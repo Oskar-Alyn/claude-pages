@@ -373,6 +373,14 @@ body.ui-hidden .modal {
     display: none !important;
 }
 
+/* ---------- Explore mode (embedded in the feed host) ---------- */
+/* The host owns all stream chrome; in explore the iframe shows only the bare
+   canvas. The full world chrome is built but hidden until "take control". */
+body.mode-explore .fab-toolbar,
+body.mode-explore .settings-menu {
+    display: none !important;
+}
+
 /* ---------- Backdrop ---------- */
 .backdrop {
     position: fixed;

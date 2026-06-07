@@ -595,6 +595,13 @@ const SimShell = (() => {
         const _q = new URLSearchParams(location.search);
         const FEED = _q.has("feed");
         const BOOT_PAUSED = _q.has("paused");
+        // Runtime chrome mode. Embedded feed iframes start lean-back (explore,
+        // no world chrome); a direct/standalone sim is always studio.
+        let mode = FEED ? "explore" : "studio";
+        function applyMode() {
+            document.body.classList.toggle("mode-explore", mode === "explore");
+            document.body.classList.toggle("mode-studio", mode === "studio");
+        }
 
         // ---- inject chrome DOM --------------------------------------
         document.body.insertAdjacentHTML("beforeend", CHROME_HTML);
@@ -1629,6 +1636,16 @@ const SimShell = (() => {
                         playing = false;
                         updatePauseButton();
                     }
+                } else if (d.type === "takeControl") {
+                    mode = "studio";
+                    applyMode();
+                } else if (d.type === "returnToExplore") {
+                    mode = "explore";
+                    applyMode();
+                    parent.postMessage(
+                        { type: "recipe", recipe: stateWithoutGlobal() },
+                        "*",
+                    );
                 }
             });
         }
@@ -1943,6 +1960,7 @@ const SimShell = (() => {
         syncPatternControls();
         syncSettings();
         if (FEED && BOOT_PAUSED) playing = false;
+        applyMode();
         updatePauseButton();
         updateSpeedLabel();
 
