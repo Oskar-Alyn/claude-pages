@@ -1814,6 +1814,9 @@ const SimShell = (() => {
         document.addEventListener("keydown", (e) => {
             if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
                 return;
+            // Chrome shortcuts are studio-only. In explore the world is bare and
+            // these would fire over chrome that isn't shown.
+            if (mode !== "studio") return;
             if (e.key === "Escape") {
                 closeAllModals();
                 closeDropdown();
