@@ -388,31 +388,24 @@ body.mode-explore .settings-menu {
     }
 }
 
-/* Mobile: bottom sheet */
+/* Mobile: modeless tray, anchored above the launcher bar so the world stays
+   visible and pokeable. Same .modal DOM, re-presented — no second render
+   target. (36px clears the .fab-toolbar's 20px bottom inset plus a 16px gap.) */
 @media (max-width: 719px) {
-    .modal {
-        bottom: 0;
-        left: 0;
-        right: 0;
-        max-height: 85vh;
-        border-radius: 22px 22px 0 0;
-        transform: translateY(24px);
-    }
-    .modal.open {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-    /* Modeless tray: anchored above the launcher bar, world stays pokeable.
-       Same .modal DOM, re-presented — no second render target. */
     .modal {
         bottom: calc(
             var(--fab-size) + 36px + env(safe-area-inset-bottom, 0px)
         );
         left: 12px;
         right: 12px;
-        border-radius: 18px;
         max-height: 60vh;
+        border-radius: 18px;
+        transform: translateY(24px); /* slide-in start */
+    }
+    .modal.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
     }
     /* Modeless: the backdrop never dims or captures the pointer on mobile, so
        taps fall through to the world. Collapse is explicit (re-tap a launcher
