@@ -322,45 +322,35 @@ const SimShell = (() => {
         </a>
 
         <div class="settings-menu" id="settings-menu">
-            <button class="fab" id="settings-trigger" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+            <button class="fab launcher" id="launch-color" data-modal="color" title="Color" aria-label="Color">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z" />
+                    <circle cx="8" cy="11" r="1" fill="currentColor" />
+                    <circle cx="11" cy="7" r="1" fill="currentColor" />
+                    <circle cx="15" cy="7" r="1" fill="currentColor" />
+                    <circle cx="17" cy="11" r="1" fill="currentColor" />
+                </svg>
+            </button>
+            <button class="fab launcher" id="launch-pattern" data-modal="pattern" title="Shape" aria-label="Shape">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                    <rect x="4" y="4" width="11" height="11" rx="1.5" />
+                    <circle cx="15" cy="15" r="5.5" />
+                </svg>
+            </button>
+            <button class="fab launcher" id="launch-params" data-modal="params" title="Parameters" aria-label="Parameters">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+                    <circle cx="9" cy="6" r="2.5" fill="rgba(20,25,35,0.95)" />
+                    <circle cx="16" cy="12" r="2.5" fill="rgba(20,25,35,0.95)" />
+                    <circle cx="7" cy="18" r="2.5" fill="rgba(20,25,35,0.95)" />
+                </svg>
+            </button>
+            <button class="fab" id="settings-trigger" data-modal="settings" title="Settings" aria-label="Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
             </button>
-            <div class="menu-dropdown" id="menu-dropdown" role="menu">
-                <button class="dropdown-item" data-modal="color" role="menuitem" title="Color" aria-label="Color">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z" />
-                        <circle cx="8" cy="11" r="1" fill="currentColor" />
-                        <circle cx="11" cy="7" r="1" fill="currentColor" />
-                        <circle cx="15" cy="7" r="1" fill="currentColor" />
-                        <circle cx="17" cy="11" r="1" fill="currentColor" />
-                    </svg>
-                </button>
-                <button class="dropdown-item" data-modal="pattern" role="menuitem" title="Shape" aria-label="Shape">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-                        <rect x="4" y="4" width="11" height="11" rx="1.5" />
-                        <circle cx="15" cy="15" r="5.5" />
-                    </svg>
-                </button>
-                <button class="dropdown-item" data-modal="params" role="menuitem" title="Parameters" aria-label="Parameters">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                        <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-                        <circle cx="9" cy="6" r="2.5" fill="rgba(20,25,35,0.95)" />
-                        <circle cx="16" cy="12" r="2.5" fill="rgba(20,25,35,0.95)" />
-                        <circle cx="7" cy="18" r="2.5" fill="rgba(20,25,35,0.95)" />
-                    </svg>
-                </button>
-                <button class="dropdown-item" data-modal="settings" role="menuitem" title="Settings" aria-label="Settings">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="5" width="18" height="6" rx="3" />
-                        <circle cx="8" cy="8" r="1.7" fill="currentColor" stroke="none" />
-                        <rect x="3" y="13" width="18" height="6" rx="3" />
-                        <circle cx="16" cy="16" r="1.7" fill="currentColor" stroke="none" />
-                    </svg>
-                </button>
-            </div>
         </div>
 
         <div id="rec-indicator" class="rec-indicator hidden">
@@ -802,13 +792,15 @@ const SimShell = (() => {
         }
 
         function refreshDropdownActive() {
-            document.querySelectorAll(".dropdown-item").forEach((f) => {
-                const m = byId("modal-" + f.dataset.modal);
-                f.classList.toggle(
-                    "active",
-                    !!(m && m.classList.contains("open")),
-                );
-            });
+            document.querySelectorAll(".launcher, #settings-trigger").forEach(
+                (f) => {
+                    const m = byId("modal-" + f.dataset.modal);
+                    f.classList.toggle(
+                        "active",
+                        !!(m && m.classList.contains("open")),
+                    );
+                },
+            );
         }
 
         function openModal(id) {
@@ -1776,37 +1768,11 @@ const SimShell = (() => {
         }
         byId("fab-hide").addEventListener("click", toggleUI);
 
-        // ============================================================
-        // DROPDOWN MENU
-        // ============================================================
-        const settingsMenu = byId("settings-menu");
-        const settingsTrigger = byId("settings-trigger");
-        const menuDropdown = byId("menu-dropdown");
-        let dropdownOpen = false;
-        function openDropdown() {
-            if (dropdownOpen) return;
-            if (!floating()) closeAllModals();
-            dropdownOpen = true;
-            menuDropdown.classList.add("open");
-            settingsTrigger.classList.add("open");
-            settingsTrigger.setAttribute("aria-expanded", "true");
-        }
-        function closeDropdown() {
-            if (!dropdownOpen) return;
-            dropdownOpen = false;
-            menuDropdown.classList.remove("open");
-            settingsTrigger.classList.remove("open");
-            settingsTrigger.setAttribute("aria-expanded", "false");
-        }
-        settingsTrigger.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (dropdownOpen) closeDropdown();
-            else openDropdown();
-        });
-        document.addEventListener("click", (e) => {
-            if (dropdownOpen && !settingsMenu.contains(e.target))
-                closeDropdown();
-        });
+        // DROPDOWN MENU — removed. Color/Shape/Parameters are now direct
+        // launchers and Settings opens via the gear (all use [data-modal]
+        // wiring below). closeDropdown() is kept as a no-op so existing callers
+        // (openModal, the keyboard handler) need no changes.
+        function closeDropdown() {}
 
         // ============================================================
         // KEYBOARD SHORTCUTS
