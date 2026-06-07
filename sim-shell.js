@@ -1526,22 +1526,7 @@ const SimShell = (() => {
             );
         }
 
-        // ---- feed: Back FAB (styled identically; reuses .fab) ---------
-        if (FEED) {
-            const back = document.createElement("button");
-            back.className = "fab";
-            back.id = "fab-back";
-            back.title = "Back";
-            back.setAttribute("aria-label", "Back");
-            back.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                </svg>`;
-            byId("fab-toolbar").insertBefore(back, byId("fab-randomize"));
-            back.addEventListener("click", () => {
-                parent.postMessage({ type: "back" }, "*");
-            });
-        }
+        // Back/Next are host-owned in the feed now; the iframe has no Back FAB.
 
         // ---- randomize -----------------------------------------------
         const fabRandomize = byId("fab-randomize");
@@ -1549,13 +1534,6 @@ const SimShell = (() => {
             fabRandomize.classList.remove("spin");
             void fabRandomize.offsetWidth;
             fabRandomize.classList.add("spin");
-
-            // Feed mode: randomize forwards intent to the host, which owns the
-            // draw. The local randomize path below is skipped entirely.
-            if (FEED) {
-                parent.postMessage({ type: "next" }, "*");
-                return;
-            }
 
             sim.randomize();
             applyParamsToSliders();
