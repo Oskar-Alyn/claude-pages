@@ -13,8 +13,9 @@
  * modals.params ranges in its `ready` message, so the host never hand-maintains
  * per-sim ranges and they can't drift from the sims.
  *
- * Learning is passive (dwell + fast-skip), measured here; the sims carry no
- * telemetry code. The profile is per-(sim, param-bucket) in localStorage. A
+ * Learning is passive (dwell, normalized to each viewer's own scroll pace),
+ * measured here; the sims carry no telemetry code. The profile is per-(sim,
+ * param-bucket) in localStorage. A
  * single "Taste influence" slider (in each sim's Settings, read here) linearly
  * blends the learned draw toward uniform random.
  *
@@ -27,7 +28,8 @@
     const TUNING = {
         HISTORY_CAP: 20, // back-stack depth
         DWELL_CAP_MS: 30000, // dwell saturates here
-        FAST_SKIP_MS: 1500, // below this = negative signal
+        DWELL_PRIOR_MS: 4000, // cold-start guess for a viewer's average dwell
+        DWELL_AVG_DECAY: 0.95, // EMA decay for the per-viewer average dwell
         BUCKETS_PER_PARAM: 4, // taste granularity per param axis
         DEFAULT_INFLUENCE: 0.5, // Taste Influence slider default (0..1)
         DECAY: 0.9, // EMA decay applied to a score before adding reward
@@ -65,7 +67,9 @@
     // TASTE PROFILE (passive learning, persisted to localStorage)
     // ====================================================================
     function freshTaste() {
-        return { sims: {}, params: {} }; // params keyed "sim|param" -> bucket array
+        // params keyed "sim|param" -> bucket array; dwellAvg is the running
+        // average dwell used to normalize reward to this viewer's pace.
+        return { sims: {}, params: {}, dwellAvg: TUNING.DWELL_PRIOR_MS };
     }
     function loadTaste() {
         try {
@@ -108,18 +112,25 @@
         return Math.max(0, Math.min(TUNING.BUCKETS_PER_PARAM - 1, b));
     }
 
-    // Reward in [-1, 1]: fast-skip is -1; otherwise 0 at the skip threshold
-    // rising to +1 at the dwell cap. Scores are an EMA: score = score*DECAY + r.
-    function rewardFor(ms) {
-        if (ms < TUNING.FAST_SKIP_MS) return -1;
-        return (
-            (Math.min(ms, TUNING.DWELL_CAP_MS) - TUNING.FAST_SKIP_MS) /
-            (TUNING.DWELL_CAP_MS - TUNING.FAST_SKIP_MS)
-        );
+    // Reward in [-1, 1], normalized to the viewer's own pace: an item watched
+    // for the running-average dwell scores 0; an instant skip (dwell -> 0)
+    // scores -1; anything at or above 2x the average saturates at +1. Relative
+    // framing means fast and slow scrollers both yield a balanced signal
+    // instead of being judged against one absolute threshold. Scores are an
+    // EMA: score = score*DECAY + r.
+    function rewardFor(ms, mean) {
+        const m = Math.max(mean, 1); // guard divide-by-zero
+        return Math.max(-1, Math.min(1, (ms - m) / m));
     }
     function commitDwell(item) {
         if (!item) return;
-        const r = rewardFor(dwellMs());
+        const ms = dwellMs();
+        const mean = taste.dwellAvg || TUNING.DWELL_PRIOR_MS;
+        const r = rewardFor(ms, mean);
+        // Fold this dwell into the running average AFTER scoring against it, so
+        // the item is judged against prior habit, not partly against itself.
+        taste.dwellAvg =
+            mean * TUNING.DWELL_AVG_DECAY + ms * (1 - TUNING.DWELL_AVG_DECAY);
         taste.sims[item.sim] = (taste.sims[item.sim] || 0) * TUNING.DECAY + r;
         const man = manifests[item.sim] && manifests[item.sim].manifest;
         if (item.recipe && item.recipe.params && man) {
