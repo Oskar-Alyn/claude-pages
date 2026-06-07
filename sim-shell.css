@@ -403,6 +403,24 @@ body.mode-explore .settings-menu {
         pointer-events: auto;
         transform: translateY(0);
     }
+    /* Modeless tray: anchored above the launcher bar, world stays pokeable.
+       Same .modal DOM, re-presented — no second render target. */
+    .modal {
+        bottom: calc(
+            var(--fab-size) + 36px + env(safe-area-inset-bottom, 0px)
+        );
+        left: 12px;
+        right: 12px;
+        border-radius: 18px;
+        max-height: 60vh;
+    }
+    /* Modeless: the backdrop never dims or captures the pointer on mobile, so
+       taps fall through to the world. Collapse is explicit (re-tap a launcher
+       or the modal's close button). */
+    .backdrop.open {
+        background: rgba(0, 0, 0, 0);
+        pointer-events: none;
+    }
 }
 
 .modal-body {

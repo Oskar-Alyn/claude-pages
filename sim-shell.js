@@ -842,6 +842,21 @@ const SimShell = (() => {
         }
 
         document.body.classList.toggle("floating-windows", floating());
+        dragQuery.addEventListener("change", () => {
+            document.body.classList.toggle("floating-windows", floating());
+            // Drop any inline floating positions when leaving floating mode so
+            // the mobile tray/bottom-sheet presentation takes over cleanly.
+            if (!floating()) {
+                document.querySelectorAll(".modal").forEach((m) => {
+                    m.style.left = "";
+                    m.style.top = "";
+                    m.style.right = "";
+                    m.style.bottom = "";
+                    m.style.transform = "";
+                    delete m.dataset.placed;
+                });
+            }
+        });
 
         backdrop.addEventListener("click", closeAllModals);
 
