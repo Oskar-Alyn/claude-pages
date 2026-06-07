@@ -346,16 +346,15 @@
             .world .cta-row {
                 justify-content: flex-start;
             }
-            /* About card closes the gallery: no live preview, so it gets a soft
-               accent glow instead of a canvas. */
+            /* About card closes the gallery with a black-and-white particle-life
+               demo (the Mono palette) behind its blurb. var(--card) is just the
+               fallback under the canvas. */
             .world-about {
-                background:
-                    radial-gradient(
-                        ellipse 90% 70% at 25% 18%,
-                        rgba(var(--accent-rgb), 0.14),
-                        transparent 60%
-                    ),
-                    var(--card);
+                background: var(--card);
+            }
+            /* Lighter scrim than the other cards so the mono demo reads through. */
+            .world-about .scrim {
+                opacity: 0.5;
             }
             .world-about .pitch {
                 max-width: 38ch;
@@ -499,6 +498,15 @@
                         "#4a3ac0",
                         "#c060e0",
                         "#ffd0e0",
+                    ],
+                    // Black-and-white ramp for the about card's particle-life
+                    // demo: dark bg, species sampled across grey → white.
+                    Mono: [
+                        "#05070b",
+                        "#3a3a3a",
+                        "#777777",
+                        "#b5b5b5",
+                        "#ffffff",
                     ],
                 };
                 function hexToRgb(h) {
@@ -839,13 +847,18 @@
                 }
 
                 // ---- Particle life ----
-                function createPL(canvas, stops) {
+                function createPL(canvas, stops, opts) {
                     const ctx = canvas.getContext("2d");
                     const lut = buildLUT(stops);
-                    const K = 4;
+                    const K = (opts && opts.K) || 4;
+                    const nMax = (opts && opts.nMax) || 340;
+                    const nDiv = (opts && opts.nDiv) || 6500;
+                    // Slice of the ramp the K species are sampled across.
+                    const lo = (opts && opts.lo) || 0.4;
+                    const hi = (opts && opts.hi) || 1.0;
                     const scol = [];
                     for (let k = 0; k < K; k++) {
-                        const idx = ((0.4 + 0.6 * (k / (K - 1))) * 255) | 0;
+                        const idx = ((lo + (hi - lo) * (k / (K - 1))) * 255) | 0;
                         scol[k] =
                             "rgb(" +
                             lut[idx * 3] +
@@ -870,7 +883,7 @@
                         const s = fitFull(canvas);
                         W = s.w;
                         H = s.h;
-                        n = Math.min(340, Math.round((W * H) / 6500));
+                        n = Math.min(nMax, Math.round((W * H) / nDiv));
                         xs = new Float32Array(n);
                         ys = new Float32Array(n);
                         vx = new Float32Array(n);
@@ -1330,6 +1343,8 @@
                 const about = document.createElement("article");
                 about.className = "world world-about";
                 about.innerHTML = `
+                    <canvas class="bg"></canvas>
+                    <div class="scrim"></div>
                     <div class="content">
                         <h2 class="wname">A handful of rules each</h2>
                         <p class="pitch">
@@ -1343,6 +1358,13 @@
                         </div>
                     </div>`;
                 galleryEl.appendChild(about);
+                // Black-and-white particle-life demo behind the about blurb.
+                about.__prev = createPL(
+                    about.querySelector("canvas"),
+                    PALS.Mono,
+                    { K: 6, nMax: 700, nDiv: 4000, lo: 0.28, hi: 1.0 },
+                );
+                previews.push(about.__prev);
 
                 // ============================================================
                 // HERO — self-cycling feed, crossfaded across two canvases

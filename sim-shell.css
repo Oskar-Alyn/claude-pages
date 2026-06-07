@@ -2,7 +2,7 @@
    every sim links before this file. data-world on <html> tints the bg/ink per
    world. Only sim-specific tokens live here. */
 :root {
-    --accent-2: #f6c177;
+    --accent-2: #fff;
     --danger: #ff6e5e;
     --fab-size: 50px;
 }
@@ -16,9 +16,9 @@
    per-world accent here; bg/ink/cell tints are left alone on purpose. This
    only loads on sim pages, so explainers keep their world accent. */
 html[data-world] {
-    --accent: #66d9c2;
-    --accent-deep: #2f9e8a;
-    --accent-rgb: 102, 217, 194;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
 }
 
 html,

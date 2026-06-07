@@ -60,9 +60,9 @@
     --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 
     /* ---- Default accent (master teal) — overridden per world below ---- */
-    --accent: #66d9c2;
-    --accent-deep: #2f9e8a;
-    --accent-rgb: 102, 217, 194;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
 }
 
 /* Universal reset shared by every page that links this file (the sims, the
@@ -94,9 +94,9 @@ svg.mark {
    ============================================================================ */
 
 [data-world="slime-mold"] {
-    --accent: #ff7a2e;
-    --accent-deep: #b8541e;
-    --accent-rgb: 255, 122, 46;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
     --ink: #fbf4ee;
     --muted: rgba(251, 244, 238, 0.86);
     --faint: rgba(251, 244, 238, 0.45);
@@ -108,9 +108,9 @@ svg.mark {
 }
 
 [data-world="boids"] {
-    --accent: #5af0d8;
-    --accent-deep: #0a8a98;
-    --accent-rgb: 90, 240, 216;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
     --ink: #f5f8fc;
     --muted: rgba(245, 248, 252, 0.86);
     --faint: rgba(245, 248, 252, 0.45);
@@ -122,9 +122,9 @@ svg.mark {
 }
 
 [data-world="particle-life"] {
-    --accent: #ff63c4;
-    --accent-deep: #9a2a86;
-    --accent-rgb: 255, 99, 196;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
     --ink: #f7f3fa;
     --muted: rgba(247, 243, 250, 0.86);
     --faint: rgba(247, 243, 250, 0.45);
@@ -136,9 +136,9 @@ svg.mark {
 }
 
 [data-world="flow-field"] {
-    --accent: #c060e0;
-    --accent-deep: #7a5ad8;
-    --accent-rgb: 192, 96, 224;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
     --ink: #f6f2fc;
     --muted: rgba(246, 242, 252, 0.86);
     --faint: rgba(246, 242, 252, 0.45);
@@ -152,9 +152,9 @@ svg.mark {
 [data-world="reaction-diffusion"] {
     /* Acid-green identity, drawn from the home demo's Acid palette
        (#1a8a3c / #7af066) so the world reads green, not another orange. */
-    --accent: #7af066;
-    --accent-deep: #1a8a3c;
-    --accent-rgb: 122, 240, 102;
+    --accent: #fff;
+    --accent-deep: #fff;
+    --accent-rgb: 255, 255, 255;
     --ink: #f3faee;
     --muted: rgba(243, 250, 238, 0.86);
     --faint: rgba(243, 250, 238, 0.45);
