@@ -59,6 +59,9 @@
     let current = null;
     let warm = null;
     let nextItem = null;
+    // When true the host is no longer a stream (the viewer took control of the
+    // current world in studio); prepareNext() is a no-op until return.
+    let stopped = false;
     // A cross-sim reveal awaiting an iframe's `ready` before the hard cut.
     let pendingReveal = null;
     const history = []; // back-stack of past items {sim, recipe}
@@ -267,6 +270,7 @@
     // sim than current (same-sim draws apply in place and need no second
     // iframe — this keeps live iframes <= 2).
     function prepareNext() {
+        if (stopped) return;
         nextItem = drawItem();
         destroyWarm();
         if (nextItem.sim !== current.sim) {
@@ -342,6 +346,7 @@
         else if (d.type === "next") onNext();
         else if (d.type === "back") onBack();
         else if (d.type === "resetTaste") onResetTaste();
+        else if (d.type === "recipe") onRecipe(d);
     });
 
     function onReady(src, d) {
@@ -383,6 +388,38 @@
         saveTaste();
     }
 
+    function takeControl() {
+        if (stopped || !current || !current.iframe) return;
+        // Commit the dwell accumulated so far, then stop measuring: the studio
+        // session is off the books so a long edit can't saturate the signal.
+        commitDwell(current);
+        stopped = true;
+        destroyWarm(); // the visible frame is never touched — it keeps running
+        document.body.classList.add("taken");
+        current.iframe.contentWindow.postMessage({ type: "takeControl" }, "*");
+    }
+
+    function returnToExplore() {
+        if (!stopped || !current || !current.iframe) return;
+        // Ask the iframe to hide studio chrome and reply with its edited recipe.
+        current.iframe.contentWindow.postMessage(
+            { type: "returnToExplore" },
+            "*",
+        );
+    }
+
+    // The iframe's reply to returnToExplore: adopt its (possibly edited) recipe
+    // as `current` so Back/history replay the world the viewer actually shaped,
+    // then resume the stream with a fresh dwell.
+    function onRecipe(d) {
+        if (!stopped || !current) return;
+        if (d.recipe) current.recipe = d.recipe;
+        stopped = false;
+        document.body.classList.remove("taken");
+        startDwell();
+        prepareNext();
+    }
+
     // ====================================================================
     // BOOT — show one uniform-random item, then warm the next draw.
     // ====================================================================
@@ -392,6 +429,15 @@
         current.iframe.classList.add("show");
         startDwell();
         prepareNext();
+
+        document.getElementById("feed-back").addEventListener("click", onBack);
+        document.getElementById("feed-next").addEventListener("click", onNext);
+        document
+            .getElementById("feed-take")
+            .addEventListener("click", takeControl);
+        document
+            .getElementById("feed-return")
+            .addEventListener("click", returnToExplore);
     }
 
     startFeed();
