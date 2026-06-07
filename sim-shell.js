@@ -791,7 +791,7 @@ const SimShell = (() => {
             modal.dataset.placed = "1";
         }
 
-        function refreshDropdownActive() {
+        function refreshLauncherActive() {
             document.querySelectorAll(".launcher, #settings-trigger").forEach(
                 (f) => {
                     const m = byId("modal-" + f.dataset.modal);
@@ -819,7 +819,7 @@ const SimShell = (() => {
                 backdrop.classList.add("open");
             }
             if (id === "modal-color") syncColorControls();
-            refreshDropdownActive();
+            refreshLauncherActive();
         }
 
         function closeModal(id) {
@@ -829,7 +829,7 @@ const SimShell = (() => {
             if (!document.querySelector(".modal.open"))
                 backdrop.classList.remove("open");
             saveWindows();
-            refreshDropdownActive();
+            refreshLauncherActive();
         }
 
         function closeAllModals() {
@@ -838,7 +838,7 @@ const SimShell = (() => {
                 .forEach((m) => m.classList.remove("open"));
             backdrop.classList.remove("open");
             saveWindows();
-            refreshDropdownActive();
+            refreshLauncherActive();
         }
 
         document.body.classList.toggle("floating-windows", floating());
