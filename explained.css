@@ -181,6 +181,14 @@ section {
     padding: 46px 0 8px;
     scroll-margin-top: 64px;
 }
+.step {
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 6px;
+}
 /* Section dots: the wayfinding, pinned to the right edge. Hover (or the
    active dot) reveals the section name so a dot is never a mystery. */
 .secnav {
