@@ -14,10 +14,15 @@
 
     const { registry, randItem, hexToRgb, hslHex, hexToHsl } = SimShell;
 
-    // Pointer-attraction radius (px); squared once to compare against squared
-    // distances without a sqrt per boid.
-    const POINTER_PULL_RADIUS = 180;
-    const POINTER_PULL_R2 = POINTER_PULL_RADIUS * POINTER_PULL_RADIUS;
+    // Pointer-push radius (px); squared once to compare against squared
+    // distances without a sqrt per boid. POINTER_PUSH is the peak velocity
+    // kick applied right under the pointer, fading to zero at the radius edge.
+    // It is set well above maxSpeed (slider max 6) on purpose: the per-boid
+    // speed clamp caps outward motion at maxSpeed, so a large value just makes
+    // the push reliably win over flocking across the inner radius.
+    const POINTER_PUSH_RADIUS = 180;
+    const POINTER_PUSH_R2 = POINTER_PUSH_RADIUS * POINTER_PUSH_RADIUS;
+    const POINTER_PUSH = 12;
 
     // Arrowhead glyph dimensions (px): tip ahead of the boid, base behind it,
     // and half the base width to either side.
@@ -531,7 +536,7 @@
     }
 
     // ------------------------------------------------------------------
-    // INTERACTION (pointer attracts the flock)
+    // INTERACTION (pointer pushes the flock away)
     // ------------------------------------------------------------------
     let pointerActive = false;
     let pointerX = 0,
@@ -559,7 +564,7 @@
         const edge = state.params.edge;
         const cell = Math.max(vision, sepDist, 1);
         const margin = Math.max(40, Math.min(W, H) * 0.08);
-        const pull = pointerActive ? 0.0009 : 0;
+        const push = pointerActive ? POINTER_PUSH : 0;
 
         buildGrid(n, cell);
 
@@ -634,13 +639,17 @@
             nvx += sepX * sepW;
             nvy += sepY * sepW;
 
-            // Pointer attraction while pressed.
-            if (pull > 0) {
-                const ddx = pointerX - x;
-                const ddy = pointerY - y;
-                if (ddx * ddx + ddy * ddy < POINTER_PULL_R2) {
-                    nvx += ddx * pull;
-                    nvy += ddy * pull;
+            // Pointer push while pressed: shove boids away from the pointer,
+            // strongest right under it so a tap opens a clear gap.
+            if (push > 0) {
+                const ddx = x - pointerX;
+                const ddy = y - pointerY;
+                const d2 = ddx * ddx + ddy * ddy;
+                if (d2 > 0 && d2 < POINTER_PUSH_R2) {
+                    const d = Math.sqrt(d2);
+                    const f = ((1 - d / POINTER_PUSH_RADIUS) * push) / d;
+                    nvx += ddx * f;
+                    nvy += ddy * f;
                 }
             }
 

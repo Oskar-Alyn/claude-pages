@@ -241,8 +241,9 @@
     let qualityScalar = () => 1;
 
     // Interaction strength is fixed at the old slider's max (the per-sim
-    // "Click / touch pull" setting was removed).
-    const POINTER_PULL = 0.012;
+    // "Click / touch pull" setting was removed). The value is the peak
+    // velocity kick right under the pointer, fading to zero at the radius edge.
+    const POINTER_PUSH = 2.4;
 
     const px = new Float32Array(MAX_PARTICLES);
     const py = new Float32Array(MAX_PARTICLES);
@@ -461,7 +462,7 @@
     }
 
     // ------------------------------------------------------------------
-    // INTERACTION (pointer tugs the flow)
+    // INTERACTION (pointer pushes the flow away)
     // ------------------------------------------------------------------
     let pointerActive = false;
     let pointerX = 0,
@@ -481,8 +482,9 @@
         const ns = state.params.noiseScale;
         const resp = 1 - state.params.inertia;
         const life = state.params.lifespan;
-        const pull = pointerActive ? POINTER_PULL : 0;
-        const pullR2 = 200 * 200;
+        const push = pointerActive ? POINTER_PUSH : 0;
+        const pushR = 200;
+        const pushR2 = pushR * pushR;
         const halfW = W * 0.5,
             halfH = H * 0.5;
 
@@ -499,16 +501,22 @@
             let nvx = vx[i] + (Math.cos(a) * speed - vx[i]) * resp;
             let nvy = vy[i] + (Math.sin(a) * speed - vy[i]) * resp;
 
-            if (pull > 0) {
+            // Pointer push while pressed: shove particles away from the pointer
+            // (via the nearest wrapped copy, so it works across the seam),
+            // strongest right under it so a tap opens a clear gap.
+            if (push > 0) {
                 let ddx = pointerX - x;
                 let ddy = pointerY - y;
                 if (ddx > halfW) ddx -= W;
                 else if (ddx < -halfW) ddx += W;
                 if (ddy > halfH) ddy -= H;
                 else if (ddy < -halfH) ddy += H;
-                if (ddx * ddx + ddy * ddy < pullR2) {
-                    nvx += ddx * pull;
-                    nvy += ddy * pull;
+                const d2 = ddx * ddx + ddy * ddy;
+                if (d2 > 0 && d2 < pushR2) {
+                    const d = Math.sqrt(d2);
+                    const f = ((1 - d / pushR) * push) / d;
+                    nvx -= ddx * f;
+                    nvy -= ddy * f;
                 }
             }
 
