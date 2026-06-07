@@ -152,6 +152,15 @@ body {
     color: var(--ink);
 }
 
+.fab-record .rec-stop {
+    display: none;
+}
+.fab-record.recording .rec-idle {
+    display: none;
+}
+.fab-record.recording .rec-stop {
+    display: block;
+}
 .fab-record.recording {
     background: rgba(255, 110, 94, 0.22);
     border-color: var(--danger);

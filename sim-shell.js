@@ -374,7 +374,11 @@ const SimShell = (() => {
 
         <div class="fab-toolbar" id="fab-toolbar">
             <button class="fab fab-record" id="fab-record" title="Record video" aria-label="Record video">
-                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6" /></svg>
+                <svg class="rec-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="14" height="12" rx="2.5" />
+                    <path d="M16 9.5l5-2.5v10l-5-2.5" />
+                </svg>
+                <svg class="rec-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2" /></svg>
             </button>
             <button class="fab" id="fab-share" title="Copy share link" aria-label="Copy share link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1718,6 +1722,8 @@ const SimShell = (() => {
             mediaRecorder.start();
             recordStart = Date.now();
             fabRecord.classList.add("recording");
+            fabRecord.title = "Stop recording";
+            fabRecord.setAttribute("aria-label", "Stop recording");
             recIndicator.classList.remove("hidden");
             recTimer = setInterval(() => {
                 const sec = Math.floor((Date.now() - recordStart) / 1000);
@@ -1732,6 +1738,8 @@ const SimShell = (() => {
             }
             mediaRecorder = null;
             fabRecord.classList.remove("recording");
+            fabRecord.title = "Record video";
+            fabRecord.setAttribute("aria-label", "Record video");
             recIndicator.classList.add("hidden");
             if (recTimer) {
                 clearInterval(recTimer);
