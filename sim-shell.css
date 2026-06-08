@@ -251,7 +251,21 @@ body {
     align-items: flex-end;
     gap: 10px;
 }
-/* Creative launchers — always visible, stacked above the gear. */
+
+/* Creative launchers — Color / Shape / Parameters. A bottom-center bar that
+   mirrors the host's explore pager (.feed-bar), studio only. The Settings gear
+   stays in the top-right .settings-menu. */
+.launcher-bar {
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .launcher.active,
 #settings-trigger.active {
     background: var(--glass-bg-strong);
@@ -297,11 +311,14 @@ body {
 }
 
 /* ---------- Hide-UI mode ---------- */
+/* The recording timer is deliberately NOT hidden: recording is a canvas-only
+   captureStream (the overlay never lands in the WebM), and with the toolbar
+   gone the timer is the only sign recording is still running. */
 body.ui-hidden .fab-toolbar,
 body.ui-hidden .settings-menu,
+body.ui-hidden .launcher-bar,
 body.ui-hidden .sim-home,
 body.ui-hidden .backdrop,
-body.ui-hidden .rec-indicator,
 body.ui-hidden .modal {
     display: none !important;
 }
@@ -310,7 +327,8 @@ body.ui-hidden .modal {
 /* The host owns all stream chrome; in explore the iframe shows only the bare
    canvas. The full world chrome is built but hidden until "take control". */
 body.mode-explore .fab-toolbar,
-body.mode-explore .settings-menu {
+body.mode-explore .settings-menu,
+body.mode-explore .launcher-bar {
     display: none !important;
 }
 
@@ -383,6 +401,7 @@ body.mode-explore .settings-menu {
     /* Floating-window mode: keep chrome above the panels so the menu and
        toolbar stay reachable while panels float over the canvas. */
     body.floating-windows .settings-menu,
+    body.floating-windows .launcher-bar,
     body.floating-windows .fab-toolbar {
         z-index: 210;
     }

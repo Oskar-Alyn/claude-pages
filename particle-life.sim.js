@@ -49,6 +49,8 @@
             quality: "high",
             fps: 60,
             simSpeed: 1,
+            showSpeed: false,
+            showPause: false,
             showRecord: false,
             showShareLink: false,
             showHideUI: false,

@@ -3,7 +3,8 @@
  * ============================================================================
  *
  * claude-pages is a set of single-canvas sims that all share the same chrome:
- * direct Color/Shape/Parameters launchers + a Settings gear, a FAB toolbar
+ * a bottom-center launcher bar (Color/Shape/Parameters), a top-right Settings
+ * gear, a FAB toolbar
  * (record / share / hide-UI / speed / reset / pause / randomize), a recording
  * indicator, a hide banner, and four modals (Color, Shape, Parameters,
  * Settings) with desktop floating-window + mobile modeless-tray behavior. In
@@ -79,7 +80,7 @@
  *     .modals.settings   OPTIONAL and, in practice, unused — every current sim
  *                          declares ZERO custom Settings sections. The shell
  *                          renders the standard "Performance" (Quality picker +
- *                          Max FPS), "Randomize behavior", "Sharing tools" and
+ *                          Max FPS), "Randomize behavior", "Toolbar buttons" and
  *                          "Restore" sections unconditionally. A sim MAY still
  *                          pass { sections:[ {label, controls:[...], hint?} ] }
  *                          to inject extra sections (rendered after Performance);
@@ -87,7 +88,7 @@
  *                          params, or {type:'segmented', label, options:
  *                          [{id,label}], get(), set(id), onChange?()} for a row
  *                          of mutually-exclusive named buttons. The randomize/
- *                          sharing toggles bind to fixed state.settings keys
+ *                          video toggles bind to fixed state.settings keys
  *                          (see below).
  *
  *   sim.init(ctx)        REQUIRED. Called once after chrome is built and the
@@ -166,8 +167,8 @@
  * Fixed state.settings keys the SHELL reads/writes (every sim must carry these,
  * JSON-serializable, so the shared toolbar/settings/loop work):
  *   quality, fps, simSpeed, resetOnRandomize, randomizeColor, randomizePattern,
- *   showRecord, showShareLink, showHideUI
- * These nine are the GLOBAL (per-device) block: the shell owns them, persists
+ *   showSpeed, showPause, showRecord, showShareLink, showHideUI
+ * These eleven are the GLOBAL (per-device) block: the shell owns them, persists
  * them to one shared localStorage key (`claude-sims-global`) identical across
  * every sim, and EXCLUDES them from the per-sim key and the share-link hash.
  * On first boot the shared key is seeded from whatever global values the sim's
@@ -303,6 +304,8 @@ const SimShell = (() => {
         "resetOnRandomize",
         "randomizeColor",
         "randomizePattern",
+        "showSpeed",
+        "showPause",
         "showRecord",
         "showShareLink",
         "showHideUI",
@@ -335,7 +338,7 @@ const SimShell = (() => {
             <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span class="wordmark">Tiny Worlds</span>
         </a>
 
-        <div class="settings-menu" id="settings-menu">
+        <div class="launcher-bar" id="launcher-bar">
             <button class="fab launcher" id="launch-color" data-modal="color" title="Color" aria-label="Color">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3a9 9 0 1 0 0 18 1.5 1.5 0 0 0 1.5-1.5c0-.4-.15-.78-.43-1.06A1.5 1.5 0 0 1 14.13 16h2.37A4.5 4.5 0 0 0 21 11.5C21 7 16.97 3 12 3z" />
@@ -359,6 +362,9 @@ const SimShell = (() => {
                     <circle cx="7" cy="18" r="2.5" fill="rgba(20,25,35,0.95)" />
                 </svg>
             </button>
+        </div>
+
+        <div class="settings-menu" id="settings-menu">
             <button class="fab" id="settings-trigger" data-modal="settings" title="Settings" aria-label="Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3" />
@@ -1240,7 +1246,7 @@ const SimShell = (() => {
         const settingsCfg = modalsCfg.settings || {};
         const settingSliders = [];
         const settingToggles = [];
-        // Fixed shell toggles for the standard "Randomize" + "Sharing" sections.
+        // Fixed shell toggles for the standard "Randomize" + "Toolbar buttons" sections.
         const RAND_TOGGLES = [
             {
                 key: "randomizeColor",
@@ -1259,6 +1265,16 @@ const SimShell = (() => {
             },
         ];
         const SHARE_TOGGLES = [
+            {
+                key: "showSpeed",
+                label: "Speed button",
+                hint: "Show the simulation-speed button in the toolbar.",
+            },
+            {
+                key: "showPause",
+                label: "Pause button",
+                hint: "Show the pause/play button in the toolbar.",
+            },
             {
                 key: "showRecord",
                 label: "Record button",
@@ -1516,7 +1532,7 @@ const SimShell = (() => {
             body.appendChild(
                 makeToggleSection("Randomize behavior", RAND_TOGGLES),
             );
-            body.appendChild(makeToggleSection("Sharing tools", SHARE_TOGGLES));
+            body.appendChild(makeToggleSection("Toolbar buttons", SHARE_TOGGLES));
 
             const restoreSec = sectionEl("Restore");
             const actions = document.createElement("div");
@@ -1576,6 +1592,14 @@ const SimShell = (() => {
         });
 
         function updateToolbarVisibility() {
+            byId("fab-speed").classList.toggle(
+                "hidden",
+                !state.settings.showSpeed,
+            );
+            byId("fab-pause").classList.toggle(
+                "hidden",
+                !state.settings.showPause,
+            );
             byId("fab-record").classList.toggle(
                 "hidden",
                 !state.settings.showRecord,
@@ -1681,6 +1705,10 @@ const SimShell = (() => {
                 } else if (d.type === "takeControl") {
                     mode = "studio";
                     applyMode();
+                    // Never inherit a stale hide-UI state: studio must always
+                    // come up with its chrome visible (toggleUI also clears the
+                    // banner). On touch there's no H key to recover otherwise.
+                    if (uiHidden) toggleUI();
                 } else if (d.type === "returnToExplore") {
                     mode = "explore";
                     applyMode();
