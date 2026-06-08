@@ -38,6 +38,7 @@
     const FEED_SIMS = [
         "boids",
         "flow-field",
+        "lenia",
         "particle-life",
         "reaction-diffusion",
         "slime-mold",

@@ -18,6 +18,7 @@ behind it.
 | `particle-life.html` | Colored species attract/repel by a random matrix; cells and creatures self-assemble. |
 | `flow-field.html` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
 | `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
+| `lenia.html` | A smooth, continuous Game of Life: a ring-kernel convolution plus a bell-curve growth rule grows gliding, self-healing creatures. |
 
 ## Running it
 
@@ -90,7 +91,7 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
 - **Particle sims** (boids, particle-life, flow-field) share density
   scaling (the count is a per-reference-screen target × a Settings multiplier, so
   small screens run proportionally fewer), a toroidal world, and center-anchored
-  zoom. **Grid sims** (reaction-diffusion)
+  zoom. **Grid sims** (reaction-diffusion, lenia)
   render a small offscreen grid scaled up via `drawImage`, and Settings offers
   Resolution + a brush instead of count/density.
 
