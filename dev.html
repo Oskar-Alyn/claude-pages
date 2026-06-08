@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex" />
+        <title>Dev mode</title>
+        <link rel="icon" href="favicon.svg" />
+        <link rel="stylesheet" href="tokens.css" />
+        <style>
+            body {
+                margin: 0;
+                min-height: 100dvh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg, #0b0b0d);
+                color: var(--ink, #f4f4f5);
+                font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+                padding: 24px;
+                box-sizing: border-box;
+            }
+            .panel {
+                width: 100%;
+                max-width: 30rem;
+            }
+            h1 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin: 0 0 0.25rem;
+            }
+            .sub {
+                color: var(--muted, #a1a1aa);
+                font-size: 0.9rem;
+                margin: 0 0 1.5rem;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem 0;
+                border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+            }
+            .row label {
+                cursor: pointer;
+                user-select: none;
+            }
+            input[type="checkbox"] {
+                width: 1.15rem;
+                height: 1.15rem;
+                accent-color: var(--accent, #fff);
+                cursor: pointer;
+            }
+            .state {
+                margin: 0.75rem 0 0;
+                font-size: 0.95rem;
+            }
+            .gated {
+                margin: 1.5rem 0 0;
+                color: var(--muted, #a1a1aa);
+                font-size: 0.85rem;
+            }
+            .gated ul {
+                margin: 0.5rem 0 0;
+                padding-left: 1.1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="panel">
+            <h1>Dev mode</h1>
+            <p class="sub">
+                Reveals work-in-progress sims on the home page and in the
+                explore feed. Off by default. Stored in this browser only.
+            </p>
+            <div class="row">
+                <input type="checkbox" id="toggle" />
+                <label for="toggle">Show work-in-progress sims</label>
+            </div>
+            <p class="state" id="state"></p>
+            <div class="gated">
+                Currently gated:
+                <ul id="gated"></ul>
+            </div>
+        </main>
+        <script src="dev-mode.js"></script>
+        <script>
+            const toggle = document.getElementById("toggle");
+            const state = document.getElementById("state");
+            const gated = document.getElementById("gated");
+
+            function render() {
+                const on = DevMode.isOn();
+                toggle.checked = on;
+                state.textContent = on
+                    ? "Dev mode is ON — work-in-progress sims are visible."
+                    : "Dev mode is OFF — work-in-progress sims are hidden.";
+            }
+
+            toggle.addEventListener("change", () => {
+                DevMode.set(toggle.checked);
+                render();
+            });
+
+            // List the gated sims by their feed-scheme id (the human-readable one).
+            gated.innerHTML = DevMode.wipList()
+                .map((w) => `<li>${w.feed}</li>`)
+                .join("");
+
+            render();
+        </script>
+    </body>
+</html>
