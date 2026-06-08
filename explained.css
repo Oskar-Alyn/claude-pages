@@ -326,7 +326,7 @@ p .hi {
     color: var(--ink);
 }
 .tag.off {
-    color: var(--faint);
+    color: var(--muted);
 }
 .dot {
     width: 7px;

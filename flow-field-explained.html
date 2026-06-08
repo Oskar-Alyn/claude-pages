@@ -96,7 +96,7 @@
             <div class="content">
                 <h1 class="title">Riding an invisible&nbsp;current</h1>
                 <p class="lede">
-                    No particle decides where to go. Each one just follows the
+                    No particle decides where to go. Each one follows the
                     arrow it's standing&nbsp;on.
                 </p>
             </div>
@@ -123,14 +123,13 @@
                 <p>
                     Every line of color up there is
                     <span class="hi">a single particle</span>, drifting on its
-                    own. It can't see the flock, the screen, or where it's
-                    headed. It only reads the one arrow beneath it and takes a
+                    own. It only reads the one arrow beneath it and takes a
                     step that way. Its color comes from
                     <span class="hi">which way</span> it's flowing.
                 </p>
                 <p>
-                    Those silky streams look planned. Nothing here plans
-                    anything, so where do they come from?
+                    Those silky streams look arranged. The order comes from
+                    underneath.
                 </p>
             </section>
 
@@ -161,17 +160,17 @@
                 </div>
             </section>
 
-            <!-- WHAT THE STREAKS ARE (cosmetics, moved up out of the climax) -->
+            <!-- WHAT YOU'RE SEEING -->
             <section id="trails">
                 <p class="step">What you're seeing</p>
-                <h2>The streaks are just trails</h2>
+                <h2>The bright line is a fading trail</h2>
                 <p>
                     Each particle is only a moving dot. The bright streak is
                     the <span class="hi">trail it leaves</span>, fading a little
                     each frame. Wipe the frame clean every step and you see bare
                     dots; let the paint <span class="hi">linger</span> and short
-                    steps stretch into long ribbons. The trail is just how we
-                    draw the motion, and it carries most of the flow's look.
+                    steps stretch into long ribbons. The trail is how we draw
+                    the motion, and it carries most of the flow's look.
                 </p>
                 <div class="demo" data-demo="trails">
                     <div class="demo-pair">
@@ -200,7 +199,6 @@
                 <p class="step">Shaping the map · 1</p>
                 <h2>How tightly the map curls</h2>
                 <p>
-                    Now you can shape the map itself.
                     <span class="hi">Swirliness</span> sets how tightly the
                     arrows curl, from one slow current that sweeps the whole
                     screen to a froth of countless tiny whirlpools. Of every
@@ -219,7 +217,7 @@
                             type="range"
                             min="0.002"
                             max="0.02"
-                            value="0.0075"
+                            value="0.005"
                             step="0.0005"
                             data-swirl
                             aria-label="How tightly the field curls"
@@ -267,9 +265,8 @@
                 <h2>The streams were already in the map</h2>
                 <p>
                     The rivers you've watched were there before any particle
-                    moved, waiting in the arrows. No particle invents a stream;
-                    each just traces a channel the map already held. And the
-                    arrows themselves are nothing more than smooth random noise.
+                    moved, waiting in the arrows. Each particle traces a channel
+                    the map already held.
                 </p>
                 <p>
                     See for yourself. Send the particles in from
@@ -547,7 +544,9 @@
                         const G = 30 * DPR;
                         const len = G * 0.42;
                         ctx.lineWidth = Math.max(1, DPR);
-                        ctx.strokeStyle = "rgba(192,96,224,0.22)";
+                        // Whitish gray so the arrows read cleanly over the
+                        // bright, saturated particle streaks.
+                        ctx.strokeStyle = "rgba(226,230,238,0.26)";
                         ctx.beginPath();
                         for (let gx = G * 0.5; gx < W; gx += G) {
                             for (let gy = G * 0.5; gy < H; gy += G) {
@@ -645,27 +644,31 @@
                 // trail is how long streaks linger.
                 // ============================================================
                 const BASE = {
-                    count: 320,
-                    speed: 1.4,
-                    noiseScale: 0.0075,
-                    evolve: 0.012,
-                    inertia: 0.82,
-                    trail: 0.86,
-                    lifespan: 220,
+                    count: 1400,
+                    speed: 0.77,
+                    noiseScale: 0.005,
+                    evolve: 0.0025,
+                    inertia: 0.72,
+                    trail: 0.95,
+                    lifespan: 210,
                     pattern: "Scatter",
-                    regionSize: 0.6,
+                    regionSize: 0.75,
                     showField: false,
                 };
                 const mk = (over) => Object.assign({}, BASE, over);
 
                 const PRESETS = {
                     breathe: {
-                        lo: mk({ evolve: 0, trail: 0.86 }),
-                        hi: mk({ evolve: 0.04, trail: 0.86 }),
+                        // evolve poles kept (frozen vs churning); other params
+                        // ride the smoother BASE. hi evolve moved halfway to the
+                        // share link's gentle 0.004 drift.
+                        lo: mk({ evolve: 0, showField: true }),
+                        hi: mk({ evolve: 0.007, showField: true }),
                     },
                     trails: {
-                        lo: mk({ trail: 0.0 }),
-                        hi: mk({ trail: 0.95 }),
+                        // trail poles kept (no lingering vs long ribbons).
+                        lo: mk({ count: 490, trail: 0.0 }),
+                        hi: mk({ count: 490, trail: 0.995 }),
                     },
                 };
 
@@ -695,10 +698,10 @@
                 const fieldPrev = makeFlow(
                     fieldCanvas,
                     mk({
-                        count: 240,
-                        noiseScale: 0.007,
-                        inertia: 0.85,
-                        trail: 0.8,
+                        count: 1450,
+                        noiseScale: 0.0048,
+                        inertia: 0.74,
+                        trail: 0.93,
                         showField: true,
                     }),
                 );
@@ -707,10 +710,11 @@
                 // Swirliness slider demo.
                 const dialDemo = document.querySelector('[data-demo="dial"]');
                 const dialParams = mk({
-                    count: 420,
-                    noiseScale: 0.0075,
-                    inertia: 0.85,
-                    trail: 0.9,
+                    count: 1550,
+                    noiseScale: 0.005,
+                    inertia: 0.74,
+                    trail: 0.965,
+                    showField: true,
                 });
                 const dialPrev = makeFlow(
                     dialDemo.querySelector("canvas"),
@@ -762,12 +766,12 @@
                 const togetherPrev = makeFlow(
                     togetherCanvas,
                     mk({
-                        count: 520,
-                        noiseScale: 0.008,
-                        inertia: 0.85,
-                        trail: 0.9,
+                        count: 1575,
+                        noiseScale: 0.0053,
+                        inertia: 0.74,
+                        trail: 0.985,
                         pattern: "Scatter",
-                        regionSize: 0.6,
+                        regionSize: 0.75,
                     }),
                 );
                 instances.push({ el: togetherCanvas, prev: togetherPrev });
@@ -805,11 +809,11 @@
                 const heroPrev = makeFlow(
                     document.getElementById("hero-canvas"),
                     mk({
-                        count: 600,
-                        noiseScale: 0.0075,
-                        inertia: 0.85,
-                        trail: 0.92,
-                        evolve: 0.01,
+                        count: 1600,
+                        noiseScale: 0.005,
+                        inertia: 0.74,
+                        trail: 0.975,
+                        evolve: 0.00225,
                     }),
                 );
 
