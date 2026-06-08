@@ -38,7 +38,7 @@ body {
 }
 
 /* ---------- Home / brand pill (back to all worlds) ---------- */
-/* Carries the same globe + Tiny Worlds lockup as the nav on the content pages, so a
+/* Carries the same globe + Toy World Workshop lockup as the nav on the content pages, so a
    sim no longer reads as an unbranded standalone applet and there is always a
    way back out. Suppressed in feed mode by sim-shell.js (the feed owns nav). */
 .sim-home {

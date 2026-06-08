@@ -79,7 +79,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Brand glyph: the inline-SVG globe that sits next to "Tiny Worlds". It scales
+/* Brand glyph: the inline-SVG globe that sits next to "Toy World Workshop". It scales
    to the surrounding text (font-size → 1em) and tints itself via the element's
    `color` through stroke="currentColor", so the existing `.mark` rules (which
    set color + font-size) keep working untouched. */
