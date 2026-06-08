@@ -320,6 +320,16 @@
                         ax = new Float32Array(n);
                         ay = new Float32Array(n);
                         aa = new Float32Array(n);
+                        if (p.scatter) {
+                            // Scatter walkers across the whole field, each
+                            // aimed a random direction — a Random start.
+                            for (let i = 0; i < n; i++) {
+                                ax[i] = Math.random() * gw;
+                                ay[i] = Math.random() * gh;
+                                aa[i] = Math.random() * TAU;
+                            }
+                            return;
+                        }
                         // Seed a central disc, each walker aimed tangentially —
                         // the sim's default Disc + Spinning start.
                         const cx = gw / 2,
@@ -564,7 +574,9 @@
                             );
                             const prev = makeSlime(
                                 cv,
-                                Object.assign({}, PRESETS[kind][side]),
+                                Object.assign({}, PRESETS[kind][side], {
+                                    scatter: true,
+                                }),
                             );
                             instances.push({ el: cv, prev });
                         });
