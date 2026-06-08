@@ -35,7 +35,7 @@
         DECAY: 0.9, // EMA decay applied to a score before adding reward
         SOFTMAX_TEMP: 1.5, // sharpness of the learned distribution
     };
-    const FEED_SIMS = [
+    let FEED_SIMS = [
         "boids",
         "flow-field",
         "gravity",
@@ -43,6 +43,11 @@
         "reaction-diffusion",
         "slime-mold",
     ];
+
+    // Hide work-in-progress sims from the feed unless dev mode is on. Done up
+    // front so the sampler and taste weights only ever see the active set; a
+    // stale taste entry for a now-hidden sim is harmless (read as `|| 0`).
+    FEED_SIMS = FEED_SIMS.filter((s) => DevMode.isVisible(s));
 
     const LS_TASTE = "claude-feed-taste";
     const LS_SETTINGS = "claude-feed-settings";
