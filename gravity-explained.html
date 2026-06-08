@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en" data-world="gravity">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#05070b" />
+        <title>How Gravity Works · Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of the Gravity simulation. One rule: every speck pulls on every other. See how that single pull builds clumps, orbits, and spiral whirlpools."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Gravity Works" />
+        <meta
+            property="og:description"
+            content="One rule: every speck pulls on every other. A visual walkthrough of the Gravity simulation."
+        />
+        <meta property="og:image" content="og/gravity.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/gravity.png" />
+        <meta name="twitter:title" content="How Gravity Works" />
+        <meta
+            name="twitter:description"
+            content="One rule: every speck pulls on every other."
+        />
+
+        <link rel="stylesheet" href="tokens.css" />
+        <link rel="stylesheet" href="explained.css" />
+        <style>
+            .hero .lede {
+                max-width: 32ch;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="gravity.html">Open Gravity →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <h1 class="title">One pull, a whole&nbsp;galaxy</h1>
+                <p class="lede">
+                    A drifting cloud, a single rule, and it gathers itself into
+                    glowing whirlpools. Here is how.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>Each glow is one speck</h2>
+                <p>
+                    Every point of light up there is
+                    <span class="hi">a single speck</span> of matter, drifting
+                    on its own. It has no plan and no idea where the crowd is. All
+                    it ever does is feel a tug from every other speck.
+                </p>
+                <p>
+                    No speck steers the whole cloud. The clumps, the orbits, the
+                    spiral arms, they are just what those countless little tugs
+                    add up to, run over and over, many times a second.
+                </p>
+                <p>And there is only one rule. Here it is.</p>
+            </section>
+
+            <!-- THE ONE RULE -->
+            <section id="pull">
+                <p class="step">The only rule</p>
+                <h2>Everything pulls on everything</h2>
+                <p>
+                    Every speck attracts every other, and the closer two specks
+                    get, the
+                    <span class="hi">harder</span> they pull. That runaway is the
+                    whole engine: a slightly denser patch tugs a little harder,
+                    which draws specks closer, which makes it tug harder still,
+                    until a clump snaps together out of nothing but an even haze.
+                </p>
+                <div class="demo" data-demo="pull">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">No pull</span>, they just
+                                drift, scattered
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Pull on</span>, they fall
+                                into clumps
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ORBITS (slider hero) -->
+            <section id="orbit">
+                <p class="step">The twist</p>
+                <h2>So why don't they all just collide?</h2>
+                <p>
+                    If everything pulls together, you would expect one giant
+                    pile-up. The escape is
+                    <span class="hi">sideways motion</span>. A speck moving
+                    across the pull keeps missing what it is falling toward, and
+                    so it loops around instead of landing. That near miss,
+                    repeated forever, is an orbit.
+                </p>
+                <p>
+                    Here a single speck is dropped near a heavy core. Set how
+                    fast it is moving sideways:
+                </p>
+                <div class="demo wide" data-demo="orbit">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="control">
+                        <div class="row">
+                            <span class="label">Sideways speed</span>
+                            <span class="val" data-out>just right</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value="50"
+                            step="1"
+                            data-speed
+                            aria-label="How fast the speck moves sideways"
+                        />
+                        <p class="read" data-read></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REVEAL -->
+            <section id="together">
+                <p class="step">All at once</p>
+                <h2>A cloud winds itself into a spiral</h2>
+                <p>
+                    Now give a whole scattered cloud that same one rule. The
+                    densest patch wins, pulling everything inward. As the cloud
+                    shrinks, its faint leftover spin tightens, the way a skater
+                    speeds up by drawing in their arms, and the infall winds into
+                    a glowing spiral.
+                </p>
+                <p>
+                    <span class="hi">Give it a stir</span> (click or tap) and
+                    watch the whirlpool scatter, then gather itself back.
+                </p>
+                <div class="demo" data-demo="poke">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">Click or tap to stir the cloud ↑</p>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go pull it around</h2>
+                <p>
+                    The full sim gives you every control and a reroll button, the
+                    same one rule running underneath.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="gravity.html"
+                        >Open the Gravity sim <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script src="explained.js"></script>
+        <script>
+            (() => {
+                const { REDUCED, DPR, TAU, hexToRgb } = window.EX;
+
+                // Gravity palette (the sim/landing "Iris" look).
+                const STOPS = [
+                    "#000018",
+                    "#0c1448",
+                    "#4a3ac0",
+                    "#c060e0",
+                    "#ffd0e0",
+                ];
+                const BG = hexToRgb(STOPS[0]);
+                const BG_STR = "rgb(" + BG[0] + "," + BG[1] + "," + BG[2] + ")";
+
+                // Sample the 5 stops at t in [0,1] -> [r,g,b].
+                function sampleStops(t) {
+                    const seg = STOPS.length - 1;
+                    const sf = Math.min(Math.max(t, 0), 1) * seg;
+                    const s = Math.min(sf | 0, seg - 1);
+                    const u = sf - s;
+                    const c0 = hexToRgb(STOPS[s]);
+                    const c1 = hexToRgb(STOPS[s + 1]);
+                    return [
+                        (c0[0] + (c1[0] - c0[0]) * u) | 0,
+                        (c0[1] + (c1[1] - c0[1]) * u) | 0,
+                        (c0[2] + (c1[2] - c0[2]) * u) | 0,
+                    ];
+                }
+
+                // A soft round glow sprite tinted [r,g,b].
+                function glowSprite(rgb, size) {
+                    const cv = document.createElement("canvas");
+                    cv.width = cv.height = size;
+                    const c = cv.getContext("2d");
+                    const h = size / 2;
+                    const g = c.createRadialGradient(h, h, 0, h, h, h);
+                    const s = rgb[0] + "," + rgb[1] + "," + rgb[2];
+                    g.addColorStop(0, "rgba(" + s + ",1)");
+                    g.addColorStop(0.35, "rgba(" + s + ",0.55)");
+                    g.addColorStop(1, "rgba(" + s + ",0)");
+                    c.fillStyle = g;
+                    c.fillRect(0, 0, size, size);
+                    return cv;
+                }
+
+                // ============================================================
+                // Parameterized gravity engine (softened all-pairs, wrapping).
+                // p = { count, G, soft, cap, trail }  — read live each frame.
+                // ============================================================
+                function makeGravity(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    const SPR = 8;
+                    let GS = 13,
+                        GH = GS / 2,
+                        sprites = [];
+                    function buildSprites() {
+                        GS = Math.max(10, Math.round(13 * DPR));
+                        GH = GS / 2;
+                        sprites = [];
+                        for (let k = 0; k < SPR; k++) {
+                            sprites.push(
+                                glowSprite(
+                                    sampleStops(0.6 + 0.4 * (k / (SPR - 1))),
+                                    GS,
+                                ),
+                            );
+                        }
+                    }
+                    let W = 0,
+                        H = 0,
+                        n = 0,
+                        xs,
+                        ys,
+                        vx,
+                        vy,
+                        ax,
+                        ay,
+                        raf = 0;
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        W = Math.max(2, Math.round(r.width * DPR));
+                        H = Math.max(2, Math.round(r.height * DPR));
+                        canvas.width = W;
+                        canvas.height = H;
+                    }
+                    function seed() {
+                        n = p.count;
+                        xs = new Float32Array(n);
+                        ys = new Float32Array(n);
+                        vx = new Float32Array(n);
+                        vy = new Float32Array(n);
+                        ax = new Float32Array(n);
+                        ay = new Float32Array(n);
+                        let mvx = 0,
+                            mvy = 0;
+                        for (let i = 0; i < n; i++) {
+                            xs[i] = Math.random() * W;
+                            ys[i] = Math.random() * H;
+                            vx[i] = (Math.random() - 0.5) * 0.5 * DPR;
+                            vy[i] = (Math.random() - 0.5) * 0.5 * DPR;
+                            mvx += vx[i];
+                            mvy += vy[i];
+                        }
+                        mvx /= n;
+                        mvy /= n;
+                        for (let i = 0; i < n; i++) {
+                            vx[i] -= mvx;
+                            vy[i] -= mvy;
+                        }
+                    }
+                    function init() {
+                        fit();
+                        buildSprites();
+                        seed();
+                        ctx.fillStyle = BG_STR;
+                        ctx.fillRect(0, 0, W, H);
+                    }
+                    function step() {
+                        const G = p.G * DPR;
+                        const soft2 = (p.soft * DPR) ** 2;
+                        const cap = p.cap * DPR;
+                        const capSq = cap * cap;
+                        const hw = W / 2,
+                            hh = H / 2;
+                        ax.fill(0);
+                        ay.fill(0);
+                        if (G > 0) {
+                            for (let i = 0; i < n; i++) {
+                                const xi = xs[i],
+                                    yi = ys[i];
+                                let axi = ax[i],
+                                    ayi = ay[i];
+                                for (let j = i + 1; j < n; j++) {
+                                    let dx = xs[j] - xi,
+                                        dy = ys[j] - yi;
+                                    if (dx > hw) dx -= W;
+                                    else if (dx < -hw) dx += W;
+                                    if (dy > hh) dy -= H;
+                                    else if (dy < -hh) dy += H;
+                                    const d2 = dx * dx + dy * dy + soft2;
+                                    const inv = G / (d2 * Math.sqrt(d2));
+                                    const fx = dx * inv,
+                                        fy = dy * inv;
+                                    axi += fx;
+                                    ayi += fy;
+                                    ax[j] -= fx;
+                                    ay[j] -= fy;
+                                }
+                                ax[i] = axi;
+                                ay[i] = ayi;
+                            }
+                        }
+                        for (let i = 0; i < n; i++) {
+                            let nvx = vx[i] + ax[i],
+                                nvy = vy[i] + ay[i];
+                            const s2 = nvx * nvx + nvy * nvy;
+                            if (s2 > capSq) {
+                                const sc = cap / Math.sqrt(s2);
+                                nvx *= sc;
+                                nvy *= sc;
+                            }
+                            vx[i] = nvx;
+                            vy[i] = nvy;
+                            let nx = xs[i] + nvx,
+                                ny = ys[i] + nvy;
+                            nx -= Math.floor(nx / W) * W;
+                            ny -= Math.floor(ny / H) * H;
+                            xs[i] = nx;
+                            ys[i] = ny;
+                        }
+                    }
+                    function render() {
+                        const cap = p.cap * DPR;
+                        const trail = p.trail == null ? 0.86 : p.trail;
+                        ctx.globalCompositeOperation = "source-over";
+                        ctx.fillStyle =
+                            "rgba(" +
+                            BG[0] +
+                            "," +
+                            BG[1] +
+                            "," +
+                            BG[2] +
+                            "," +
+                            (0.5 - trail * 0.46) +
+                            ")";
+                        ctx.fillRect(0, 0, W, H);
+                        ctx.globalCompositeOperation = "lighter";
+                        for (let i = 0; i < n; i++) {
+                            let t = Math.hypot(vx[i], vy[i]) / (cap || 1);
+                            if (t > 1) t = 1;
+                            let b = (t * (SPR - 1) + 0.5) | 0;
+                            if (b > SPR - 1) b = SPR - 1;
+                            ctx.drawImage(sprites[b], xs[i] - GH, ys[i] - GH);
+                        }
+                        ctx.globalCompositeOperation = "source-over";
+                    }
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+                    function scatterAt(cx, cy) {
+                        const R = Math.min(W, H) * 0.45;
+                        const Rsq = R * R;
+                        const kick = p.cap * DPR * 1.4;
+                        for (let i = 0; i < n; i++) {
+                            const dx = xs[i] - cx,
+                                dy = ys[i] - cy;
+                            const d2 = dx * dx + dy * dy;
+                            if (d2 > Rsq || d2 === 0) continue;
+                            const d = Math.sqrt(d2);
+                            const f = (1 - d / R) * kick;
+                            vx[i] += (dx / d) * f;
+                            vy[i] += (dy / d) * f;
+                        }
+                    }
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 140; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        scatterAt,
+                        get size() {
+                            return { W, H };
+                        },
+                    };
+                }
+
+                // ============================================================
+                // Orbit demo: one test speck around a fixed heavy core. The
+                // slider sets its sideways launch speed as a fraction of the
+                // circular-orbit speed, so 50 = a clean circle.
+                // ============================================================
+                function makeOrbit(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    let W = 0,
+                        H = 0,
+                        cx = 0,
+                        cy = 0,
+                        R0 = 0,
+                        GM = 0,
+                        soft2 = 0,
+                        vc = 0,
+                        mergeR = 0,
+                        escR = 0,
+                        x = 0,
+                        y = 0,
+                        vx = 0,
+                        vy = 0,
+                        raf = 0,
+                        flash = 0;
+                    let coreSprite, headSprite, trailSprites;
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        W = Math.max(2, Math.round(r.width * DPR));
+                        H = Math.max(2, Math.round(r.height * DPR));
+                        canvas.width = W;
+                        canvas.height = H;
+                    }
+                    function build() {
+                        cx = W / 2;
+                        cy = H / 2;
+                        R0 = Math.min(W, H) * 0.32;
+                        vc = 2.6 * DPR; // circular speed at R0
+                        GM = vc * vc * R0; // so sqrt(GM/R0) = vc
+                        soft2 = (R0 * 0.14) ** 2;
+                        mergeR = R0 * 0.16;
+                        escR = Math.min(W, H) * 0.62;
+                        coreSprite = glowSprite(
+                            sampleStops(1),
+                            Math.round(R0 * 0.5),
+                        );
+                        headSprite = glowSprite(
+                            sampleStops(0.85),
+                            Math.round(14 * DPR),
+                        );
+                        trailSprites = sampleStops(0.7);
+                        launch();
+                    }
+                    function launch() {
+                        x = cx + R0;
+                        y = cy;
+                        vx = 0;
+                        vy = -(p.frac / 50) * vc; // upward, across the pull
+                    }
+                    function init() {
+                        fit();
+                        build();
+                        ctx.fillStyle = BG_STR;
+                        ctx.fillRect(0, 0, W, H);
+                    }
+                    function step() {
+                        for (let s = 0; s < 2; s++) {
+                            const dx = cx - x,
+                                dy = cy - y;
+                            const d2 = dx * dx + dy * dy;
+                            const dist = Math.sqrt(d2);
+                            const inv =
+                                GM / ((d2 + soft2) * Math.sqrt(d2 + soft2));
+                            vx += dx * inv;
+                            vy += dy * inv;
+                            x += vx;
+                            y += vy;
+                            if (dist < mergeR) {
+                                flash = 1;
+                                launch();
+                            } else if (dist > escR) {
+                                launch();
+                            }
+                        }
+                    }
+                    function render() {
+                        ctx.fillStyle =
+                            "rgba(" +
+                            BG[0] +
+                            "," +
+                            BG[1] +
+                            "," +
+                            BG[2] +
+                            ",0.12)";
+                        ctx.fillRect(0, 0, W, H);
+                        ctx.globalCompositeOperation = "lighter";
+                        // the speck
+                        const hh = headSprite.width / 2;
+                        ctx.drawImage(headSprite, x - hh, y - hh);
+                        // the heavy core (drawn after so it stays bright)
+                        const ch = coreSprite.width / 2;
+                        if (flash > 0) {
+                            ctx.globalAlpha = 0.4 + 0.6 * flash;
+                            flash = Math.max(0, flash - 0.06);
+                        }
+                        ctx.drawImage(coreSprite, cx - ch, cy - ch);
+                        ctx.globalAlpha = 1;
+                        ctx.globalCompositeOperation = "source-over";
+                    }
+                    function frame() {
+                        step();
+                        render();
+                        raf = requestAnimationFrame(frame);
+                    }
+                    return {
+                        start() {
+                            if (!W) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 200; k++) step();
+                                render();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        relaunch: launch,
+                    };
+                }
+
+                // ============================================================
+                // Wire up the demos.
+                // ============================================================
+                const instances = [];
+
+                // The one-rule two-up: no pull vs pull.
+                const pullDemo = document.querySelector('[data-demo="pull"]');
+                const pullPresets = {
+                    lo: { count: 60, G: 0, soft: 10, cap: 6, trail: 0.7 },
+                    hi: { count: 60, G: 26, soft: 12, cap: 9, trail: 0.86 },
+                };
+                ["lo", "hi"].forEach((side) => {
+                    const cv = pullDemo.querySelector(
+                        'canvas[data-side="' + side + '"]',
+                    );
+                    const prev = makeGravity(cv, pullPresets[side]);
+                    instances.push({ el: cv, prev });
+                });
+
+                // Orbit slider demo.
+                const orbitDemo = document.querySelector('[data-demo="orbit"]');
+                const orbitParams = { frac: 50 };
+                const orbitPrev = makeOrbit(
+                    orbitDemo.querySelector("canvas"),
+                    orbitParams,
+                );
+                instances.push({
+                    el: orbitDemo.querySelector("canvas"),
+                    prev: orbitPrev,
+                });
+                const oSlider = orbitDemo.querySelector("[data-speed]");
+                const oOut = orbitDemo.querySelector("[data-out]");
+                const oRead = orbitDemo.querySelector("[data-read]");
+                function describeOrbit(f) {
+                    if (f < 30)
+                        return {
+                            word: "too slow",
+                            text: "It falls almost straight in and is swallowed by the core.",
+                        };
+                    if (f < 72)
+                        return {
+                            word: "just right",
+                            text: "It keeps missing the core and loops around it. That is an orbit.",
+                        };
+                    return {
+                        word: "too fast",
+                        text: "It sweeps past once and escapes, never to come back.",
+                    };
+                }
+                function syncOrbit() {
+                    const f = +oSlider.value;
+                    orbitParams.frac = f;
+                    const d = describeOrbit(f);
+                    oOut.textContent = d.word;
+                    oRead.textContent = d.text;
+                    orbitPrev.relaunch();
+                }
+                oSlider.addEventListener("input", syncOrbit);
+                syncOrbit();
+
+                // Poke / whirlpool demo.
+                const pokeDemo = document.querySelector('[data-demo="poke"]');
+                const pokeCanvas = pokeDemo.querySelector("canvas");
+                const pokePrev = makeGravity(pokeCanvas, {
+                    count: 150,
+                    G: 26,
+                    soft: 14,
+                    cap: 16,
+                    trail: 0.86,
+                });
+                instances.push({ el: pokeCanvas, prev: pokePrev });
+                function poke(ev) {
+                    const r = pokeCanvas.getBoundingClientRect();
+                    const px = ((ev.clientX - r.left) / r.width) * pokePrev.size.W;
+                    const py = ((ev.clientY - r.top) / r.height) * pokePrev.size.H;
+                    pokePrev.scatterAt(px, py);
+                }
+                pokeCanvas.addEventListener("pointerdown", poke);
+                pokeCanvas.style.cursor = "pointer";
+
+                // Hero backdrop cloud.
+                const heroCanvas = document.getElementById("hero-canvas");
+                const heroPrev = makeGravity(heroCanvas, {
+                    count: 170,
+                    G: 26,
+                    soft: 14,
+                    cap: 18,
+                    trail: 0.88,
+                });
+
+                // Lazy start/stop + resize.
+                window.EX.observeLazy([
+                    ...instances.map((it) => ({ el: it.el, inst: it.prev })),
+                    { el: heroCanvas, inst: heroPrev },
+                ]);
+                heroPrev.start();
+                window.EX.onResize(() => {
+                    heroPrev.resize();
+                    instances.forEach((it) => it.prev.resize());
+                    syncOrbit();
+                });
+            })();
+        </script>
+    </body>
+</html>

@@ -153,6 +153,17 @@ svg.mark {
     --cell-bg: #020600;
 }
 
+[data-world="gravity"] {
+    --ink: #f4f1fb;
+    --muted: rgba(244, 241, 251, 0.86);
+    --faint: rgba(244, 241, 251, 0.45);
+    --hi: rgba(244, 241, 251, 0.92);
+    --bg: #000018;
+    --bg-rgb: 0, 0, 24;
+    --nav-bg: rgba(4, 4, 26, 0.55);
+    --cell-bg: #000018;
+}
+
 /* ============================================================================
    Cross-document view transitions (option 9) — a shared crossfade between
    worlds. Browsers without support simply hard-cut as before.

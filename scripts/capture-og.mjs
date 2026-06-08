@@ -41,11 +41,10 @@ const HEIGHT = 630;
 const SIMS = {
   'boids':              { dwell: 5000,  mode: 'plain' },
   'flow-field':         { dwell: 4500,  mode: 'plain' },
-  // A full-frame "Scatter" settles into a field of distinct swimming cells;
-  // 'plain' keeps the signature Verdant palette (randomize would reroll color,
-  // which lives in the per-device global block and can't be pinned via the hash).
-  'lenia':              { dwell: 9000,  mode: 'plain',
-                          state: { pattern: { name: 'Scatter', regionSize: 1 } } },
+  // The default scattered cloud reliably winds into a glowing spiral; capture it
+  // straight rather than randomizing (random rerolls can collapse to a dot).
+  'gravity':            { dwell: 8000,  mode: 'plain',
+                          state: { params: { count: 1500 } } },
   'particle-life':      { dwell: 9000,  mode: 'best', tries: 6 },
   'reaction-diffusion': { dwell: 8500,  mode: 'plain' },
   'slime-mold':         { dwell: 16000, mode: 'plain', // networks take a while
