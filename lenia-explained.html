@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en" data-world="lenia">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#020808" />
+        <title>How Lenia Works · Tiny Worlds</title>
+        <meta
+            name="description"
+            content="A visual walkthrough of Lenia, a smooth Game of Life. Every cell looks around a soft ring, a sweet spot of company decides whether it grows or fades, and out of that one rule, creatures swim. Tune it and watch."
+        />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content="How Lenia Works" />
+        <meta
+            property="og:description"
+            content="Every cell looks around a soft ring, a sweet spot of company decides its fate, and out of that one rule, creatures swim. A visual walkthrough of Lenia."
+        />
+        <meta property="og:image" content="og/lenia.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="og/lenia.png" />
+        <meta name="twitter:title" content="How Lenia Works" />
+        <meta
+            name="twitter:description"
+            content="A soft ring, a sweet spot of company, and creatures that swim out of the noise."
+        />
+
+        <link rel="stylesheet" href="tokens.css" />
+        <link rel="stylesheet" href="explained.css" />
+        <style>
+            /* ---------- Aliveness legend ---------- */
+            .legend {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+                margin-top: 14px;
+                font-size: 13px;
+                color: var(--muted);
+            }
+            .legend .ramp {
+                width: 160px;
+                max-width: 50vw;
+                height: 12px;
+                border-radius: 999px;
+                background: linear-gradient(
+                    90deg,
+                    #020808,
+                    #0a2818,
+                    #187058,
+                    #54d8b8,
+                    #dcfff0
+                );
+                background-repeat: no-repeat;
+                border: 1px solid var(--line);
+            }
+
+            /* The ring section pairs a still kernel diagram with a live field;
+               keep both square so they read as a matched set. */
+            .ring-grid .cell canvas {
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+
+            /* ---------- Growth-bell map (the showpiece) ---------- */
+            .map-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-top: 4px;
+            }
+            @media (min-width: 620px) {
+                .map-grid {
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
+                }
+            }
+            .pad-wrap {
+                display: flex;
+                flex-direction: column;
+            }
+            .map-grid .pad-wrap .cell canvas {
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+            .pad {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                border-radius: 14px;
+                border: 1px solid var(--line);
+                background:
+                    radial-gradient(
+                        120% 120% at 30% 78%,
+                        rgba(var(--accent-rgb), 0.16),
+                        rgba(var(--accent-rgb), 0) 55%
+                    ),
+                    linear-gradient(
+                        180deg,
+                        rgba(24, 112, 88, 0.28),
+                        rgba(2, 8, 8, 0.2)
+                    );
+                background-repeat: no-repeat;
+                cursor: crosshair;
+                touch-action: none;
+                overflow: hidden;
+            }
+            .pad .axis {
+                position: absolute;
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--faint);
+                pointer-events: none;
+            }
+            .pad .axis.x {
+                bottom: 7px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .pad .axis.y {
+                top: 50%;
+                left: 7px;
+                transform: translateY(-50%) rotate(-90deg);
+                transform-origin: left center;
+            }
+            .pad .land {
+                position: absolute;
+                font-size: 10.5px;
+                letter-spacing: 0.03em;
+                color: var(--faint);
+                pointer-events: none;
+                white-space: nowrap;
+                transform: translate(-50%, -50%);
+            }
+            .knob {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                margin: -10px 0 0 -10px;
+                border-radius: 50%;
+                background: var(--accent);
+                border: 2px solid #fff;
+                box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.55);
+                pointer-events: none;
+            }
+            .map-side {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .map-side .regime {
+                font-size: clamp(22px, 4.5vw, 30px);
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                margin: 0 0 6px;
+            }
+            .map-side .read {
+                font-size: 14px;
+                color: var(--muted);
+                min-height: 3.6em;
+                margin: 0 0 14px;
+            }
+            .map-side .vals {
+                display: flex;
+                gap: 18px;
+                font-size: 13px;
+                color: var(--faint);
+                font-variant-numeric: tabular-nums;
+            }
+            .map-side .vals b {
+                color: var(--ink);
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav">
+            <a class="brand" href="index.html"
+                ><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg> Tiny Worlds</a
+            >
+            <div class="links">
+                <a class="home" href="index.html">All worlds</a>
+                <a class="launch" href="lenia.html">Open Lenia →</a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <canvas id="hero-canvas"></canvas>
+            <div class="scrim"></div>
+            <div class="content">
+                <h1 class="title">A softer Game of Life</h1>
+                <p class="lede">
+                    One rule, run on a smooth field instead of a checkerboard, and
+                    creatures swim out of the&nbsp;noise.
+                </p>
+            </div>
+            <svg
+                class="chev"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </header>
+
+        <main class="article">
+            <!-- ORIENTATION -->
+            <section id="what">
+                <p class="step">Before the rule</p>
+                <h2>A field of living cells</h2>
+                <p>
+                    Picture the screen as a grid of cells, each one somewhere
+                    between empty and full. The color is just
+                    <span class="hi">how alive</span> a cell is: dark where the
+                    field is empty, bright where it is brimming. Nothing here is a
+                    creature yet, only a smooth field of numbers.
+                </p>
+                <p>
+                    The classic Game of Life flips cells hard on or off. Lenia
+                    lets them sit anywhere in between, which is the whole trick.
+                    <span class="hi">Paint some life in yourself</span> and watch
+                    it sit there, waiting for a rule.
+                </p>
+                <div class="demo" data-demo="paint">
+                    <div class="cell">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <div class="legend">
+                        <span>Empty</span>
+                        <span class="ramp"></span>
+                        <span>Full</span>
+                    </div>
+                    <p class="hint">Drag on the field to paint in life ↑</p>
+                </div>
+            </section>
+
+            <!-- HALF 1: LOOK AROUND A RING -->
+            <section id="ring">
+                <p class="step">Half 1 of 2</p>
+                <h2>Every cell looks around a ring</h2>
+                <p>
+                    To decide what happens next, each cell adds up how much life
+                    sits around it. Not its touching neighbors, but a
+                    <span class="hi">soft ring</span> held a short distance away,
+                    brightest at the middle of the ring and fading to nothing at
+                    the edges. That donut on the left is the exact shape of the
+                    look.
+                </p>
+                <p>
+                    Reaching out to a ring instead of the cells next door is what
+                    gives Lenia its scale. Widen the ring and the creatures grow
+                    with it.
+                </p>
+                <div class="demo ring-grid" data-demo="ring">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="kernel"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">The ring</span>, each cell's
+                                window on its neighbors
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="field"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">The field</span>, blurred
+                                through that ring
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HALF 2: THE SWEET SPOT -->
+            <section id="growth">
+                <p class="step">Half 2 of 2</p>
+                <h2>A sweet spot decides its fate</h2>
+                <p>
+                    Now the cell has a number: how much company it sees in that
+                    ring. A single
+                    <span class="hi">sweet spot</span> turns that into life or
+                    death. See about the right amount and the cell grows. See too
+                    little or too much and it fades. That is the entire rule, run
+                    on every cell at once, over and over.
+                </p>
+                <p>
+                    Both fields below start from the same scatter. They differ by
+                    one setting, where the sweet spot sits.
+                </p>
+                <div class="demo" data-demo="growth">
+                    <div class="demo-pair">
+                        <div class="cell">
+                            <canvas data-side="lo"></canvas>
+                            <div class="caption">
+                                <span class="dot lo"></span
+                                ><span class="tag off">Sweet spot too high</span>,
+                                life starves out
+                            </div>
+                        </div>
+                        <div class="cell">
+                            <canvas data-side="hi"></canvas>
+                            <div class="caption">
+                                <span class="dot hi"></span
+                                ><span class="tag">Sweet spot just right</span>,
+                                it holds and thrives
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- THE REVEAL: IT MOVES -->
+            <section id="swim">
+                <p class="step">The surprise</p>
+                <h2>And then it starts to swim</h2>
+                <p>
+                    Here is the part nobody puts in by hand. Leave that one rule
+                    running and the blobs do not just sit and pulse. Some of them
+                    settle into a lopsided shape that
+                    <span class="hi">pushes itself forward</span>, healing the
+                    damage you do to it and gliding across the field like a
+                    single-celled animal. Cut one in half and each half can grow
+                    back whole.
+                </p>
+                <p>
+                    These swimmers were never drawn. They are simply the only
+                    shapes the rule lets survive while moving, so the field finds
+                    them on its own.
+                </p>
+                <div class="demo" data-demo="swim">
+                    <div class="cell wide">
+                        <canvas data-side="solo"></canvas>
+                    </div>
+                    <p class="hint">Same rule as above, just left to run →</p>
+                </div>
+            </section>
+
+            <!-- PAYOFF: tune the sweet spot and tolerance -->
+            <section id="map">
+                <p class="step">All of it, in your hands</p>
+                <h2>The same field, a hundred worlds</h2>
+                <p>
+                    You have met the whole rule now: a soft ring that measures
+                    company, and a sweet spot that turns it into life or death.
+                    Two dials shape that sweet spot. Where it sits decides how
+                    much company cells want, and how fussy they are about it
+                    decides whether shapes come out crisp or melt together.
+                </p>
+                <p>
+                    Drag across the map and watch the very same field reorganize.
+                    Push too far and life starves to black or floods into
+                    shapeless blobs. Hold the narrow band between them and
+                    creatures appear.
+                </p>
+                <div class="demo" data-demo="map">
+                    <div class="map-grid">
+                        <div class="pad-wrap">
+                            <div class="cell">
+                                <canvas data-side="solo"></canvas>
+                            </div>
+                        </div>
+                        <div class="map-side">
+                            <div class="pad" data-pad>
+                                <span class="axis x">Sweet spot →</span>
+                                <span class="axis y">Tolerance →</span>
+                                <span class="land" style="left: 16%; top: 50%"
+                                    >overgrown</span
+                                >
+                                <span class="land" style="left: 84%; top: 50%"
+                                    >fading</span
+                                >
+                                <span class="land" style="left: 50%; top: 16%"
+                                    >crisp</span
+                                >
+                                <span class="land" style="left: 50%; top: 84%"
+                                    >melting</span
+                                >
+                                <div class="knob" data-knob></div>
+                            </div>
+                            <p class="hint">Drag anywhere on the square ↑</p>
+                        </div>
+                    </div>
+                    <div class="map-side" style="margin-top: 14px">
+                        <p class="regime" data-regime>living</p>
+                        <p class="read" data-read></p>
+                        <div class="vals">
+                            <span>sweet spot <b data-mu></b></span>
+                            <span>tolerance <b data-sigma></b></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="launch" class="outro">
+                <h2>Go grow your own</h2>
+                <p>
+                    The full sim hands you every dial, a palette to recolor it,
+                    and seed shapes to start from, gliders included. The one rule
+                    behind it never changes.
+                </p>
+                <p style="margin-top: 22px">
+                    <a class="cta" href="lenia.html"
+                        >Open the Lenia sim <span class="arrow">→</span></a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script src="explained.js"></script>
+        <script>
+            (() => {
+                const { REDUCED, DPR, hexToRgb } = window.EX;
+
+                // Lenia palette — the "Verdant" look, matching the home-page demo
+                // and this world's accent.
+                const STOPS = [
+                    "#020808",
+                    "#0a2818",
+                    "#187058",
+                    "#54d8b8",
+                    "#dcfff0",
+                ];
+                function buildLUT(stops) {
+                    const seg = stops.length - 1;
+                    const out = new Uint8ClampedArray(256 * 3);
+                    for (let i = 0; i < 256; i++) {
+                        const sf = (i / 255) * seg;
+                        const s = Math.min(sf | 0, seg - 1);
+                        const u = sf - s;
+                        const c0 = hexToRgb(stops[s]);
+                        const c1 = hexToRgb(stops[s + 1]);
+                        out[i * 3] = c0[0] + (c1[0] - c0[0]) * u;
+                        out[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * u;
+                        out[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * u;
+                    }
+                    return out;
+                }
+                const LUT = buildLUT(STOPS);
+
+                // Seeded PRNG so paired (lo/hi) demos start from the exact same
+                // scatter, then only the rule differs.
+                function mulberry32(a) {
+                    return function () {
+                        a |= 0;
+                        a = (a + 0x6d2b79f5) | 0;
+                        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                    };
+                }
+
+                // The canonical "Orbium" glider (Bert Chan), tuned for R=13. A
+                // 20x20 patch of cell values in [0,1], stamped (scaled to R) so
+                // the swimmers appear on demand.
+                // prettier-ignore
+                const ORBIUM = [
+                    [0,0,0,0,0,0,0.1,0.14,0.1,0,0,0.03,0.03,0,0,0.3,0,0,0,0],
+                    [0,0,0,0,0,0.08,0.24,0.3,0.3,0.18,0.14,0.15,0.16,0.15,0.09,0.2,0,0,0,0],
+                    [0,0,0,0,0,0.15,0.34,0.44,0.46,0.38,0.18,0.14,0.11,0.13,0.19,0.18,0.45,0,0,0],
+                    [0,0,0,0,0.06,0.13,0.39,0.5,0.5,0.37,0.06,0,0,0,0.02,0.16,0.68,0,0,0],
+                    [0,0,0,0.11,0.17,0.17,0.33,0.4,0.38,0.28,0.14,0,0,0,0,0,0.18,0.42,0,0],
+                    [0,0,0.09,0.18,0.13,0.06,0.08,0.26,0.32,0.32,0.27,0,0,0,0,0,0,0.82,0,0],
+                    [0.27,0,0.16,0.12,0,0,0,0.25,0.38,0.44,0.45,0.34,0,0,0,0,0,0.22,0.17,0],
+                    [0,0.07,0.2,0.02,0,0,0,0.31,0.48,0.57,0.6,0.57,0,0,0,0,0,0,0.49,0],
+                    [0,0.59,0.19,0,0,0,0,0.2,0.57,0.69,0.76,0.76,0.49,0,0,0,0,0,0.36,0],
+                    [0,0.58,0.19,0,0,0,0,0,0.67,0.83,0.9,0.92,0.87,0.12,0,0,0,0,0.22,0.07],
+                    [0,0,0.46,0,0,0,0,0,0.7,0.93,1,1,1,0.61,0,0,0,0,0.18,0.11],
+                    [0,0,0.82,0,0,0,0,0,0.47,1,1,0.98,1,0.96,0.27,0,0,0,0.19,0.1],
+                    [0,0,0.46,0,0,0,0,0,0.25,0.84,0.92,0.97,0.99,1,0.89,0.23,0,0,0.21,0.05],
+                    [0,0,0,0.4,0,0,0,0,0.09,0.8,0.82,0.82,0.85,0.63,0.31,0.07,0,0,0.16,0.03],
+                    [0,0,0,0.18,0.54,0,0,0,0.04,0.41,0.51,0.55,0.49,0.39,0.2,0.02,0,0,0.07,0],
+                    [0,0,0,0,0.31,0.41,0.27,0,0,0.21,0.43,0.49,0.4,0.27,0.09,0,0,0,0.03,0],
+                    [0,0,0,0,0,0.18,0.42,0.39,0.34,0.32,0.42,0.41,0.28,0.13,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0.13,0.34,0.4,0.37,0.31,0.21,0.09,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0.12,0.21,0.16,0.06,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                ];
+
+                // ============================================================
+                // Parameterized Lenia engine.
+                // p = { mu, sigma, dt, R, sub, cells, seed, seedN, rseed }
+                //   p is read live each frame, so a drag can mutate p.mu / p.sigma
+                //   in place. Toroidal field + the same ring-and-growth math as
+                //   lenia.sim.js, sized down for these demos.
+                //   seed: "scatter" | "orbium" | "empty"
+                // ============================================================
+                function makeLenia(canvas, p) {
+                    const ctx = canvas.getContext("2d");
+                    const off = document.createElement("canvas");
+                    const offCtx = off.getContext("2d");
+                    let gw = 0,
+                        gh = 0,
+                        A,
+                        A2,
+                        img,
+                        data,
+                        raf = 0;
+                    let kdx, kdy, kw, kLen;
+
+                    function buildKernel() {
+                        const R = p.R;
+                        const dxs = [],
+                            dys = [],
+                            ws = [];
+                        let sum = 0;
+                        for (let dy = -R; dy <= R; dy++)
+                            for (let dx = -R; dx <= R; dx++) {
+                                const rn = Math.sqrt(dx * dx + dy * dy) / R;
+                                if (rn === 0 || rn >= 1) continue;
+                                const w = Math.exp(
+                                    -((rn - 0.5) * (rn - 0.5)) /
+                                        (2 * 0.15 * 0.15),
+                                );
+                                if (w < 1e-3) continue;
+                                dxs.push(dx);
+                                dys.push(dy);
+                                ws.push(w);
+                                sum += w;
+                            }
+                        kLen = ws.length;
+                        kdx = Int32Array.from(dxs);
+                        kdy = Int32Array.from(dys);
+                        kw = Float32Array.from(ws.map((w) => w / sum));
+                    }
+
+                    function fit() {
+                        const r = canvas.getBoundingClientRect();
+                        const W = Math.max(2, Math.round(r.width));
+                        const H = Math.max(2, Math.round(r.height));
+                        canvas.width = Math.round(W * DPR);
+                        canvas.height = Math.round(H * DPR);
+                        const aspect = W / H;
+                        const target = p.cells || 11000;
+                        gh = Math.max(48, Math.round(Math.sqrt(target / aspect)));
+                        gw = Math.max(64, Math.round(gh * aspect));
+                        const c = gw * gh;
+                        A = new Float32Array(c);
+                        A2 = new Float32Array(c);
+                        off.width = gw;
+                        off.height = gh;
+                        img = offCtx.createImageData(gw, gh);
+                        data = img.data;
+                        buildKernel();
+                    }
+
+                    function blob(cx, cy, r, peak) {
+                        const ri = Math.ceil(r);
+                        for (let dy = -ri; dy <= ri; dy++)
+                            for (let dx = -ri; dx <= ri; dx++) {
+                                const d = Math.sqrt(dx * dx + dy * dy);
+                                if (d > r) continue;
+                                let ix = cx + dx,
+                                    iy = cy + dy;
+                                ix -= Math.floor(ix / gw) * gw;
+                                iy -= Math.floor(iy / gh) * gh;
+                                const i = iy * gw + ix;
+                                const v =
+                                    peak * (0.5 + 0.5 * Math.cos((Math.PI * d) / r));
+                                if (v > A[i]) A[i] = v;
+                            }
+                    }
+
+                    function stamp(cx, cy, rng) {
+                        const rows = ORBIUM.length,
+                            cols = ORBIUM[0].length,
+                            sc = p.R / 13;
+                        const fw = Math.round(cols * sc),
+                            fh = Math.round(rows * sc);
+                        const fx = (rng ? rng() : Math.random()) < 0.5,
+                            fy = (rng ? rng() : Math.random()) < 0.5;
+                        for (let y = 0; y < fh; y++)
+                            for (let x = 0; x < fw; x++) {
+                                const sx = (x / fw) * (cols - 1),
+                                    sy = (y / fh) * (rows - 1);
+                                const x0 = Math.floor(sx),
+                                    y0 = Math.floor(sy);
+                                const x1 = Math.min(cols - 1, x0 + 1),
+                                    y1 = Math.min(rows - 1, y0 + 1);
+                                const tx = sx - x0,
+                                    ty = sy - y0;
+                                const v =
+                                    ORBIUM[y0][x0] * (1 - tx) * (1 - ty) +
+                                    ORBIUM[y0][x1] * tx * (1 - ty) +
+                                    ORBIUM[y1][x0] * (1 - tx) * ty +
+                                    ORBIUM[y1][x1] * tx * ty;
+                                if (v <= 0.01) continue;
+                                let px = cx + (fx ? fw - 1 - x : x) - (fw >> 1);
+                                let py = cy + (fy ? fh - 1 - y : y) - (fh >> 1);
+                                px -= Math.floor(px / gw) * gw;
+                                py -= Math.floor(py / gh) * gh;
+                                A[py * gw + px] = v;
+                            }
+                    }
+
+                    function seed() {
+                        A.fill(0);
+                        if (p.seed === "empty") return;
+                        const rng = mulberry32(p.rseed || 1);
+                        if (p.seed === "orbium") {
+                            const n = p.seedN || 5;
+                            for (let k = 0; k < n; k++)
+                                stamp(
+                                    (rng() * gw) | 0,
+                                    (rng() * gh) | 0,
+                                    rng,
+                                );
+                            return;
+                        }
+                        // scatter: smooth blobs at roughly creature scale
+                        const n = p.seedN || 8;
+                        for (let k = 0; k < n; k++)
+                            blob(
+                                (rng() * gw) | 0,
+                                (rng() * gh) | 0,
+                                p.R * (0.7 + rng() * 0.6),
+                                0.6 + rng() * 0.4,
+                            );
+                    }
+
+                    function init() {
+                        fit();
+                        seed();
+                    }
+
+                    function stepOne() {
+                        const mu = p.mu,
+                            sigma = p.sigma,
+                            dt = p.dt;
+                        const twoSig2 = 2 * sigma * sigma;
+                        for (let y = 0; y < gh; y++)
+                            for (let x = 0; x < gw; x++) {
+                                let u = 0;
+                                for (let k = 0; k < kLen; k++) {
+                                    let ix = x + kdx[k];
+                                    if (ix < 0) ix += gw;
+                                    else if (ix >= gw) ix -= gw;
+                                    let iy = y + kdy[k];
+                                    if (iy < 0) iy += gh;
+                                    else if (iy >= gh) iy -= gh;
+                                    u += kw[k] * A[iy * gw + ix];
+                                }
+                                const g =
+                                    2 *
+                                        Math.exp(
+                                            -((u - mu) * (u - mu)) / twoSig2,
+                                        ) -
+                                    1;
+                                const i = y * gw + x;
+                                let v = A[i] + dt * g;
+                                A2[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+                            }
+                        const t = A;
+                        A = A2;
+                        A2 = t;
+                    }
+
+                    function draw() {
+                        const cells = gw * gh;
+                        for (let i = 0, q = 0; i < cells; i++, q += 4) {
+                            let idx = (A[i] * 255) | 0;
+                            if (idx > 255) idx = 255;
+                            const c = idx * 3;
+                            data[q] = LUT[c];
+                            data[q + 1] = LUT[c + 1];
+                            data[q + 2] = LUT[c + 2];
+                            data[q + 3] = 255;
+                        }
+                        offCtx.putImageData(img, 0, 0);
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+                    }
+
+                    function frame() {
+                        const sub = p.sub || 1;
+                        for (let s = 0; s < sub; s++) stepOne();
+                        draw();
+                        raf = requestAnimationFrame(frame);
+                    }
+
+                    function paintAt(clientX, clientY) {
+                        if (!gw) return;
+                        const r = canvas.getBoundingClientRect();
+                        const gx = Math.floor(((clientX - r.left) / r.width) * gw);
+                        const gy = Math.floor(((clientY - r.top) / r.height) * gh);
+                        blob(gx, gy, Math.max(3, p.R * 0.9), 1);
+                        if (REDUCED) draw();
+                    }
+
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) {
+                                const budget = p.seed === "empty" ? 0 : 120;
+                                for (let k = 0; k < budget; k++) stepOne();
+                                draw();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                        reseed() {
+                            if (gw) seed();
+                        },
+                        paintAt,
+                    };
+                }
+
+                // ============================================================
+                // Presets. mu/sigma/dt/R are the same dials the sim exposes;
+                // every "alive" preset sits in the band that forms creatures.
+                // ============================================================
+                const BASE = {
+                    mu: 0.15,
+                    sigma: 0.015,
+                    dt: 0.16,
+                    R: 10,
+                    sub: 1,
+                    cells: 11000,
+                    seed: "scatter",
+                    seedN: 8,
+                };
+                const mk = (over) => Object.assign({}, BASE, over);
+
+                const instances = []; // { el, prev }
+
+                // ---------- Half 2: the sweet spot (lo fails, hi lives) ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="growth"]');
+                    const presets = {
+                        lo: mk({
+                            seed: "orbium",
+                            R: 13,
+                            cells: 13000,
+                            mu: 0.27,
+                            rseed: 9,
+                            seedN: 5,
+                            dt: 0.13,
+                        }),
+                        hi: mk({
+                            seed: "orbium",
+                            R: 13,
+                            cells: 13000,
+                            mu: 0.15,
+                            rseed: 9,
+                            seedN: 5,
+                            dt: 0.13,
+                        }),
+                    };
+                    ["lo", "hi"].forEach((side) => {
+                        const cv = demo.querySelector(
+                            'canvas[data-side="' + side + '"]',
+                        );
+                        const prev = makeLenia(cv, Object.assign({}, presets[side]));
+                        instances.push({ el: cv, prev });
+                    });
+                })();
+
+                // ---------- Half 1: the ring (still diagram + live field) --------
+                (() => {
+                    const demo = document.querySelector('[data-demo="ring"]');
+                    // Live field, blurred through the ring.
+                    const fieldCv = demo.querySelector('canvas[data-side="field"]');
+                    const fieldPrev = makeLenia(
+                        fieldCv,
+                        mk({ seed: "orbium", R: 11, seedN: 4, rseed: 3, cells: 9000 }),
+                    );
+                    instances.push({ el: fieldCv, prev: fieldPrev });
+
+                    // Still kernel diagram: draw the ring weights once, on demand
+                    // (sized to the canvas box, redrawn on resize).
+                    const kCv = demo.querySelector('canvas[data-side="kernel"]');
+                    const kCtx = kCv.getContext("2d");
+                    function drawKernel() {
+                        const r = kCv.getBoundingClientRect();
+                        const W = Math.max(2, Math.round(r.width * DPR));
+                        const H = Math.max(2, Math.round(r.height * DPR));
+                        kCv.width = W;
+                        kCv.height = H;
+                        const img = kCtx.createImageData(W, H);
+                        const d = img.data;
+                        const cx = W / 2,
+                            cy = H / 2,
+                            rad = Math.min(W, H) * 0.46;
+                        for (let y = 0; y < H; y++)
+                            for (let x = 0; x < W; x++) {
+                                const rn =
+                                    Math.sqrt(
+                                        (x - cx) * (x - cx) + (y - cy) * (y - cy),
+                                    ) / rad;
+                                let w =
+                                    rn >= 1
+                                        ? 0
+                                        : Math.exp(
+                                              -((rn - 0.5) * (rn - 0.5)) /
+                                                  (2 * 0.15 * 0.15),
+                                          );
+                                let idx = (w * 255) | 0;
+                                if (idx > 255) idx = 255;
+                                const c = idx * 3,
+                                    q = (y * W + x) * 4;
+                                d[q] = LUT[c];
+                                d[q + 1] = LUT[c + 1];
+                                d[q + 2] = LUT[c + 2];
+                                d[q + 3] = 255;
+                            }
+                        kCtx.putImageData(img, 0, 0);
+                    }
+                    drawKernel();
+                    // Redraw the still diagram when the field engine resizes too.
+                    const origResize = fieldPrev.resize;
+                    fieldPrev.resize = () => {
+                        origResize();
+                        drawKernel();
+                    };
+                })();
+
+                // ---------- The reveal: it swims ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="swim"]');
+                    const cv = demo.querySelector("canvas");
+                    const prev = makeLenia(
+                        cv,
+                        mk({
+                            seed: "orbium",
+                            R: 13,
+                            cells: 17000,
+                            seedN: 7,
+                            rseed: 42,
+                            dt: 0.13,
+                        }),
+                    );
+                    instances.push({ el: cv, prev });
+                })();
+
+                // ---------- Showpiece: the sweet-spot map ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="map"]');
+                    const cv = demo.querySelector("canvas");
+                    const params = mk({
+                        seed: "orbium",
+                        R: 13,
+                        cells: 14000,
+                        seedN: 7,
+                        rseed: 21,
+                        dt: 0.13,
+                    });
+                    const prev = makeLenia(cv, params);
+                    instances.push({ el: cv, prev });
+
+                    const pad = demo.querySelector("[data-pad]");
+                    const knob = demo.querySelector("[data-knob]");
+                    const regimeEl = demo.querySelector("[data-regime]");
+                    const readEl = demo.querySelector("[data-read]");
+                    const muEl = demo.querySelector("[data-mu]");
+                    const sigmaEl = demo.querySelector("[data-sigma]");
+
+                    // The slice of sweet-spot / tolerance space the map spans.
+                    const MU_MIN = 0.08,
+                        MU_MAX = 0.26;
+                    const SIG_MIN = 0.008,
+                        SIG_MAX = 0.03;
+
+                    function describe(mu, sigma) {
+                        if (mu > 0.215)
+                            return {
+                                word: "fading out",
+                                text: "Cells need more company than they can ever gather, so the field starves back to black.",
+                            };
+                        if (mu < 0.108)
+                            return {
+                                word: "overgrown",
+                                text: "Life grows almost everywhere, drowning any shape in a near-solid field.",
+                            };
+                        if (sigma > 0.024)
+                            return {
+                                word: "melting",
+                                text: "So forgiving that everything blurs into soft, drifting puddles that never quite hold an edge.",
+                            };
+                        if (sigma < 0.013)
+                            return {
+                                word: "crisp creatures",
+                                text: "Picky rules carve out sharp, distinct shapes that swim and turn with hard edges.",
+                            };
+                        return {
+                            word: "living",
+                            text: "The sweet band: blobs settle, rotors spin, and the odd glider sets off across the field.",
+                        };
+                    }
+
+                    function paintKnob() {
+                        const fx = (params.mu - MU_MIN) / (MU_MAX - MU_MIN);
+                        const sy = (params.sigma - SIG_MIN) / (SIG_MAX - SIG_MIN);
+                        knob.style.left = (fx * 100).toFixed(1) + "%";
+                        knob.style.top = ((1 - sy) * 100).toFixed(1) + "%";
+                    }
+                    function paintReadout() {
+                        const d = describe(params.mu, params.sigma);
+                        regimeEl.textContent = d.word;
+                        readEl.textContent = d.text;
+                        muEl.textContent = params.mu.toFixed(3);
+                        sigmaEl.textContent = params.sigma.toFixed(3);
+                    }
+
+                    let reseedTimer = null;
+                    function scheduleReseed() {
+                        if (reseedTimer) clearTimeout(reseedTimer);
+                        reseedTimer = setTimeout(() => prev.reseed(), 280);
+                    }
+
+                    function setFromPointer(e) {
+                        const r = pad.getBoundingClientRect();
+                        let fx = (e.clientX - r.left) / r.width;
+                        let py = (e.clientY - r.top) / r.height;
+                        fx = fx < 0 ? 0 : fx > 1 ? 1 : fx;
+                        py = py < 0 ? 0 : py > 1 ? 1 : py;
+                        params.mu = MU_MIN + fx * (MU_MAX - MU_MIN);
+                        params.sigma = SIG_MIN + (1 - py) * (SIG_MAX - SIG_MIN);
+                        paintKnob();
+                        paintReadout();
+                        scheduleReseed();
+                    }
+
+                    let padActive = false;
+                    pad.addEventListener("pointerdown", (e) => {
+                        e.preventDefault();
+                        padActive = true;
+                        pad.setPointerCapture(e.pointerId);
+                        setFromPointer(e);
+                    });
+                    pad.addEventListener("pointermove", (e) => {
+                        if (padActive) setFromPointer(e);
+                    });
+                    pad.addEventListener("pointerup", () => {
+                        padActive = false;
+                    });
+
+                    paintKnob();
+                    paintReadout();
+                })();
+
+                // ---------- Orientation: paint-your-own empty field ----------
+                (() => {
+                    const demo = document.querySelector('[data-demo="paint"]');
+                    const cv = demo.querySelector("canvas");
+                    const prev = makeLenia(
+                        cv,
+                        mk({ seed: "empty", cells: 13000 }),
+                    );
+                    instances.push({ el: cv, prev });
+
+                    let painting = false;
+                    cv.addEventListener("pointerdown", (e) => {
+                        e.preventDefault();
+                        painting = true;
+                        cv.setPointerCapture(e.pointerId);
+                        prev.paintAt(e.clientX, e.clientY);
+                    });
+                    cv.addEventListener("pointermove", (e) => {
+                        if (painting) prev.paintAt(e.clientX, e.clientY);
+                    });
+                    cv.addEventListener("pointerup", () => {
+                        painting = false;
+                    });
+                    cv.style.cursor = "crosshair";
+                })();
+
+                // ---------- Hero backdrop ----------
+                const heroPrev = makeLenia(
+                    document.getElementById("hero-canvas"),
+                    mk({
+                        seed: "orbium",
+                        R: 12,
+                        cells: 30000,
+                        seedN: 16,
+                        rseed: 99,
+                        dt: 0.14,
+                    }),
+                );
+
+                // ---------- Lazy start/stop on scroll ----------
+                const heroCanvas = document.getElementById("hero-canvas");
+                window.EX.observeLazy(
+                    [
+                        ...instances.map((it) => ({ el: it.el, inst: it.prev })),
+                        { el: heroCanvas, inst: heroPrev },
+                    ],
+                    0.12,
+                );
+                heroPrev.start();
+
+                // ---------- Resize ----------
+                window.EX.onResize(() => {
+                    heroPrev.resize();
+                    instances.forEach((it) => it.prev.resize());
+                });
+            })();
+        </script>
+    </body>
+</html>

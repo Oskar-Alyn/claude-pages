@@ -41,6 +41,11 @@ const HEIGHT = 630;
 const SIMS = {
   'boids':              { dwell: 5000,  mode: 'plain' },
   'flow-field':         { dwell: 4500,  mode: 'plain' },
+  // A full-frame "Scatter" settles into a field of distinct swimming cells;
+  // 'plain' keeps the signature Verdant palette (randomize would reroll color,
+  // which lives in the per-device global block and can't be pinned via the hash).
+  'lenia':              { dwell: 9000,  mode: 'plain',
+                          state: { pattern: { name: 'Scatter', regionSize: 1 } } },
   'particle-life':      { dwell: 9000,  mode: 'best', tries: 6 },
   'reaction-diffusion': { dwell: 8500,  mode: 'plain' },
   'slime-mold':         { dwell: 16000, mode: 'plain', // networks take a while

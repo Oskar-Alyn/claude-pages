@@ -10,7 +10,7 @@
         <title>Tiny Worlds: interactive simulations that run themselves</title>
         <meta
             name="description"
-            content="Tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, and reaction-diffusion. Press play and watch, dive into a single world, or read a visual walkthrough of how each one works."
+            content="Tiny interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, reaction-diffusion, and Lenia. Press play and watch, dive into a single world, or read a visual walkthrough of how each one works."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
         <link rel="stylesheet" href="tokens.css" />
@@ -19,7 +19,7 @@
         <meta property="og:title" content="Tiny Worlds" />
         <meta
             property="og:description"
-            content="Tiny interactive simulations that run themselves: slime mold, boids, particle life, flow fields, and reaction-diffusion. Watch, play, or see how they work."
+            content="Tiny interactive simulations that run themselves: slime mold, boids, particle life, flow fields, reaction-diffusion, and Lenia. Watch, play, or see how they work."
         />
         <meta property="og:image" content="og/index.png" />
         <meta property="og:image:width" content="1200" />
@@ -509,6 +509,13 @@
                         "#4a3ac0",
                         "#c060e0",
                         "#ffd0e0",
+                    ],
+                    Verdant: [
+                        "#020808",
+                        "#0a2818",
+                        "#187058",
+                        "#54d8b8",
+                        "#dcfff0",
                     ],
                     // Black-and-white ramp for the about card's particle-life
                     // demo: dark bg, species sampled across grey → white.
@@ -1269,6 +1276,169 @@
                     };
                 }
 
+                // ---- Lenia (continuous cellular automata) ----
+                // prettier-ignore
+                const LENIA_ORBIUM = [
+                    [0,0,0,0,0,0,0.1,0.14,0.1,0,0,0.03,0.03,0,0,0.3,0,0,0,0],
+                    [0,0,0,0,0,0.08,0.24,0.3,0.3,0.18,0.14,0.15,0.16,0.15,0.09,0.2,0,0,0,0],
+                    [0,0,0,0,0,0.15,0.34,0.44,0.46,0.38,0.18,0.14,0.11,0.13,0.19,0.18,0.45,0,0,0],
+                    [0,0,0,0,0.06,0.13,0.39,0.5,0.5,0.37,0.06,0,0,0,0.02,0.16,0.68,0,0,0],
+                    [0,0,0,0.11,0.17,0.17,0.33,0.4,0.38,0.28,0.14,0,0,0,0,0,0.18,0.42,0,0],
+                    [0,0,0.09,0.18,0.13,0.06,0.08,0.26,0.32,0.32,0.27,0,0,0,0,0,0,0.82,0,0],
+                    [0.27,0,0.16,0.12,0,0,0,0.25,0.38,0.44,0.45,0.34,0,0,0,0,0,0.22,0.17,0],
+                    [0,0.07,0.2,0.02,0,0,0,0.31,0.48,0.57,0.6,0.57,0,0,0,0,0,0,0.49,0],
+                    [0,0.59,0.19,0,0,0,0,0.2,0.57,0.69,0.76,0.76,0.49,0,0,0,0,0,0.36,0],
+                    [0,0.58,0.19,0,0,0,0,0,0.67,0.83,0.9,0.92,0.87,0.12,0,0,0,0,0.22,0.07],
+                    [0,0,0.46,0,0,0,0,0,0.7,0.93,1,1,1,0.61,0,0,0,0,0.18,0.11],
+                    [0,0,0.82,0,0,0,0,0,0.47,1,1,0.98,1,0.96,0.27,0,0,0,0.19,0.1],
+                    [0,0,0.46,0,0,0,0,0,0.25,0.84,0.92,0.97,0.99,1,0.89,0.23,0,0,0.21,0.05],
+                    [0,0,0,0.4,0,0,0,0,0.09,0.8,0.82,0.82,0.85,0.63,0.31,0.07,0,0,0.16,0.03],
+                    [0,0,0,0.18,0.54,0,0,0,0.04,0.41,0.51,0.55,0.49,0.39,0.2,0.02,0,0,0.07,0],
+                    [0,0,0,0,0.31,0.41,0.27,0,0,0.21,0.43,0.49,0.4,0.27,0.09,0,0,0,0.03,0],
+                    [0,0,0,0,0,0.18,0.42,0.39,0.34,0.32,0.42,0.41,0.28,0.13,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0.13,0.34,0.4,0.37,0.31,0.21,0.09,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0.12,0.21,0.16,0.06,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                ];
+                function createLenia(canvas, stops) {
+                    const ctx = canvas.getContext("2d");
+                    const lut = buildLUT(stops);
+                    const R = 10,
+                        mu = 0.15,
+                        sigma = 0.015,
+                        dt = 0.12;
+                    let gw = 0,
+                        gh = 0,
+                        A,
+                        A2,
+                        img,
+                        data,
+                        raf = 0;
+                    let kdx, kdy, kw, kLen;
+                    function buildKernel() {
+                        const dxs = [],
+                            dys = [],
+                            ws = [];
+                        let sum = 0;
+                        for (let dy = -R; dy <= R; dy++)
+                            for (let dx = -R; dx <= R; dx++) {
+                                const rn = Math.sqrt(dx * dx + dy * dy) / R;
+                                if (rn === 0 || rn >= 1) continue;
+                                const w = Math.exp(
+                                    -((rn - 0.5) * (rn - 0.5)) / (2 * 0.15 * 0.15),
+                                );
+                                if (w < 1e-3) continue;
+                                dxs.push(dx);
+                                dys.push(dy);
+                                ws.push(w);
+                                sum += w;
+                            }
+                        kLen = ws.length;
+                        kdx = Int32Array.from(dxs);
+                        kdy = Int32Array.from(dys);
+                        kw = Float32Array.from(ws.map((w) => w / sum));
+                    }
+                    function stamp(cx, cy) {
+                        const rows = LENIA_ORBIUM.length,
+                            cols = LENIA_ORBIUM[0].length,
+                            sc = R / 13;
+                        const fw = Math.round(cols * sc),
+                            fh = Math.round(rows * sc);
+                        const fx = Math.random() < 0.5,
+                            fy = Math.random() < 0.5;
+                        for (let y = 0; y < fh; y++)
+                            for (let x = 0; x < fw; x++) {
+                                const sx = (x / fw) * (cols - 1),
+                                    sy = (y / fh) * (rows - 1);
+                                const x0 = sx | 0,
+                                    y0 = sy | 0;
+                                const v = LENIA_ORBIUM[y0][x0];
+                                if (v <= 0.01) continue;
+                                let px = cx + (fx ? fw - 1 - x : x) - (fw >> 1);
+                                let py = cy + (fy ? fh - 1 - y : y) - (fh >> 1);
+                                px -= Math.floor(px / gw) * gw;
+                                py -= Math.floor(py / gh) * gh;
+                                A[py * gw + px] = v;
+                            }
+                    }
+                    function init() {
+                        const g = fitGrid(canvas, 128);
+                        gw = g.gw;
+                        gh = g.gh;
+                        const c = gw * gh;
+                        A = new Float32Array(c);
+                        A2 = new Float32Array(c);
+                        img = ctx.createImageData(gw, gh);
+                        data = img.data;
+                        buildKernel();
+                        const n = 6;
+                        for (let k = 0; k < n; k++)
+                            stamp(
+                                (Math.random() * gw) | 0,
+                                (Math.random() * gh) | 0,
+                            );
+                    }
+                    function stepOne() {
+                        const twoSig2 = 2 * sigma * sigma;
+                        for (let y = 0; y < gh; y++)
+                            for (let x = 0; x < gw; x++) {
+                                let u = 0;
+                                for (let k = 0; k < kLen; k++) {
+                                    let ix = x + kdx[k];
+                                    if (ix < 0) ix += gw;
+                                    else if (ix >= gw) ix -= gw;
+                                    let iy = y + kdy[k];
+                                    if (iy < 0) iy += gh;
+                                    else if (iy >= gh) iy -= gh;
+                                    u += kw[k] * A[iy * gw + ix];
+                                }
+                                const gg =
+                                    2 * Math.exp(-((u - mu) * (u - mu)) / twoSig2) -
+                                    1;
+                                const i = y * gw + x;
+                                let v = A[i] + dt * gg;
+                                A2[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+                            }
+                        const t = A;
+                        A = A2;
+                        A2 = t;
+                    }
+                    function step() {
+                        stepOne();
+                        for (let i = 0, p = 0; i < gw * gh; i++, p += 4) {
+                            let idx = (A[i] * 255) | 0;
+                            if (idx > 255) idx = 255;
+                            const q = idx * 3;
+                            data[p] = lut[q];
+                            data[p + 1] = lut[q + 1];
+                            data[p + 2] = lut[q + 2];
+                            data[p + 3] = 255;
+                        }
+                        ctx.putImageData(img, 0, 0);
+                    }
+                    function frame() {
+                        step();
+                        raf = requestAnimationFrame(frame);
+                    }
+                    return {
+                        start() {
+                            if (!gw) init();
+                            if (REDUCED) {
+                                for (let k = 0; k < 40; k++) step();
+                                return;
+                            }
+                            if (!raf) frame();
+                        },
+                        stop() {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        },
+                        resize() {
+                            init();
+                        },
+                    };
+                }
+
                 // ============================================================
                 // SIM CATALOG
                 // ============================================================
@@ -1312,6 +1482,14 @@
                         pitch: "One chemical feeds, the other kills, and they spread until patterns form. Paint some in and watch it grow.",
                         pal: "Acid",
                         make: createRD,
+                    },
+                    {
+                        id: "lenia",
+                        name: "Lenia",
+                        file: "lenia.html",
+                        pitch: "A smooth take on the Game of Life where soft creatures grow, swim, and heal themselves. Paint in some life and watch it go.",
+                        pal: "Verdant",
+                        make: createLenia,
                     },
                 ];
 
