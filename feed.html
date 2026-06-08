@@ -147,12 +147,12 @@
             }
 
             /* Bottom stream bar: Back / Next (compass). Host-owned; explore
-               only. Buttons reuse .fab from sim-shell.css. */
+               only. Anchored bottom-right. Buttons reuse .fab from
+               sim-shell.css. */
             .feed-bar {
                 position: fixed;
                 bottom: max(20px, env(safe-area-inset-bottom, 0px));
-                left: 50%;
-                transform: translateX(-50%);
+                right: max(20px, env(safe-area-inset-right, 0px));
                 z-index: 10;
                 display: flex;
                 align-items: center;
