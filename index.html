@@ -458,6 +458,7 @@
             <div class="gallery" id="gallery"></div>
         </section>
 
+        <script src="dev-mode.js"></script>
         <script>
             (() => {
                 const REDUCED = window.matchMedia(
@@ -1508,7 +1509,7 @@
                 const galleryEl = document.getElementById("gallery");
                 const previews = [];
 
-                APPS.forEach((app) => {
+                APPS.filter((app) => DevMode.isVisible(app.id)).forEach((app) => {
                     const card = document.createElement("article");
                     card.className = "world";
                     card.id = app.id;
