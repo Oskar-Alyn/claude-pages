@@ -239,6 +239,16 @@
     let getSize = () => ({ W: 0, H: 0, dpr: 1 });
     let qualityScalar = () => 1;
 
+    // Trails accumulate in a float buffer we fade and round only when writing to
+    // the canvas. Fading the 8-bit canvas in place stalls a few levels short of
+    // the background (the per-frame step rounds to zero) and freezes a permanent
+    // ghost; floating point reaches the background cleanly. trailImg mirrors it
+    // as display bytes for a single putImageData per frame.
+    let trail = null; // Float32Array, RGB per device pixel
+    let trailImg = null;
+    let trailW = 0,
+        trailH = 0;
+
     // Interaction strength is fixed at the old slider's max (the per-sim
     // "Click / touch pull" setting was removed). The value is the peak
     // velocity kick right under the pointer, fading to zero at the radius edge.
@@ -293,7 +303,6 @@
     // COLOR / PALETTE
     // ------------------------------------------------------------------
     let paletteLUT;
-    const colorStr = new Array(256);
     let bgR = 0,
         bgG = 0,
         bgB = 0;
@@ -329,17 +338,6 @@
     // Called by the shell whenever the resolved palette stops change.
     function refreshPalette(stops) {
         paletteLUT = buildPaletteLUT(stops);
-        for (let i = 0; i < 256; i++) {
-            const q = i * 4;
-            colorStr[i] =
-                "rgb(" +
-                paletteLUT[q] +
-                "," +
-                paletteLUT[q + 1] +
-                "," +
-                paletteLUT[q + 2] +
-                ")";
-        }
         const bg = hexToRgb(stops[0]);
         bgR = bg[0];
         bgG = bg[1];
@@ -537,7 +535,38 @@
     // ------------------------------------------------------------------
     // RENDER
     // ------------------------------------------------------------------
+    // Size the trail buffer to the canvas backing, reallocating after a resize.
+    function ensureTrail() {
+        const cw = canvas.width,
+            ch = canvas.height;
+        if (trail && trailW === cw && trailH === ch) return;
+        trailW = cw;
+        trailH = ch;
+        trail = new Float32Array(cw * ch * 3);
+        trailImg = ctx.createImageData(cw, ch);
+        clearTrail();
+    }
+
+    // Reset both the float buffer and its display bytes to the background.
+    function clearTrail() {
+        if (!trail) return;
+        const t = trail,
+            o = trailImg.data;
+        for (let i = 0, p = 0; i < t.length; i += 3, p += 4) {
+            t[i] = bgR;
+            t[i + 1] = bgG;
+            t[i + 2] = bgB;
+            o[p] = bgR;
+            o[p + 1] = bgG;
+            o[p + 2] = bgB;
+            o[p + 3] = 255;
+        }
+    }
+
     function hardClear() {
+        ensureTrail();
+        clearTrail();
+        // Paint the canvas immediately too, so a clear shows even while paused.
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.fillStyle = "rgb(" + bgR + "," + bgG + "," + bgB + ")";
         ctx.fillRect(0, 0, W, H);
@@ -547,22 +576,67 @@
     const DOT_HALF = DOT / 2;
     const INV_TAU = 1 / TAU;
     function render() {
+        ensureTrail();
         const n = activeCount;
-        // Fade the previous frame toward the background for trails.
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const trailAlpha = 0.5 - state.params.trail * 0.46;
-        ctx.fillStyle =
-            "rgba(" + bgR + "," + bgG + "," + bgB + "," + trailAlpha + ")";
-        ctx.fillRect(0, 0, W, H);
+        const a = 0.5 - state.params.trail * 0.46; // per-frame fade fraction
 
+        // Fade the whole buffer toward the background in float (no 8-bit stall),
+        // rounding into the display bytes in the same pass.
+        const t = trail,
+            o = trailImg.data,
+            len = t.length;
+        for (let i = 0, p = 0; i < len; i += 3, p += 4) {
+            const r = t[i] + (bgR - t[i]) * a;
+            const g = t[i + 1] + (bgG - t[i + 1]) * a;
+            const b = t[i + 2] + (bgB - t[i + 2]) * a;
+            t[i] = r;
+            t[i + 1] = g;
+            t[i + 2] = b;
+            o[p] = r; // Uint8ClampedArray rounds + clamps on assignment
+            o[p + 1] = g;
+            o[p + 2] = b;
+        }
+
+        // Stamp each particle as an opaque dot into both buffers.
+        const sx = trailW / W,
+            sy = trailH / H;
+        const dw = Math.max(1, Math.round(DOT * sx)),
+            dh = Math.max(1, Math.round(DOT * sy));
+        const lut = paletteLUT;
         for (let i = 0; i < n; i++) {
             const ang = Math.atan2(vy[i], vx[i]); // -PI..PI
-            let tt = (ang + Math.PI) * INV_TAU; // 0..1
+            const tt = (ang + Math.PI) * INV_TAU; // 0..1
             let idx = ((0.35 + 0.6 * tt) * 255) | 0;
             if (idx > 255) idx = 255;
-            ctx.fillStyle = colorStr[idx];
-            ctx.fillRect(px[i] - DOT_HALF, py[i] - DOT_HALF, DOT, DOT);
+            const q = idx * 4;
+            const cr = lut[q],
+                cg = lut[q + 1],
+                cb = lut[q + 2];
+            let x0 = Math.round((px[i] - DOT_HALF) * sx),
+                y0 = Math.round((py[i] - DOT_HALF) * sy);
+            let x1 = x0 + dw,
+                y1 = y0 + dh;
+            if (x0 < 0) x0 = 0;
+            if (y0 < 0) y0 = 0;
+            if (x1 > trailW) x1 = trailW;
+            if (y1 > trailH) y1 = trailH;
+            for (let yy = y0; yy < y1; yy++) {
+                let k = (yy * trailW + x0) * 3,
+                    pk = (yy * trailW + x0) * 4;
+                for (let xx = x0; xx < x1; xx++) {
+                    t[k] = cr;
+                    t[k + 1] = cg;
+                    t[k + 2] = cb;
+                    o[pk] = cr;
+                    o[pk + 1] = cg;
+                    o[pk + 2] = cb;
+                    k += 3;
+                    pk += 4;
+                }
+            }
         }
+
+        ctx.putImageData(trailImg, 0, 0);
     }
 
     // ------------------------------------------------------------------
