@@ -1571,15 +1571,19 @@
                     document.getElementById("hero-a"),
                     document.getElementById("hero-b"),
                 ];
+                // The hero is the most prominent surface on the page, so it
+                // honors the dev-mode gate too: with the flag off it only ever
+                // cycles the non-WIP sims.
+                const HERO_APPS = APPS.filter((app) => DevMode.isVisible(app.id));
                 const heroEngine = [null, null];
                 let heroVisible = 0; // canvas slot currently shown
-                let heroIdx = Math.floor(Math.random() * APPS.length); // which APP
+                let heroIdx = Math.floor(Math.random() * HERO_APPS.length); // which APP
                 let heroTimer = null;
                 let heroActive = false;
 
                 function buildHero(slot, appIdx) {
                     if (heroEngine[slot]) heroEngine[slot].stop();
-                    const app = APPS[appIdx];
+                    const app = HERO_APPS[appIdx];
                     heroEngine[slot] = app.make(
                         heroCanvas[slot],
                         PALS[app.pal],
@@ -1589,7 +1593,7 @@
                 function cycleHero() {
                     const slot = heroVisible ^ 1;
                     const old = heroVisible;
-                    heroIdx = (heroIdx + 1) % APPS.length;
+                    heroIdx = (heroIdx + 1) % HERO_APPS.length;
                     buildHero(slot, heroIdx).start();
                     heroCanvas[slot].classList.add("show");
                     heroCanvas[old].classList.remove("show");
