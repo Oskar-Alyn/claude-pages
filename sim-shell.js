@@ -1456,7 +1456,8 @@ const SimShell = (() => {
         // ---- feed: Taste Influence slider + Reset-taste button --------
         // Persists to the shared claude-feed-settings key the host reads each
         // draw; Reset clears claude-feed-taste and tells the host to drop its
-        // in-memory copy. Only built when FEED.
+        // in-memory copy. Always built so settings are consistent wherever
+        // the sim is loaded; the Reset postMessage is a no-op outside the feed.
         const FEED_SETTINGS_KEY = "claude-feed-settings";
         const FEED_TASTE_KEY = "claude-feed-taste";
         function readFeedInfluence() {
@@ -1464,7 +1465,7 @@ const SimShell = (() => {
                 const s = JSON.parse(localStorage.getItem(FEED_SETTINGS_KEY));
                 if (s && typeof s.influence === "number") return s.influence;
             } catch (e) {}
-            return 0.5; // matches host TUNING.DEFAULT_INFLUENCE
+            return 0.9; // matches host TUNING.DEFAULT_INFLUENCE
         }
         function writeFeedInfluence(v) {
             try {
@@ -1518,7 +1519,7 @@ const SimShell = (() => {
             body.appendChild(modalHeader("Settings"));
 
             body.appendChild(makePerformanceSection());
-            if (FEED) body.appendChild(makeFeedSection());
+            body.appendChild(makeFeedSection());
 
             (settingsCfg.sections || []).forEach((s) => {
                 const sec = sectionEl(s.label);

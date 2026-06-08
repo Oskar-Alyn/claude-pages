@@ -31,7 +31,7 @@
         DWELL_PRIOR_MS: 4000, // cold-start guess for a viewer's average dwell
         DWELL_AVG_DECAY: 0.95, // EMA decay for the per-viewer average dwell
         BUCKETS_PER_PARAM: 4, // taste granularity per param axis
-        DEFAULT_INFLUENCE: 0.5, // Taste Influence slider default (0..1)
+        DEFAULT_INFLUENCE: 0.9, // Taste Influence slider default (0..1)
         DECAY: 0.9, // EMA decay applied to a score before adding reward
         SOFTMAX_TEMP: 1.5, // sharpness of the learned distribution
     };
@@ -46,6 +46,7 @@
 
     const LS_TASTE = "claude-feed-taste";
     const LS_SETTINGS = "claude-feed-settings";
+    const LS_HINTED = "claude-feed-hinted"; // first-run compass hint shown once
 
     const stage = document.getElementById("feed-stage");
     const randItem = (a) => a[Math.floor(Math.random() * a.length)];
@@ -451,6 +452,32 @@
         document
             .getElementById("feed-return")
             .addEventListener("click", returnToExplore);
+
+        maybeShowCompassHint();
+    }
+
+    // First explore load only: nudge the viewer toward the compass (Next), then
+    // remember we've shown it so it never appears again. Retires early if they
+    // find the compass on their own.
+    function maybeShowCompassHint() {
+        let seen = false;
+        try {
+            seen = localStorage.getItem(LS_HINTED) === "1";
+        } catch (_) {}
+        if (seen) return;
+        const el = document.getElementById("feed-hint");
+        if (!el) return;
+        el.classList.add("show");
+        const dismiss = () => {
+            el.classList.remove("show");
+            try {
+                localStorage.setItem(LS_HINTED, "1");
+            } catch (_) {}
+        };
+        setTimeout(dismiss, 6000);
+        document
+            .getElementById("feed-next")
+            .addEventListener("click", dismiss, { once: true });
     }
 
     startFeed();
