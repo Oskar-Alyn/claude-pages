@@ -259,6 +259,18 @@
             .hero .title {
                 font-size: clamp(52px, 11vw, 132px);
             }
+            .hero .title-top,
+            .hero .title-bottom {
+                display: block;
+            }
+            .hero .title-top {
+                font-size: 0.56em;
+                letter-spacing: -0.02em;
+            }
+            .hero .title-bottom {
+                font-size: 1.16em;
+                line-height: 0.98;
+            }
             .hero .lede {
                 font-size: clamp(17px, 2.4vw, 24px);
                 color: var(--muted);
@@ -426,7 +438,7 @@
                         mask="url(#pm-front)"
                     />
                 </svg>
-                Toy World Workshop</a
+                Workshop</a
             >
             <div class="links">
                 <a class="feed-link" href="feed.html">Explore</a>
@@ -439,7 +451,10 @@
             <canvas class="bg hero-bg" id="hero-b"></canvas>
             <div class="scrim"></div>
             <div class="content in">
-                <h1 class="title">Toy World Workshop</h1>
+                <h1 class="title">
+                    <span class="title-top">Toy World</span>
+                    <span class="title-bottom">Workshop</span>
+                </h1>
                 <p class="lede">A few simple rules, with surprising results.</p>
                 <div class="cta-row">
                     <a class="cta" href="feed.html"
