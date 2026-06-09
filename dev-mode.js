@@ -13,10 +13,10 @@
  * dev.html. It exposes one global, `DevMode`, on globalThis (which is `window`
  * in the browser).
  *
- * The two catalogs that list sims use different id schemes for the same sims
- * (index.html: flow / rd / gravity; feed.js: flow-field / reaction-diffusion /
- * gravity). That mismatch lives ONLY here: each WIP entry carries both ids, and
- * isVisible() matches either, so each caller asks in its own vocabulary.
+ * The two catalogs that list sims can use different id schemes for the same sim
+ * (index.html vs. feed.js). Any such mismatch lives ONLY here: each WIP entry
+ * carries both ids, and isVisible() matches either, so each caller asks in its
+ * own vocabulary.
  *
  * To graduate a sim out of WIP, delete its line from WIP below. Nothing else
  * needs editing — both surfaces pick it up.
@@ -29,8 +29,6 @@
 
     var WIP = {
         gravity: { index: "gravity", feed: "gravity" },
-        flow: { index: "flow", feed: "flow-field" },
-        reaction: { index: "rd", feed: "reaction-diffusion" },
     };
 
     function store() {
