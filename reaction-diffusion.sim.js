@@ -94,7 +94,7 @@
             key: "dB",
             group: "Diffusion",
             label: "Diffusion B",
-            hint: "How quickly chemical B spreads — usually about half of A.",
+            hint: "How quickly chemical B spreads, usually about half of A.",
             min: 0.1,
             max: 0.8,
             step: 0.01,
@@ -553,7 +553,7 @@
             modals: {
                 color: {
                     intro:
-                        "The palette maps reagent concentration to color — dark where the medium is empty, bright where the reaction is dense. Tap a preset or mix your own.",
+                        "The palette maps reagent concentration to color: dark where the medium is empty, bright where the reaction is dense. Tap a preset or mix your own.",
                     paletteRegistry: PALETTES,
                     legendHTML:
                         '<div class="palette-legend"><span>Empty</span><span>Dense</span></div>',
@@ -572,7 +572,7 @@
                 shape: {
                     title: "Starting shape",
                     intro:
-                        "Choose where the reaction ignites — a drop of reagent in this shape against an empty medium, from which the pattern grows. Changes restart the simulation right away.",
+                        "Choose where the reaction ignites: a drop of reagent in this shape against an empty medium, from which the pattern grows. Changes restart the simulation right away.",
                     chipLabel: "Where it ignites",
                     chips: PATTERNS,
                     getName: () => state.pattern.name,
@@ -599,7 +599,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Two chemicals share the grid: one is fed in, the other eats it and is killed off. Diffusion spreads them at different rates, and from that tug-of-war Turing patterns emerge — spots, stripes, and mazes. Tiny changes transform everything.",
+                        "Two chemicals share the grid: one is fed in, the other eats it and is killed off. They diffuse at different rates, and from that tug-of-war Turing patterns emerge: spots, stripes, and mazes.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,

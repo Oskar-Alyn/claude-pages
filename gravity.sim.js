@@ -90,7 +90,7 @@
             key: "count",
             group: "The crowd",
             label: "Specks",
-            hint: "Target for a reference-size screen; smaller screens scale down to keep the density.",
+            hint: "How many specks fill the screen.",
             min: 100,
             max: 2000,
             step: 10,
@@ -110,7 +110,7 @@
             key: "softness",
             group: "Gravity",
             label: "Core softness",
-            hint: "How gentle a close pass is — lower means tighter, snappier flybys; higher keeps clumps soft and round.",
+            hint: "How gentle a close pass is; lower makes flybys snappier, higher keeps clumps round.",
             min: 6,
             max: 60,
             step: 1,
@@ -120,7 +120,7 @@
             key: "drag",
             group: "Motion",
             label: "Drag",
-            hint: "How fast specks shed speed — a little lets clumps settle, zero keeps it hot and restless.",
+            hint: "How fast specks shed speed; a little lets clumps settle, zero keeps it restless.",
             min: 0,
             max: 0.03,
             step: 0.001,
@@ -130,7 +130,7 @@
             key: "speed",
             group: "Motion",
             label: "Top speed",
-            hint: "The fastest a speck is allowed to travel — high enough lets clumps orbit instead of piling up.",
+            hint: "The fastest a speck is allowed to travel; high enough lets clumps orbit instead of piling up.",
             min: 4,
             max: 32,
             step: 0.5,
@@ -736,7 +736,7 @@
             modals: {
                 color: {
                     intro:
-                        "Each speck is tinted by how fast it's flying — slow drifters stay dim, while specks whipping through a close pass burn bright. Dense cores glow where their light piles up. Tap a preset or mix your own.",
+                        "Each speck is tinted by how fast it's flying: slow drifters stay dim, specks whipping through a close pass burn bright. Dense cores glow where their light piles up. Tap a preset or mix your own.",
                     paletteRegistry: PALETTES,
                     generateCustomStops: (c) =>
                         generateCustomPalette(c.hue, c.accentHue, c.saturation),
@@ -825,7 +825,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Every speck pulls on every other through a softened inverse-square gravity — the same one rule the whole way down. From it, clumps condense, fall into orbit, and merge. These sliders set how strong the pull is and how lively the motion stays.",
+                        "Every speck pulls on every other through a softened inverse-square gravity. From that one rule, clumps condense, fall into orbit, and merge.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,

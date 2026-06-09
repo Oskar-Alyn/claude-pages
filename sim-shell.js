@@ -1446,7 +1446,7 @@ const SimShell = (() => {
             );
             sec.appendChild(
                 hintEl(
-                    "Quality scales how hard this sim works — set it once per device. Lower Max FPS runs smoother on slower devices and saves battery.",
+                    "Quality scales how hard this sim works; set it once per device. Lower Max FPS runs smoother on slower devices and saves battery.",
                     true,
                 ),
             );

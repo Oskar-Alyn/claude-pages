@@ -69,7 +69,7 @@
             key: "count",
             group: "The swarm",
             label: "Particle count",
-            hint: "Target for a reference-size screen; smaller screens scale down to keep the density.",
+            hint: "How many particles fill the screen.",
             min: 100,
             max: 4000,
             step: 10,
@@ -79,7 +79,7 @@
             key: "types",
             group: "The swarm",
             label: "Species",
-            hint: "How many distinct colors interact (each new count rolls fresh rules).",
+            hint: "How many species interact. Each new count rolls fresh rules.",
             min: 2,
             max: 8,
             step: 1,
@@ -99,7 +99,7 @@
             key: "friction",
             group: "Forces",
             label: "Friction",
-            hint: "How quickly particles shed speed — higher settles faster.",
+            hint: "How quickly particles shed speed and settle.",
             min: 0.02,
             max: 0.6,
             step: 0.01,
@@ -119,7 +119,7 @@
             key: "beta",
             group: "Range",
             label: "Close-range repel",
-            hint: "The fraction of the reach where every species shoves away, keeping them from collapsing to a point.",
+            hint: "An inner zone where every species pushes apart, so they never collapse.",
             min: 0.1,
             max: 0.5,
             step: 0.01,
@@ -750,7 +750,7 @@
             modals: {
                 color: {
                     intro:
-                        "Each species draws its color from the palette. Tap a preset or mix your own — the dots below show every species' current color.",
+                        "Each species draws its color from the palette. Tap a preset or mix your own. The dots below show every species' current color.",
                     paletteRegistry: PALETTES,
                     generateCustomStops: (c) =>
                         generateCustomPalette(c.hue, c.accentHue, c.saturation),
@@ -811,7 +811,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Every pair of species has a secret attraction — some chase, some flee. From those simple pulls, cells, chains, and lifelike creatures self-assemble. Hit Randomize for a new set of rules; these sliders shape how they play out.",
+                        "Each species attracts or repels every other, but only within a limited range. Hit Randomize to roll a fresh set of rules.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,

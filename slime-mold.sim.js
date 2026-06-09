@@ -785,7 +785,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Thousands of tiny walkers wander the screen, each leaving a glowing trail and steering toward the most-worn ground just ahead. Old trails slowly fade. These sliders shape how they explore and how their trails behave.",
+                        "Each walker leaves a glowing trail and steers toward the trails it sees ahead, while old ones fade.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,

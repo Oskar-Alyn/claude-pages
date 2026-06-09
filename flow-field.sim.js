@@ -61,7 +61,7 @@
             key: "count",
             group: "The flow",
             label: "Particle count",
-            hint: "Target for a reference-size screen; smaller screens scale down to keep the density.",
+            hint: "How many particles fill the screen.",
             min: 100,
             max: 4000,
             step: 10,
@@ -81,7 +81,7 @@
             key: "noiseScale",
             group: "The field",
             label: "Swirliness",
-            hint: "How tightly the field curls — higher means more, smaller eddies.",
+            hint: "How tightly the field curls into eddies.",
             min: 0.001,
             max: 0.02,
             step: 0.0005,
@@ -101,7 +101,7 @@
             key: "inertia",
             group: "The field",
             label: "Smoothness",
-            hint: "How lazily particles turn to follow the field — higher draws longer, smoother curves.",
+            hint: "How lazily particles turn to follow the field.",
             min: 0,
             max: 0.95,
             step: 0.05,
@@ -672,7 +672,7 @@
                 shape: {
                     title: "Starting shape",
                     intro:
-                        "Particles are born here and reborn here when their lifespan runs out, so the shape acts as a continuous emitter — a ring becomes a fountain, a grid a lattice of sources. Changes restart the field right away.",
+                        "Particles are born here and reborn here when their lifespan runs out, so the shape acts as a continuous emitter: a ring becomes a fountain, a grid a lattice of sources. Changes restart the field right away.",
                     chipLabel: "Where they spawn",
                     chips: PATTERNS,
                     getName: () => state.pattern.name,
@@ -699,7 +699,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "An invisible vector field, woven from drifting noise, tells every particle which way to go. They follow it, leave fading trails, and are reborn from the emitter — these sliders shape the field and the streams it draws.",
+                        "An invisible vector field, woven from drifting noise, tells every particle which way to go. They follow it, leave fading trails, and respawn from the emitter when their lifespan runs out.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,

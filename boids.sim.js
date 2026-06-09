@@ -761,7 +761,7 @@
             modals: {
                 color: {
                     intro:
-                        "Set the colors your flock glows through. Each boid is tinted by its speed — the faster it flies, the brighter it burns. Tap a preset or mix your own.",
+                        "Set the colors your flock glows through. Each boid is tinted by its speed: the faster it flies, the brighter it burns. Tap a preset or mix your own.",
                     paletteRegistry: PALETTES,
                     generateCustomStops: (c) =>
                         generateCustomPalette(c.hue, c.accentHue, c.saturation),
@@ -832,7 +832,7 @@
                 params: {
                     title: "Parameters",
                     intro:
-                        "Each boid knows only its neighbors. Every frame it sums three steering urges — keep your distance, match headings, and drift toward the group — and a flock emerges with no leader. These sliders weight the rules and shape how the flock moves.",
+                        "Each boid watches only its neighbors and follows three urges: keep its distance, match their heading, and drift toward the group.",
                     controls: slidersDef.map((def) => ({
                         type: "slider",
                         key: def.key,
