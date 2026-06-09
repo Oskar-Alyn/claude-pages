@@ -109,7 +109,7 @@
             key: "rMax",
             group: "Range",
             label: "Reach",
-            hint: "How far a particle senses others, in pixels.",
+            hint: "How far a particle senses others.",
             min: 20,
             max: 200,
             step: 1,
