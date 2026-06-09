@@ -10,7 +10,7 @@
         <title>How Boids Work · Toy World Workshop</title>
         <meta
             name="description"
-            content="A visual walkthrough of how the Boids flocking simulation works. No leader, no plan: three simple rules per bird. Drag the sliders and watch a flock appear."
+            content="A visual walkthrough of how the Boids flocking simulation works. No leader, just three simple rules per bird. Drag the sliders and watch a flock appear."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
@@ -18,7 +18,7 @@
         <meta property="og:title" content="How Boids Work" />
         <meta
             property="og:description"
-            content="No leader, no plan: three simple rules per bird. A visual walkthrough of the Boids flocking simulation."
+            content="No leader, just three simple rules per bird. A visual walkthrough of the Boids flocking simulation."
         />
         <meta property="og:image" content="og/boids.png" />
         <meta property="og:image:width" content="1200" />
@@ -28,7 +28,7 @@
         <meta name="twitter:title" content="How Boids Work" />
         <meta
             name="twitter:description"
-            content="No leader, no plan: three simple rules per bird."
+            content="No leader, just three simple rules per bird."
         />
 
         <link rel="stylesheet" href="tokens.css" />
@@ -84,15 +84,15 @@
                 <h2>Each arrow is one bird</h2>
                 <p>
                     Every triangle up there is
-                    <span class="hi">a single bird</span>, flying on its own. It
-                    points whichever way it's heading, and glows brighter when
-                    it's moving fast. None of them can see the whole flock. Each
-                    one only notices the few birds right next to it.
+                    <span class="hi">a single bird</span>. It points whichever
+                    way it's heading, and glows brighter when it's moving fast.
+                    None of them can see the whole flock. Each one only notices
+                    the few birds right next to it.
                 </p>
                 <p>
-                    So no bird is ever steering the flock. It only reacts to
-                    whoever happens to be nearby. The flock is whatever those
-                    small, local reactions add up to.
+                    So no bird steers the flock. It only reacts to whoever
+                    happens to be nearby. The flock is whatever those small,
+                    local reactions add up to.
                 </p>
                 <p>
                     Each bird follows the same three rules, many times a second.
@@ -108,8 +108,7 @@
                     Looking only at its neighbors, a bird steers
                     <span class="hi">away</span> from any that get too close,
                     the way you shift your shoulders to avoid bumping someone on
-                    a crowded sidewalk. Without this, birds pile into the same
-                    spot. With it, they keep some breathing room.
+                    a crowded sidewalk.
                 </p>
                 <div class="demo" data-demo="separation">
                     <div class="demo-pair">
@@ -140,8 +139,7 @@
                 <p>
                     Each bird turns to <span class="hi">match</span> the average
                     direction of the neighbors around it, the way you fall into
-                    step with a crowd walking the same way. This is what turns a
-                    jittery swarm into smooth streams that travel together.
+                    step with a crowd walking the same way.
                 </p>
                 <div class="demo" data-demo="alignment">
                     <div class="demo-pair">
@@ -172,8 +170,7 @@
                 <p>
                     Each bird also drifts <span class="hi">toward</span> the
                     middle of its neighbors. Nobody wants to be the one who
-                    wanders off alone. This is the pull that gathers scattered
-                    birds into a group and keeps the flock from coming apart.
+                    wanders off alone.
                 </p>
                 <div class="demo" data-demo="cohesion">
                     <div class="demo-pair">
