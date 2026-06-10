@@ -19,7 +19,9 @@ const { chromium } = require('playwright-core');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const OUT = join(ROOT, 'og');
+const OUT = join(ROOT, 'og'); // the landing-page montage lives here
+// Each sim's preview now lives beside the sim: sims/<stem>/og.png
+const simOg = (stem) => join(ROOT, 'sims', stem, 'og.png');
 
 // OG / Twitter "summary_large_image" recommended size (1.91:1).
 const WIDTH = 1200;
@@ -118,7 +120,7 @@ async function captureSim(page, stem, recipe) {
   const hash = recipe.state
     ? '#' + Buffer.from(JSON.stringify(recipe.state)).toString('base64')
     : '';
-  const url = pathToFileURL(join(ROOT, `${stem}.html`)).href + hash;
+  const url = pathToFileURL(join(ROOT, 'sims', stem, 'index.html')).href + hash;
   await page.goto(url, { waitUntil: 'load' });
   const canvas = page.locator('#canvas');
   await canvas.waitFor({ state: 'visible', timeout: 10000 });
@@ -138,22 +140,23 @@ async function captureSim(page, stem, recipe) {
       if (score > bestScore) { bestScore = score; bestBuf = buf; }
     }
     const { writeFile } = await import('node:fs/promises');
-    await writeFile(join(OUT, `${stem}.png`), bestBuf);
+    await writeFile(simOg(stem), bestBuf);
     return;
   }
 
   // plain
   await hideUI(page, HIDE_CSS);
   await sleep(dwell);
-  await canvas.screenshot({ path: join(OUT, `${stem}.png`) });
+  await canvas.screenshot({ path: simOg(stem) });
 }
 
 async function buildMontage(page) {
   process.stdout.write('• index  (montage) … ');
   // Relative src + an HTML file written into og/ so the page shares the
   // thumbnails' file:// origin (setContent's opaque origin can't load them).
+  // Each thumbnail now lives in its sim folder, one level up from og/.
   const tiles = Object.keys(SIMS)
-    .map((s) => `<div class="t"><img src="${s}.png"></div>`)
+    .map((s) => `<div class="t"><img src="../sims/${s}/og.png"></div>`)
     .join('');
   const montage = `<!doctype html><meta charset="utf-8"><style>
     html,body{margin:0;width:${WIDTH}px;height:${HEIGHT}px;background:#05070b;overflow:hidden}
@@ -193,11 +196,11 @@ for (const stem of stems) {
   const recipe = SIMS[stem];
   process.stdout.write(`• ${stem}  (${recipe.mode}, dwell ${recipe.dwell}ms) … `);
   await captureSim(page, stem, recipe);
-  console.log(`→ og/${stem}.png`);
+  console.log(`→ sims/${stem}/og.png`);
 }
 
 // Rebuild the montage on a full run, single-sim updates, or when asked.
 if (montageOnly || !arg || stems.length) await buildMontage(page);
 
 await browser.close();
-console.log(`\nDone — ${stems.length} sim image(s) in og/`);
+console.log(`\nDone — ${stems.length} sim image(s) captured`);

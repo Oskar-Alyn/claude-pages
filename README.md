@@ -11,30 +11,49 @@ behind it.
 
 ## The sims
 
-| Page | What it is |
+| Sim | What it is |
 |------|------------|
-| `slime-mold.html` | Physarum agents leave a diffusing pheromone trail and steer up its gradient, weaving transport networks. |
-| `boids.html` | Reynolds flocking — separation, alignment, cohesion. |
-| `particle-life.html` | Colored species attract/repel by a random matrix; cells and creatures self-assemble. |
-| `flow-field.html` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
-| `reaction-diffusion.html` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
-| `gravity.html` | An n-body gravity world — every speck pulls on every other (softened inverse-square), and the crowd condenses into glowing clumps, orbits, and spiral whirlpools. |
+| `sims/slime-mold/` | Physarum agents leave a diffusing pheromone trail and steer up its gradient, weaving transport networks. |
+| `sims/boids/` | Reynolds flocking — separation, alignment, cohesion. |
+| `sims/particle-life/` | Colored species attract/repel by a random matrix; cells and creatures self-assemble. |
+| `sims/flow-field/` | Particles ride a drifting noise field, painting silken streams colored by flow direction. |
+| `sims/reaction-diffusion/` | Gray–Scott two-chemical reaction → Turing patterns (spots, stripes, coral mazes). |
+| `sims/gravity/` | An n-body gravity world — every speck pulls on every other (softened inverse-square), and the crowd condenses into glowing clumps, orbits, and spiral whirlpools. |
+
+## Layout
+
+Plain files served as-is, so a file's path is its public URL. Three tiers:
+
+- **Root** — the pages you visit: `index.html` (landing), `feed.html` + `feed.js`
+  (the Discovery Feed), `dev.html` (the work-in-progress toggle), plus
+  `favicon.svg`.
+- **`lib/`** — the shared runtime every page pulls in: `sim-shell.js` +
+  `sim-shell.css`, `explained.js` + `explained.css`, `tokens.css` (design
+  tokens), `dev-mode.js`.
+- **`sims/<slug>/`** — one folder per sim, self-contained: `index.html` (the
+  thin launcher, served at `/sims/<slug>/`), `sim.js` (its logic),
+  `explained.html` (the how-it-works page), `og.png` (its preview image).
+  `particle-life` also has a `style.css` for sim-specific bits.
+
+The landing-page montage preview lives at `og/index.png`; `scripts/` and
+`test/` hold the OG capture script and the node tests.
 
 ## Running it
 
 Zero dependencies, no build step — plain files served as-is. Open `index.html`
-(or any sim page) in a browser. The chrome is shared: every sim is a thin
-`<sim>.html` skeleton (a `<canvas>` plus two `<script>` tags) that loads the
-shared `sim-shell.js` + `sim-shell.css` and one `<sim>.sim.js` holding only that
-sim's logic. A couple of sims add a small per-sim stylesheet for sim-specific
-bits (currently only `particle-life.css`).
+(or any sim's `index.html`) in a browser. The chrome is shared: every sim is a
+thin `sims/<slug>/index.html` skeleton (a `<canvas>` plus two `<script>` tags)
+that loads the shared `lib/sim-shell.js` + `lib/sim-shell.css` and its own
+`sim.js` holding only that sim's logic. A couple of sims add a small per-sim
+stylesheet for sim-specific bits (currently only `sims/particle-life/style.css`).
 
 ## Social preview images
 
-Each page links an Open Graph / Twitter preview image from `og/`, generated
-automatically — no manual screenshots. The script runs each sim in your
-installed Chrome, hides the on-screen controls, lets it develop, then snapshots
-the canvas at 1200×630. The landing page uses a montage of all the thumbnails.
+Each sim links an Open Graph / Twitter preview image (`sims/<slug>/og.png`),
+generated automatically — no manual screenshots. The script runs each sim in
+your installed Chrome, hides the on-screen controls, lets it develop, then
+snapshots the canvas at 1200×630. The landing page uses a montage of all the
+thumbnails, written to `og/index.png`.
 
 ```sh
 npm install                              # one-time: installs playwright-core (driver only)
@@ -53,14 +72,15 @@ absolute URLs — once the site has a fixed domain, prefix the paths with it.
 
 ## How a sim is built (the shared shell)
 
-The chrome and all the cross-cutting conventions live once in `sim-shell.js` +
-`sim-shell.css`. A sim is just data + a few callbacks registered through a fixed
-contract — `SimShell.registerSim({ id, state, defaultState, config, init, step,
-render, reset, randomize, refreshPalette, resize, onRestoreDefaults? })`. **The
-contract is documented in the comment block at the top of `sim-shell.js`; read it
-before adding or editing a sim.** To make a new sim, copy any `<sim>.html`
-skeleton and write one `<sim>.sim.js` against that contract (mirror the nearest
-analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
+The chrome and all the cross-cutting conventions live once in `lib/sim-shell.js`
++ `lib/sim-shell.css`. A sim is just data + a few callbacks registered through a
+fixed contract — `SimShell.registerSim({ id, state, defaultState, config, init,
+step, render, reset, randomize, refreshPalette, resize, onRestoreDefaults? })`.
+**The contract is documented in the comment block at the top of
+`lib/sim-shell.js`; read it before adding or editing a sim.** To make a new sim,
+copy any `sims/<slug>/` folder and write its `sim.js` against that contract
+(mirror the nearest analog — a particle sim, or a grid/field sim like
+`reaction-diffusion`).
 
 - **Chrome (shell-owned).** The shell renders, at runtime, a full-viewport
   `<canvas>`; a top-right cogwheel opening a dropdown of four glass modals (Color /
@@ -99,7 +119,7 @@ analog — a particle sim, or a grid/field sim like `reaction-diffusion`).
 
 `feed.html` is an invisible, chrome-less host (`feed.js`) that turns the sims into
 a personal "scroll for fun" feed. It renders the current item in a full-screen
-`<iframe src="<sim>.html?feed=1#<recipe>">` and keeps the next draw warm in a
+`<iframe src="sims/<sim>/index.html?feed=1#<recipe>">` and keeps the next draw warm in a
 second paused, off-screen iframe (cap: 2 live iframes) so cross-sim draws are a
 flash-free hard cut; same-sim draws apply the recipe in place via `postMessage`.
 The recipe is the existing share-hash payload (`base64(stateWithoutGlobal())`) —

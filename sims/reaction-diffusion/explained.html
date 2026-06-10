@@ -12,7 +12,7 @@
             name="description"
             content="A visual walkthrough of the Gray-Scott reaction-diffusion simulation. Two chemicals, one self-copying reaction, and a speed mismatch that breaks it into spots, stripes, and mazes. Drag the map and watch."
         />
-        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
 
         <meta property="og:type" content="article" />
         <meta property="og:title" content="How Reaction-Diffusion Works" />
@@ -20,19 +20,19 @@
             property="og:description"
             content="Two chemicals, one self-copying reaction, and a speed mismatch that breaks it into spots and mazes. A visual walkthrough of reaction-diffusion."
         />
-        <meta property="og:image" content="og/reaction-diffusion.png" />
+        <meta property="og:image" content="og.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="og/reaction-diffusion.png" />
+        <meta name="twitter:image" content="og.png" />
         <meta name="twitter:title" content="How Reaction-Diffusion Works" />
         <meta
             name="twitter:description"
             content="One reaction copies itself; a speed mismatch breaks it into patterns."
         />
 
-        <link rel="stylesheet" href="tokens.css" />
-        <link rel="stylesheet" href="explained.css" />
+        <link rel="stylesheet" href="../../lib/tokens.css" />
+        <link rel="stylesheet" href="../../lib/explained.css" />
         <style>
             :root {
                 /* Page-unique reagent label colors; design tokens come from
@@ -200,12 +200,12 @@
     </head>
     <body>
         <nav class="nav">
-            <a class="brand" href="index.html"
+            <a class="brand" href="../../index.html"
                 ><svg class="mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><mask id="pm-out"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="6.3" fill="#000"/></mask><mask id="pm-gap"><rect width="24" height="24" fill="#fff"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><rect x="0" y="0" width="24" height="11.3" fill="#fff"/></mask><mask id="pm-front"><rect x="0" y="11.3" width="24" height="12.7" fill="#fff"/></mask><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-out)"/><circle cx="12" cy="12" r="6.3" mask="url(#pm-gap)"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-front)"/></svg> Workshop</a
             >
             <div class="links">
-                <a class="home" href="index.html">All worlds</a>
-                <a class="launch" href="reaction-diffusion.html"
+                <a class="home" href="../../index.html">All worlds</a>
+                <a class="launch" href="index.html"
                     >Open Reaction-Diffusion →</a
                 >
             </div>
@@ -440,7 +440,7 @@
                     changes.
                 </p>
                 <p style="margin-top: 22px">
-                    <a class="cta" href="reaction-diffusion.html"
+                    <a class="cta" href="index.html"
                         >Open the Reaction-Diffusion sim
                         <span class="arrow">→</span></a
                     >
@@ -448,7 +448,7 @@
             </section>
         </main>
 
-        <script src="explained.js"></script>
+        <script src="../../lib/explained.js"></script>
         <script>
             (() => {
                 const { REDUCED, DPR, hexToRgb } = window.EX;
@@ -497,7 +497,7 @@
                 // p = { feed, kill, dA, dB, sub, cells, seed, seedN, rseed }
                 //   p is read live each frame, so a drag can mutate p.feed /
                 //   p.kill in place. Toroidal grid + the same reaction math as
-                //   reaction-diffusion.sim.js, just sized down for these demos.
+                //   sim.js, just sized down for these demos.
                 //   seed: "scatter" | "empty"  (empty = blank dish to paint on)
                 // ============================================================
                 function makeRD(canvas, p) {

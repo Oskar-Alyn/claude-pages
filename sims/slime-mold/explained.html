@@ -12,7 +12,7 @@
             name="description"
             content="A visual walkthrough of the Slime Mold (Physarum) simulation. Each walker heads for the most-worn ground and wears a path of its own, and a branching map draws itself. Drag across it and watch."
         />
-        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
 
         <meta property="og:type" content="article" />
         <meta property="og:title" content="How Slime Mold Works" />
@@ -20,28 +20,28 @@
             property="og:description"
             content="Head for the most-worn ground, wear a path of your own, and a branching map draws itself. A visual walkthrough of the Slime Mold simulation."
         />
-        <meta property="og:image" content="og/slime-mold.png" />
+        <meta property="og:image" content="og.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="og/slime-mold.png" />
+        <meta name="twitter:image" content="og.png" />
         <meta name="twitter:title" content="How Slime Mold Works" />
         <meta
             name="twitter:description"
             content="Follow a path, leave a path, and a branching map draws itself."
         />
 
-        <link rel="stylesheet" href="tokens.css" />
-        <link rel="stylesheet" href="explained.css" />
+        <link rel="stylesheet" href="../../lib/tokens.css" />
+        <link rel="stylesheet" href="../../lib/explained.css" />
     </head>
     <body>
         <nav class="nav">
-            <a class="brand" href="index.html"
+            <a class="brand" href="../../index.html"
                 ><svg class="mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><mask id="pm-out"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="6.3" fill="#000"/></mask><mask id="pm-gap"><rect width="24" height="24" fill="#fff"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><rect x="0" y="0" width="24" height="11.3" fill="#fff"/></mask><mask id="pm-front"><rect x="0" y="11.3" width="24" height="12.7" fill="#fff"/></mask><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-out)"/><circle cx="12" cy="12" r="6.3" mask="url(#pm-gap)"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-front)"/></svg> Workshop</a
             >
             <div class="links">
-                <a class="home" href="index.html">All worlds</a>
-                <a class="launch" href="slime-mold.html">Open Slime Mold →</a>
+                <a class="home" href="../../index.html">All worlds</a>
+                <a class="launch" href="index.html">Open Slime Mold →</a>
             </div>
         </nav>
 
@@ -228,7 +228,7 @@
                     and your own colors for the trails.
                 </p>
                 <p style="margin-top: 22px">
-                    <a class="cta" href="slime-mold.html"
+                    <a class="cta" href="index.html"
                         >Open the Slime Mold sim
                         <span class="arrow">→</span></a
                     >
@@ -236,7 +236,7 @@
             </section>
         </main>
 
-        <script src="explained.js"></script>
+        <script src="../../lib/explained.js"></script>
         <script>
             (() => {
                 const { REDUCED, TAU, hexToRgb } = window.EX;
@@ -251,7 +251,7 @@
                     "#ffec70",
                 ];
                 // 256-entry RGB lookup table the trail field is colored
-                // through, matching slime-mold.sim.js's buildPaletteLUT.
+                // through, matching sim.js's buildPaletteLUT.
                 function buildLUT(stops) {
                     const lut = new Uint8ClampedArray(256 * 3);
                     const seg = stops.length - 1;
@@ -271,7 +271,7 @@
 
                 // ============================================================
                 // Parameterized slime (Physarum) engine — a small-grid version
-                // of slime-mold.sim.js. Thousands of agents sense the trail
+                // of sim.js. Thousands of agents sense the trail
                 // field ahead (left/center/right), steer toward the brightest,
                 // step forward, and deposit; the field then diffuses (toroidal
                 // 3x3 blur) and decays each frame, so branching networks self-
@@ -363,7 +363,7 @@
                     // Diffuse one perimeter cell with the same 3x3 kernel as the
                     // interior loop, but with neighbor indices wrapped on the
                     // torus — keeps the edges from turning into a sticky bright
-                    // seam (same fix as slime-mold.sim.js's diffuseEdgeCell).
+                    // seam (same fix as sim.js's diffuseEdgeCell).
                     function diffuseEdgeCell(x, y, dc, dn, decayMul) {
                         const xm = x === 0 ? gw - 1 : x - 1;
                         const xp = x === gw - 1 ? 0 : x + 1;
@@ -528,7 +528,7 @@
 
                 // ============================================================
                 // Per-demo parameter presets. Angles are in degrees; sensorDist
-                // is in grid cells. Defaults track slime-mold.sim.js.
+                // is in grid cells. Defaults track sim.js.
                 // ============================================================
                 const BASE = {
                     grid: 158,

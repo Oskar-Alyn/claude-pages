@@ -20,7 +20,7 @@ function makeStorage() {
 }
 
 globalThis.localStorage = makeStorage();
-const code = readFileSync(new URL("../dev-mode.js", import.meta.url), "utf8");
+const code = readFileSync(new URL("../lib/dev-mode.js", import.meta.url), "utf8");
 // Indirect eval runs the IIFE in global scope; it sets globalThis.DevMode.
 (0, eval)(code);
 const { DevMode } = globalThis;

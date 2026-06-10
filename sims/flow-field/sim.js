@@ -1,5 +1,5 @@
 /* ============================================================================
- * flow-field.sim.js — the Flow Field sim, driven through the SimShell contract.
+ * sim.js — the Flow Field sim, driven through the SimShell contract.
  *
  * Thousands of particles ride an invisible vector field woven from drifting
  * value noise, leaving silky fading trails and reborn from an emitter shape

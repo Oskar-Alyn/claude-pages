@@ -12,7 +12,7 @@
             name="description"
             content="A visual walkthrough of how a flow-field simulation works. No particle decides anything: each one just follows the arrow beneath it on an invisible map. Drag the sliders and watch the streams appear."
         />
-        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
 
         <meta property="og:type" content="article" />
         <meta property="og:title" content="How Flow Fields Work" />
@@ -20,19 +20,19 @@
             property="og:description"
             content="No particle decides where to go: each just follows the arrow beneath it on an invisible map. A visual walkthrough of the Flow Field simulation."
         />
-        <meta property="og:image" content="og/flow-field.png" />
+        <meta property="og:image" content="og.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="og/flow-field.png" />
+        <meta name="twitter:image" content="og.png" />
         <meta name="twitter:title" content="How Flow Fields Work" />
         <meta
             name="twitter:description"
             content="An invisible map of arrows, and every particle just follows the one beneath it."
         />
 
-        <link rel="stylesheet" href="tokens.css" />
-        <link rel="stylesheet" href="explained.css" />
+        <link rel="stylesheet" href="../../lib/tokens.css" />
+        <link rel="stylesheet" href="../../lib/explained.css" />
         <style>
 
             /* ---------- Emitter chips ---------- */
@@ -81,12 +81,12 @@
     </head>
     <body>
         <nav class="nav">
-            <a class="brand" href="index.html"
+            <a class="brand" href="../../index.html"
                 ><svg class="mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><mask id="pm-out"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="6.3" fill="#000"/></mask><mask id="pm-gap"><rect width="24" height="24" fill="#fff"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><rect x="0" y="0" width="24" height="11.3" fill="#fff"/></mask><mask id="pm-front"><rect x="0" y="11.3" width="24" height="12.7" fill="#fff"/></mask><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-out)"/><circle cx="12" cy="12" r="6.3" mask="url(#pm-gap)"/><path d="M1 12 A11 3.3 0 1 0 23 12 A11 3.3 0 1 0 1 12 Z M3.6 11.85 A8.4 2.3 0 1 0 20.4 11.85 A8.4 2.3 0 1 0 3.6 11.85 Z" fill-rule="evenodd" mask="url(#pm-front)"/></svg> Workshop</a
             >
             <div class="links">
-                <a class="home" href="index.html">All worlds</a>
-                <a class="launch" href="flow-field.html">Open Flow Field →</a>
+                <a class="home" href="../../index.html">All worlds</a>
+                <a class="launch" href="index.html">Open Flow Field →</a>
             </div>
         </nav>
 
@@ -303,7 +303,7 @@
                     speed, and lifespan. One rule still drives all of it.
                 </p>
                 <p style="margin-top: 22px">
-                    <a class="cta" href="flow-field.html"
+                    <a class="cta" href="index.html"
                         >Open the Flow Field sim
                         <span class="arrow">→</span></a
                     >
@@ -311,7 +311,7 @@
             </section>
         </main>
 
-        <script src="explained.js"></script>
+        <script src="../../lib/explained.js"></script>
         <script>
             (() => {
                 const { REDUCED, DPR, TAU, hexToRgb, buildColors } = window.EX;
@@ -329,7 +329,7 @@
                 const BG = hexToRgb(STOPS[0]);
                 const BG_STR = "rgb(" + BG[0] + "," + BG[1] + "," + BG[2] + ")";
 
-                // ---- Value noise (same field math as flow-field.sim.js) ----
+                // ---- Value noise (same field math as sim.js) ----
                 function hash2(ix, iy) {
                     let h =
                         Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263);
@@ -361,7 +361,7 @@
                 //       read live each frame, so a slider can mutate it in
                 //       place. noiseScale is in CSS-px space (divided by DPR
                 //       internally) so the swirl density is resolution-stable.
-                //       Same noise + inertia math as flow-field.sim.js, scaled
+                //       Same noise + inertia math as sim.js, scaled
                 //       to these small demo canvases.
                 // ============================================================
                 function makeFlow(canvas, p) {

@@ -1,5 +1,5 @@
 /* ============================================================================
- * gravity.sim.js — the Gravity sim, driven through the SimShell contract.
+ * sim.js — the Gravity sim, driven through the SimShell contract.
  *
  * An n-body gravity world: every speck pulls on every other through a softened
  * inverse-square attraction, and from that one force clumps condense, fall into

@@ -13,7 +13,7 @@
             content="Interactive simulations that run in your browser: slime mold, boids, particle life, flow fields, reaction-diffusion, and gravity. Press play and watch, dive into a single world, or read a visual walkthrough of how each one works."
         />
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-        <link rel="stylesheet" href="tokens.css" />
+        <link rel="stylesheet" href="lib/tokens.css" />
 
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Toy World Workshop" />
@@ -507,7 +507,7 @@
             <div class="gallery" id="gallery"></div>
         </section>
 
-        <script src="dev-mode.js"></script>
+        <script src="lib/dev-mode.js"></script>
         <script>
             (() => {
                 const REDUCED = window.matchMedia(
@@ -1502,7 +1502,7 @@
                     {
                         id: "slime",
                         name: "Slime Mold",
-                        file: "slime-mold.html",
+                        slug: "slime-mold",
                         pitch: "Each walker heads for the most-worn ground and wears a path of its own.",
                         pal: "Inferno",
                         make: createSlime,
@@ -1510,7 +1510,7 @@
                     {
                         id: "boids",
                         name: "Boids",
-                        file: "boids.html",
+                        slug: "boids",
                         pitch: "Each bird follows three rules: don't crowd, match your neighbors, stay close.",
                         pal: "Cyber",
                         make: createBoids,
@@ -1518,7 +1518,7 @@
                     {
                         id: "particle-life",
                         name: "Particle Life",
-                        file: "particle-life.html",
+                        slug: "particle-life",
                         pitch: "One table decides which colors attract and which repel.",
                         pal: "Twilight",
                         make: createPL,
@@ -1526,7 +1526,7 @@
                     {
                         id: "flow",
                         name: "Flow Field",
-                        file: "flow-field.html",
+                        slug: "flow-field",
                         pitch: "Each particle drifts along an invisible current.",
                         pal: "Iris",
                         make: createFlow,
@@ -1534,7 +1534,7 @@
                     {
                         id: "rd",
                         name: "Reaction-Diffusion",
-                        file: "reaction-diffusion.html",
+                        slug: "reaction-diffusion",
                         pitch: "Two chemicals spread and react, one feeding the other.",
                         pal: "Acid",
                         make: createRD,
@@ -1542,15 +1542,12 @@
                     {
                         id: "gravity",
                         name: "Gravity",
-                        file: "gravity.html",
+                        slug: "gravity",
                         pitch: "Every speck pulls on every other.",
                         pal: "Iris",
                         make: createGravity,
                     },
                 ];
-
-                const explainOf = (file) =>
-                    file.replace(".html", "-explained.html");
 
                 // ============================================================
                 // WORLDS GALLERY
@@ -1563,9 +1560,9 @@
                     card.className = "world";
                     card.id = app.id;
                     // Tag this card with its world so its bg/ink tints match
-                    // the sim; the world id is the sim's filename (e.g.
+                    // the sim; the world id is the sim's folder slug (e.g.
                     // "slime-mold"). The accent stays white across all worlds.
-                    card.dataset.world = app.file.replace(".html", "");
+                    card.dataset.world = app.slug;
                     card.innerHTML = `
                         <canvas class="bg"></canvas>
                         <div class="scrim"></div>
@@ -1573,8 +1570,8 @@
                             <h2 class="wname">${app.name}</h2>
                             <p class="pitch">${app.pitch}</p>
                             <div class="cta-row">
-                                <a class="cta" href="${app.file}">Poke It</a>
-                                <a class="cta-ghost" href="${explainOf(app.file)}">Understand It</a>
+                                <a class="cta" href="sims/${app.slug}/">Poke It</a>
+                                <a class="cta-ghost" href="sims/${app.slug}/explained.html">Understand It</a>
                             </div>
                         </div>`;
                     galleryEl.appendChild(card);

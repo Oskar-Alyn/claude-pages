@@ -1,5 +1,5 @@
 /* ============================================================================
- * boids.sim.js — the Boids sim, driven through the SimShell contract.
+ * sim.js — the Boids sim, driven through the SimShell contract.
  *
  * Classic flocking: every boid steers off its neighbors with three simple
  * rules — separation, alignment, cohesion — and a flock emerges with no

@@ -1,5 +1,5 @@
 /* ============================================================================
- * slime-mold.sim.js — the Slime Mold sim, driven through the SimShell contract.
+ * sim.js — the Slime Mold sim, driven through the SimShell contract.
  *
  * A Physarum-style agent simulation: thousands of agents wander a wrapping
  * (toroidal) pheromone field, each sensing the trail just ahead (left/center/

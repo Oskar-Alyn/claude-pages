@@ -1,5 +1,5 @@
 /* ============================================================================
- * particle-life.sim.js — the Particle Life sim, driven through the SimShell
+ * sim.js — the Particle Life sim, driven through the SimShell
  * contract.
  *
  * N species of particles attract and repel one another by a random interaction

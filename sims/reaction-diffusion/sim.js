@@ -1,5 +1,5 @@
 /* ============================================================================
- * reaction-diffusion.sim.js — the Reaction–Diffusion sim, driven through the
+ * sim.js — the Reaction–Diffusion sim, driven through the
  * SimShell contract.
  *
  * A Gray-Scott reaction-diffusion system on a wrapping (toroidal) grid: two

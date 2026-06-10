@@ -2,7 +2,7 @@
  * feed.js — the invisible Discovery Feed host.
  *
  * Owns the durable state (history, taste model, sampler) and renders the
- * current item in a full-screen iframe (<sim>.html?feed=1#<recipe>). A second
+ * current item in a full-screen iframe (sims/<sim>/index.html?feed=1#<recipe>). A second
  * paused, opacity-0 iframe keeps the next drawn item warm so a cross-sim draw is
  * a flash-free hard cut. Cap: 2 live iframes (the visible one + one warm
  * preload). Same-sim draws apply the recipe in place via postMessage — no
@@ -264,7 +264,7 @@
         const f = document.createElement("iframe");
         f.className = "feed-frame";
         const hash = item.recipe ? "#" + encodeRecipe(item.recipe) : "";
-        f.src = `${item.sim}.html?feed=1${paused ? "&paused=1" : ""}${hash}`;
+        f.src = `sims/${item.sim}/index.html?feed=1${paused ? "&paused=1" : ""}${hash}`;
         stage.appendChild(f);
         return f;
     }
