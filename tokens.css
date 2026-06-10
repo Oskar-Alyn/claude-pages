@@ -62,12 +62,9 @@
     --radius-pill: 980px;
     --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-    /* ---- Accent — monochrome white site-wide. The chrome (buttons, sliders,
-       focus rings, card edges) stays minimal and uncolored so it reads as one
-       product against the big colorful simulations. Single knob: every surface
-       reads --accent / --accent-rgb, so reintroducing color is one edit here. */
-    --accent: #fff;
-    --accent-rgb: 255, 255, 255;
+    /* The chrome (buttons, sliders, focus rings, card edges) is monochrome
+       white site-wide so it reads as one product against the colorful
+       simulations. Surfaces use plain #fff / rgba(255,255,255,a) directly. */
 }
 
 /* Universal reset shared by every page that links this file (the sims, the

@@ -3,7 +3,6 @@
 
    Theme tokens come from tokens.css via data-world on <html>:
 
-     --accent, --accent-rgb   (monochrome white, shared site-wide)
      --ink, --muted, --faint, --hi
      --line, --card
      --bg, --bg-rgb           (bg as hex + as rgb triplet, per world)
@@ -59,7 +58,7 @@ body {
     gap: 8px;
 }
 .nav .brand .mark {
-    color: var(--accent);
+    color: #fff;
     font-size: 15px;
 }
 .nav .links {
@@ -77,7 +76,7 @@ body {
     color: #fff;
 }
 .nav .links .launch {
-    color: var(--accent);
+    color: #fff;
 }
 @media (max-width: 560px) {
     .nav .links .home {
@@ -206,17 +205,17 @@ section {
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: rgba(var(--accent-rgb), 0.25);
+    background: rgba(255, 255, 255, 0.25);
     transition:
         background 0.18s,
         transform 0.18s;
 }
 .secnav a:hover {
-    background: rgba(var(--accent-rgb), 0.6);
+    background: rgba(255, 255, 255, 0.6);
     transform: scale(1.25);
 }
 .secnav a[aria-current="true"] {
-    background: var(--accent);
+    background: #fff;
     transform: scale(1.4);
 }
 .secnav a::after {
@@ -283,9 +282,8 @@ p .hi {
     padding: 16px;
     border-radius: 18px;
     background: var(--card);
-    /* Faint accent frame per world (data-world retints --accent-rgb), so each
-       demo carries its world's colour the way the home cards do. */
-    border: 1px solid rgba(var(--accent-rgb), 0.18);
+    /* Faint white frame to lift the demo off the card. */
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 .demo-pair {
     display: grid;
@@ -339,7 +337,7 @@ p .hi {
     background: var(--faint);
 }
 .dot.hi {
-    background: var(--accent);
+    background: #fff;
 }
 
 /* ---------- Slider control ---------- */
@@ -361,7 +359,7 @@ p .hi {
 }
 .control .val {
     font-size: 14px;
-    color: var(--accent);
+    color: #fff;
     font-variant-numeric: tabular-nums;
 }
 .control .read {
@@ -390,19 +388,19 @@ input[type="range"]::-webkit-slider-thumb {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--accent);
+    background: #fff;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.4);
     border: 2px solid rgba(8, 10, 16, 0.9);
 }
 input[type="range"]::-moz-range-thumb {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--accent);
+    background: #fff;
     cursor: pointer;
     border: 2px solid rgba(8, 10, 16, 0.9);
-    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.4);
 }
 
 .hint {
@@ -426,11 +424,11 @@ input[type="range"]::-moz-range-thumb {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: rgba(var(--accent-rgb), 0.16);
+    background: rgba(255, 255, 255, 0.16);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
-    border: 1px solid rgba(var(--accent-rgb), 0.5);
-    color: var(--accent);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #fff;
     padding: 13px 26px;
     border-radius: var(--radius-pill);
     font-size: 15px;
@@ -442,14 +440,14 @@ input[type="range"]::-moz-range-thumb {
         background 0.16s ease,
         border-color 0.16s ease,
         color 0.16s ease;
-    box-shadow: 0 8px 30px rgba(var(--accent-rgb), 0.18);
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.18);
 }
 .cta:hover {
     transform: translateY(-2px);
-    background: rgba(var(--accent-rgb), 0.28);
-    border-color: rgba(var(--accent-rgb), 0.7);
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(255, 255, 255, 0.7);
     color: var(--ink);
-    box-shadow: 0 12px 38px rgba(var(--accent-rgb), 0.3);
+    box-shadow: 0 12px 38px rgba(255, 255, 255, 0.3);
 }
 .cta .arrow {
     transition: transform 0.16s ease;
