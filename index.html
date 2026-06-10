@@ -382,6 +382,18 @@
             .world-about .pitch {
                 max-width: 38ch;
             }
+            /* Official Ko-fi button image, capped to roughly CTA height. The
+               dark variant (kofi3) sits closest to the mono card. */
+            .kofi {
+                display: inline-block;
+                line-height: 0;
+            }
+            .kofi img {
+                height: 38px;
+                width: auto;
+                display: block;
+                border: 0;
+            }
             @media (max-width: 720px) {
                 .gallery {
                     grid-template-columns: 1fr;
@@ -1581,14 +1593,16 @@
                     <canvas class="bg"></canvas>
                     <div class="scrim"></div>
                     <div class="content">
-                        <h2 class="wname">A handful of rules each</h2>
+                        <h2 class="wname">About the Workshop</h2>
                         <p class="pitch">
-                            Each one is just a few simple rules, yet flocks,
-                            trails, and lifelike patterns appear on their own.
-                            Watch them run, poke at one, or see how it works.
+                            I made the first three of these over a weekend to
+                            amuse myself. They turned out fun, so I cleaned them
+                            up and added a few explainers to share. Everything
+                            here is free to play with, but if you'd like to chip
+                            in, there's a button below.
                         </p>
                         <div class="cta-row">
-                            <a class="cta" href="feed.html">Explore <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></a>
+                            <a class="kofi" href="https://ko-fi.com/kitbon" target="_blank" rel="noopener" aria-label="Support the Workshop on Ko-fi"><img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Support me on Ko-fi" /></a>
                         </div>
                     </div>`;
                 galleryEl.appendChild(about);
